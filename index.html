@@ -1398,7 +1398,7 @@ function settle(gf,ga,real){
   c.msg=m;if(c.stage==='over')goldenBoot();saveAll();
 }
 /* ---- Worldwide leaderboard (Supabase). Fill these in, see leaderboard-setup.sql ---- */
-const ONLINE={url:'https://uioscnsawpgoysfvajix.supabase.co',key:'PASTE-KEY-HERE'}; // e.g. url:'https://abcd1234.supabase.co', key:'sb_publishable_...' (or the legacy eyJ... anon key)
+const ONLINE={url:'https://uioscnsawpgoysfvajix.supabase.co',key:'sb_publishable_uqlUv4qNOSXqK5n-jIHduA_fK8DEk9-'}; // e.g. url:'https://abcd1234.supabase.co', key:'sb_publishable_...' (or the legacy eyJ... anon key)
 const oh=()=>ONLINE.key.startsWith('eyJ')?{apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key}:{apikey:ONLINE.key};
 let pT=null;
 function pushOnline(e){
