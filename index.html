@@ -1398,8 +1398,8 @@ function settle(gf,ga,real){
   c.msg=m;if(c.stage==='over')goldenBoot();saveAll();
 }
 /* ---- Worldwide leaderboard (Supabase). Fill these in, see leaderboard-setup.sql ---- */
-const ONLINE={url:'',key:''}; // e.g. url:'https://abcd1234.supabase.co', key:'<anon public key>'
-const oh=()=>({apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key});
+const ONLINE={url:'',key:''}; // e.g. url:'https://abcd1234.supabase.co', key:'sb_publishable_...' (or the legacy eyJ... anon key)
+const oh=()=>ONLINE.key.startsWith('eyJ')?{apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key}:{apikey:ONLINE.key};
 let pT=null;
 function pushOnline(e){
   if(!ONLINE.url)return;clearTimeout(pT);
@@ -1505,7 +1505,7 @@ let sb=null,lobby=null,myId=null;
 const netSend=(ev,d)=>{if(net.ch)net.ch.send({type:'broadcast',event:ev,payload:d});};
 for(const k in sfx){const f=sfx[k];sfx[k]=(...a)=>{f(...a);if(net.on&&net.host)netSend('sfx',[k,a[0]]);};}
 const R=n=>Math.round(n*10)/10,onSt=t=>{$('onSt').textContent=t;};
-const loadSb=()=>new Promise((ok,no)=>{if(window.supabase)return ok();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc);});
+const loadSb=()=>new Promise((ok,no)=>{if(window.supabase)return ok();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc);});
 async function findMatch(){
   if(!ONLINE.url){onSt('Online play needs your Supabase URL and key filled in (see the setup notes).');return;}
   $('onFind').disabled=true;onSt('Connecting…');
