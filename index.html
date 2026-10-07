@@ -1398,7 +1398,7 @@ function settle(gf,ga,real){
   c.msg=m;if(c.stage==='over')goldenBoot();saveAll();
 }
 /* ---- Worldwide leaderboard (Supabase). Fill these in, see leaderboard-setup.sql ---- */
-const ONLINE={url:'',key:''}; // e.g. url:'https://abcd1234.supabase.co', key:'sb_publishable_...' (or the legacy eyJ... anon key)
+const ONLINE={url:'https://uioscnsawpgoysfvajix.supabase.co',key:'PASTE-KEY-HERE'}; // e.g. url:'https://abcd1234.supabase.co', key:'sb_publishable_...' (or the legacy eyJ... anon key)
 const oh=()=>ONLINE.key.startsWith('eyJ')?{apikey:ONLINE.key,Authorization:'Bearer '+ONLINE.key}:{apikey:ONLINE.key};
 let pT=null;
 function pushOnline(e){
@@ -1507,7 +1507,7 @@ for(const k in sfx){const f=sfx[k];sfx[k]=(...a)=>{f(...a);if(net.on&&net.host)n
 const R=n=>Math.round(n*10)/10,onSt=t=>{$('onSt').textContent=t;};
 const loadSb=()=>new Promise((ok,no)=>{if(window.supabase)return ok();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc);});
 async function findMatch(){
-  if(!ONLINE.url){onSt('Online play needs your Supabase URL and key filled in (see the setup notes).');return;}
+  if(!ONLINE.url||!ONLINE.key||ONLINE.key==='PASTE-KEY-HERE'){onSt('The Supabase key is still missing. Open the file in a text editor, find const ONLINE=, and replace PASTE-KEY-HERE with your publishable key.');return;}
   $('onFind').disabled=true;onSt('Connecting…');
   try{await loadSb();}catch(e){onSt('Could not load the network library.');$('onFind').disabled=false;return;}
   sb=sb||window.supabase.createClient(ONLINE.url,ONLINE.key);
