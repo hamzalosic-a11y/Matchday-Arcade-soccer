@@ -85,3 +85,12 @@ begin
 end $$ language plpgsql;
 drop trigger if exists ranked_guard on ranked;
 create trigger ranked_guard before insert or update on ranked for each row execute function ranked_guard();
+
+-- ===== Dream Team ranked ladder =====
+create table if not exists dream_ranked (like ranked including all);
+alter table dream_ranked enable row level security;
+create policy "anyone can read dream_ranked"   on dream_ranked for select using (true);
+create policy "anyone can add dream_ranked"    on dream_ranked for insert with check (true);
+create policy "anyone can update dream_ranked" on dream_ranked for update using (true) with check (true);
+drop trigger if exists ranked_guard on dream_ranked;
+create trigger ranked_guard before insert or update on dream_ranked for each row execute function ranked_guard();
