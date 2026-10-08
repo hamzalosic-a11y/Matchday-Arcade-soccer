@@ -536,12 +536,12 @@ function attachBall(dt){
   const o=ball.owner;const off=15+(o.sprinting?4:0)+(o.isGK?9:0);
   const tx=o.x+Math.cos(o.face)*off,ty=o.y+Math.sin(o.face)*off;
   const k=1-Math.exp(-28*dt);
-  ball.x+=(tx-ball.x)*k;ball.y+=(ty-ball.y)*k;ball.z=0;ball.vz=0;ball.vx=o.vx;ball.vy=o.vy;
+  ball.x+=(tx-ball.x)*k;ball.y+=(ty-ball.y)*k;if(o.thr){ball.x=clamp(ball.x,1,L-1);ball.y=clamp(ball.y,1,W-1);}ball.z=0;ball.vz=0;ball.vx=o.vx;ball.vy=o.vy;
   ball.roll+=Math.hypot(o.vx,o.vy)*dt/6;
 }
 function kick(p,dx,dy,speed,vz){
   const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
-  ball.offs=null;ball.owner=null;ball.vx=dx*speed;ball.vy=dy*speed;ball.vz=vz;ball.z=vz>0?1:0;
+  p.thr=false;ball.offs=null;ball.owner=null;ball.vx=dx*speed;ball.vy=dy*speed;ball.vz=vz;ball.z=vz>0?1:0;
   ball.lastKicker=p;ball.lastTeam=p.team;ball.noPick=.3;p.kick=.22;p.charge=0;
   if(setPiece&&setPiece.taker===p)setPiece=null;
   sfx.kick(Math.min(1,speed/1000));
@@ -806,7 +806,7 @@ function setupRestart(type,team,x,y){
   taker.face=face;taker.x=x-Math.cos(face)*off;taker.y=y-Math.sin(face)*off;
   taker.vx=taker.vy=0;taker.lunge=null;taker.stun=0;taker.cant=0;taker.recv=0;
   ball.x=x;ball.y=y;ball.z=0;ball.vx=ball.vy=ball.vz=0;ball.owner=taker;ball.lastTeam=team;ball.noPick=0;
-  taker.protect=1.3;taker.noOff=(type==='throw'||type==='corner'||type==='goal');ball.offs=null;taker.ai.t=type==='pen'?1.3:rand(.9,1.5);
+  taker.protect=1.3;taker.noOff=(type==='throw'||type==='corner'||type==='goal');ball.offs=null;taker.thr=(type==='throw');taker.ai.t=type==='pen'?1.3:rand(.9,1.5);
   taker.ai.force=type==='goal'?'long':type==='corner'?'cross':type==='pen'?'shoot':(type==='free'&&Math.hypot(atkX-x,W/2-y)<330?'shoot':'pass');
   for(const p of players){
     if(p===taker)continue;
@@ -836,7 +836,8 @@ function goalScored(t){
   for(let i=0;i<110;i++)particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(40,380),vy:rand(-260,260),c:i%2?teams[t].kit.p:teams[t].kit.c,life:rand(1.4,2.8),r:rand(0,6)});
 }
 function checkBounds(){
-  if(ball.owner||ball.net)return;
+  if(ball.net)return;
+  if(ball.owner)ball.lastTeam=ball.owner.team;
   const x=ball.x,y=ball.y;
   if(y<0||y>W){
     const t=1-ball.lastTeam;
@@ -998,7 +999,9 @@ function gkDistribute(p){
 function inputDir(p){
   const inp=IN(p);
   const mag=Math.hypot(inp.mx,inp.my);
-  return mag>.3?{x:inp.mx/mag,y:inp.my/mag}:{x:Math.cos(p.face),y:Math.sin(p.face)};
+  const r=mag>.3?{x:inp.mx/mag,y:inp.my/mag}:{x:Math.cos(p.face),y:Math.sin(p.face)};
+  if(p.thr){const sd=p.y<W/2?1:-1;if(r.y*sd<.7){r.y=.7*sd;r.x=(r.x<0?-1:1)*.714;}}
+  return r;
 }
 function setHuman(q){const o=q.team?human2:human;if(o)o.charge=0;if(q.team)human2=q;else human=q;q.charge=0;}
 function humanStep(p,dt){
@@ -1013,12 +1016,13 @@ function humanStep(p,dt){
   const sp=BASE*p.pace*(owner?.93:1)*(sprinting?1.22:1)*(p.tired?.9:1);
   let tvx=0,tvy=0;
   if(mag>.1){const l=Math.hypot(inp.mx,inp.my);tvx=inp.mx/l*sp*mag;tvy=inp.my/l*sp*mag;}
+  if(p.thr){tvx=tvy=0;p.vx=p.vy=0;p.sprinting=false;if(mag>.3){const dd=inputDir(p);p.face=Math.atan2(dd.y,dd.x);}}
   accelTo(p,tvx,tvy,(sprinting?950:1250)*dt);
   if(owner){
     if(inp.passP)humanPass(p,false);
     else if(inp.lobP)humanPass(p,true);
-    if(inp.shoot)p.charge=Math.min(1,p.charge+dt/.8);
-    if(inp.shootR&&ball.owner===p){humanShoot(p);}
+    if(inp.shoot&&!p.thr)p.charge=Math.min(1,p.charge+dt/.8);
+    if(inp.shootR&&ball.owner===p&&!p.thr){humanShoot(p);}
     if(!inp.shoot&&!inp.shootR)p.charge=0;
   }else{
     p.charge=0;
@@ -1075,6 +1079,7 @@ function autoSwitch(dt,t){
 /* ---------- main step ---------- */
 function updatePlayer(p,dt){
   if(p.out)return;
+  if(p.thr&&ball.owner!==p)p.thr=false;else if(p.thr)p.protect=Math.max(p.protect,.4);
   p.protect=Math.max(0,p.protect-dt);p.tackleCd=Math.max(0,p.tackleCd-dt);p.cant=Math.max(0,p.cant-dt);
   p.kick=Math.max(0,p.kick-dt);p.recv=Math.max(0,p.recv-dt);
   const live=state==='play';
@@ -1096,7 +1101,7 @@ function separate(){
   for(let i=0;i<players.length;i++)for(let j=i+1;j<players.length;j++){
     const a=players[i],b=players[j];if(a.out||b.out)continue;
     const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
-    if(d<24&&d>.01){const pu=(24-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*pu;a.y-=ny*pu;b.x+=nx*pu;b.y+=ny*pu;}
+    if(d<24&&d>.01){const w=(a.thr?0:1)+(b.thr?0:1);if(!w)continue;const pu=(24-d)/w,nx=dx/d,ny=dy/d;if(!a.thr){a.x-=nx*pu;a.y-=ny*pu;}if(!b.thr){b.x+=nx*pu;b.y+=ny*pu;}}
   }
 }
 function endHalfCheck(){
