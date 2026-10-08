@@ -83,7 +83,7 @@ table.lg tr.me{background:var(--panel2);color:var(--acc)}
 .tr{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .tr button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font:600 14px 'Barlow',sans-serif;cursor:pointer}
 .tr button:disabled{opacity:.4;cursor:default}
-#cName,#onName{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:600 16px 'Barlow',sans-serif;width:min(280px,90%);text-align:center;-webkit-user-select:text;user-select:text}
+#cName,#onName,#tSearch{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:600 16px 'Barlow',sans-serif;width:min(280px,90%);text-align:center;-webkit-user-select:text;user-select:text}
 #cBody{width:min(640px,100%);display:flex;flex-direction:column;align-items:center;gap:10px}
 #board.rk{background:linear-gradient(180deg,rgba(20,32,58,.96),rgba(8,14,26,.96));border-color:var(--acc);box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:30px}
 #board.rk .chip{width:12px}
@@ -99,6 +99,7 @@ table.lg tr.me{background:var(--panel2);color:var(--acc)}
 @media (max-width:620px){.cols{grid-template-columns:1fr 1fr;gap:8px}.team{font-size:13px;padding:6px}.help .hg{grid-template-columns:1fr}#radar{width:104px;height:66px}#board{font-size:20px}#board .sc{font-size:26px;min-width:34px}}
 @media (prefers-reduced-motion: reduce){#msg{animation:none}}
 button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#tSearch{margin:0 0 10px;width:min(820px,100%);text-align:left;-webkit-user-select:text;user-select:text}
 </style>
 </head>
 <body>
@@ -133,6 +134,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <div class="row" style="margin-top:0">
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
+    <input id="tSearch" placeholder="Search teams…" autocomplete="off">
     <div class="cols">
       <div class="col"><h2>Your team</h2><div class="lst" id="lstHome"></div></div>
       <div class="col"><h2>Opponent</h2><div class="lst" id="lstAway"></div></div>
@@ -211,8 +213,8 @@ const TEAMS=[
  T('Arsenal','ARS','#ef0107','#ffffff','#ffffff','solid',88,88,89,'4231','club'),
  T('Bayern Munich','BAY','#dc052d','#ffffff','#ffffff','solid',91,88,87,'4231','club'),
  T('Paris Saint-Germain','PSG','#004170','#da291c','#004170','solid',90,87,85,'433','club'),
- T('Inter','INT','#0068a8','#111111','#111111','stripes',87,86,87,'442','club'),
- T('Juventus','JUV','#f2f2f2','#111111','#111111','stripes',84,84,86,'442','club'),
+ T('Inter','INT','#0068a8','#111111','#111111','stripes',87,86,87,'352','club'),
+ T('Juventus','JUV','#f2f2f2','#111111','#111111','stripes',84,84,86,'352','club'),
  T('AC Milan','MIL','#d11a2a','#111111','#111111','stripes',84,83,83,'4231','club'),
  T('Atlético Madrid','ATM','#cb3524','#f2f2f2','#1d3f8f','stripes',84,85,87,'442','club'),
  T('Chelsea','CHE','#034694','#ffffff','#034694','solid',84,84,83,'433','club'),
@@ -242,7 +244,7 @@ const TEAMS=[
  T('Athletic Club','ATH','#d1111c','#f2f2f2','#111111','stripes',80,80,80,'442','club'),
  T('Roma','ROM','#8e1f2f','#f0bc42','#f2f2f2','solid',80,80,79,'433','club'),
  T('Lazio','LAZ','#87d8f7','#ffffff','#ffffff','solid',79,79,78,'433','club'),
- T('Atalanta','ATA','#111111','#1e71b8','#111111','stripes',83,81,79,'433','club'),
+ T('Atalanta','ATA','#111111','#1e71b8','#111111','stripes',83,81,79,'352','club'),
  T('Fiorentina','FIO','#5b2a86','#ffffff','#5b2a86','solid',78,78,76,'433','club'),
  T('Bayer Leverkusen','LEV','#e32221','#111111','#111111','solid',86,85,83,'4231','club'),
  T('RB Leipzig','RBL','#f2f2f2','#dd0741','#f2f2f2','solid',83,82,81,'4231','club'),
@@ -253,11 +255,11 @@ const TEAMS=[
  T('Lille','LIL','#d3202f','#1d2a5b','#1d2a5b','solid',77,77,77,'442','club'),
  T('Benfica','SLB','#e3161c','#f2f2f2','#f2f2f2','solid',82,81,79,'433','club'),
  T('FC Porto','FCP','#1f4a9b','#f2f2f2','#f2f2f2','stripes',80,79,79,'433','club'),
- T('Sporting CP','SCP','#0a7a3a','#f2f2f2','#f2f2f2','solid',80,80,79,'433','club'),
+ T('Sporting CP','SCP','#0a7a3a','#f2f2f2','#f2f2f2','hoops',80,80,79,'433','club'),
  T('Ajax','AJX','#f2f2f2','#d2122e','#f2f2f2','solid',79,79,77,'433','club'),
  T('PSV Eindhoven','PSV','#e4202c','#f2f2f2','#f2f2f2','solid',81,80,78,'433','club'),
  T('Feyenoord','FEY','#e4202c','#f2f2f2','#111111','solid',78,78,77,'433','club'),
- T('Celtic','CEL','#0a7a3a','#f2f2f2','#f2f2f2','solid',79,77,75,'442','club'),
+ T('Celtic','CEL','#0a7a3a','#f2f2f2','#f2f2f2','hoops',79,77,75,'442','club'),
  T('Rangers','RAN','#1b4f9c','#f2f2f2','#f2f2f2','solid',76,75,75,'442','club'),
  T('Galatasaray','GAL','#e3262e','#fbb900','#e3262e','solid',79,78,76,'442','club'),
  T('Fenerbahçe','FEN','#12234b','#ffe800','#12234b','stripes',78,78,76,'442','club'),
@@ -301,12 +303,89 @@ const TEAMS=[
  T('Ivory Coast','CIV','#f77f00','#009e60','#f2f2f2','solid',79,77,76,'433','nat'),
  T('Algeria','ALG','#f2f2f2','#006233','#f2f2f2','solid',77,76,75,'433','nat'),
  T('Bosnia and Herzegovina','BIH','#0a3a8f','#fecb00','#0a3a8f','solid',77,77,75,'442','nat'),
+ T('VfB Stuttgart','STU','#f2f2f2','#e32219','#f2f2f2','solid',80,79,77,'433','club'),
+ T('Borussia Mönchengladbach','BMG','#f2f2f2','#0a7a3a','#f2f2f2','solid',77,76,75,'442','club'),
+ T('Werder Bremen','SVW','#1d9053','#f2f2f2','#f2f2f2','solid',76,75,74,'442','club'),
+ T('Union Berlin','FCU','#e30613','#f2f2f2','#f2f2f2','solid',75,74,76,'532','club'),
+ T('SC Freiburg','SCF','#111111','#e30613','#111111','solid',77,77,77,'4231','club'),
+ T('VfL Wolfsburg','WOB','#65b32e','#f2f2f2','#f2f2f2','solid',75,75,74,'442','club'),
+ T('Brighton','BHA','#0057b8','#f2f2f2','#0057b8','stripes',79,79,77,'4141','club'),
+ T('Brentford','BRE','#e30613','#f2f2f2','#111111','stripes',77,76,75,'433','club'),
+ T('Fulham','FUL','#f2f2f2','#111111','#111111','solid',76,76,75,'442','club'),
+ T('Crystal Palace','CRY','#1b458f','#c4122e','#1b458f','stripes',76,76,76,'442','club'),
+ T('Wolverhampton','WOL','#fdb913','#111111','#111111','solid',76,76,76,'532','club'),
+ T('Nottingham Forest','NFO','#c8102e','#f2f2f2','#f2f2f2','solid',75,75,76,'442','club'),
+ T('Bournemouth','BOU','#d71920','#111111','#111111','stripes',76,75,73,'4141','club'),
+ T('Real Betis','BET','#0bb363','#f2f2f2','#f2f2f2','stripes',78,78,77,'442','club'),
+ T('Girona','GIR','#d71920','#f2f2f2','#111111','solid',78,77,74,'433','club'),
+ T('Osasuna','OSA','#d91a21','#0a1d4a','#0a1d4a','solid',74,74,75,'4141','club'),
+ T('Torino','TOR','#8a1538','#f2f2f2','#f2f2f2','solid',74,74,76,'352','club'),
+ T('Bologna','BOL','#1a2f5b','#c4122e','#f2f2f2','stripes',77,76,76,'433','club'),
+ T('OGC Nice','NIC','#111111','#d71920','#111111','stripes',76,76,77,'352','club'),
+ T('Stade Rennais','REN','#d71920','#111111','#111111','solid',76,76,75,'4141','club'),
+ T('RC Lens','RCL','#fdd400','#d71920','#d71920','stripes',76,76,77,'352','club'),
+ T('SC Braga','SCB','#d71920','#f2f2f2','#f2f2f2','solid',76,75,74,'433','club'),
+ T('Club Brugge','BRU','#0a5ca8','#111111','#111111','stripes',76,75,74,'442','club'),
+ T('Anderlecht','AND','#5e2d79','#f2f2f2','#f2f2f2','solid',74,73,72,'442','club'),
+ T('Shakhtar Donetsk','SHA','#f58220','#111111','#111111','solid',75,74,73,'433','club'),
+ T('Dinamo Zagreb','DZG','#1f4fa3','#f2f2f2','#1f4fa3','solid',74,74,73,'442','club'),
+ T('Red Bull Salzburg','RBS','#f2f2f2','#d71920','#f2f2f2','solid',76,75,73,'4231','club'),
+ T('Beşiktaş','BJK','#111111','#f2f2f2','#111111','stripes',76,76,75,'442','club'),
+ T('Olympiacos','OLY','#d71920','#f2f2f2','#d71920','stripes',75,74,74,'442','club'),
+ T('Palmeiras','PAL','#0a7a3a','#f2f2f2','#f2f2f2','solid',80,79,78,'433','club'),
+ T('Corinthians','COR','#f2f2f2','#111111','#111111','solid',76,75,75,'442','club'),
+ T('São Paulo','SAO','#f2f2f2','#d71920','#f2f2f2','solid',76,75,75,'442','club'),
+ T('Atlético Mineiro','CAM','#111111','#f2f2f2','#111111','stripes',76,75,74,'442','club'),
+ T('Club América','AME','#fdd400','#0a2a66','#0a2a66','solid',76,75,74,'442','club'),
+ T('Monterrey','MTY','#0a2a66','#f2f2f2','#0a2a66','solid',75,74,74,'442','club'),
+ T('Al-Hilal','HIL','#0a4ea3','#f2f2f2','#f2f2f2','solid',77,76,75,'433','club'),
+ T('Al-Nassr','NAS','#fdd400','#0a2a66','#0a2a66','solid',77,75,73,'442','club'),
+ T('Al Ahly','AHL','#d71920','#f2f2f2','#f2f2f2','solid',73,72,72,'442','club'),
+ T('Seattle Sounders','SEA','#5d9732','#005595','#005595','solid',72,71,71,'442','club'),
+ T('Urawa Red Diamonds','URA','#d71920','#111111','#111111','solid',72,72,71,'442','club'),
+ T('Hajduk Split','HAJ','#f2f2f2','#1f4fa3','#1f4fa3','solid',71,71,70,'442','club'),
+ T('FK Sarajevo','SAR','#7a1f3d','#f2f2f2','#7a1f3d','solid',69,68,68,'442','club'),
+ T('Željezničar','ZEL','#1f4fa3','#f2f2f2','#f2f2f2','solid',68,68,67,'442','club'),
+ T('HŠK Zrinjski','ZRI','#d71920','#1f4fa3','#f2f2f2','solid',69,68,68,'442','club'),
+ T('Borac Banja Luka','BOR','#d71920','#1f4fa3','#1f4fa3','stripes',67,67,67,'442','club'),
+ T('Costa Rica','CRC','#d71920','#1f4fa3','#1f4fa3','solid',71,70,70,'442','nat'),
+ T('Peru','PER','#f2f2f2','#d71920','#f2f2f2','solid',73,73,72,'442','nat'),
+ T('Ecuador','ECU','#fdd400','#1f4fa3','#1f4fa3','solid',76,75,75,'442','nat'),
+ T('Paraguay','PAR','#d71920','#f2f2f2','#1f4fa3','stripes',73,72,73,'442','nat'),
+ T('Venezuela','VEN','#7a1f3d','#fdd400','#7a1f3d','solid',72,72,71,'442','nat'),
+ T('Iran','IRN','#f2f2f2','#d71920','#f2f2f2','solid',75,73,74,'442','nat'),
+ T('Saudi Arabia','KSA','#0a7a3a','#f2f2f2','#f2f2f2','solid',72,72,71,'442','nat'),
+ T('Qatar','QAT','#7a1f3d','#f2f2f2','#7a1f3d','solid',70,70,70,'442','nat'),
+ T('Iraq','IRQ','#f2f2f2','#0a7a3a','#f2f2f2','solid',70,69,69,'442','nat'),
+ T('Tunisia','TUN','#d71920','#f2f2f2','#f2f2f2','solid',73,73,74,'442','nat'),
+ T('Cameroon','CMR','#0a7a3a','#d71920','#d71920','solid',75,73,72,'433','nat'),
+ T('Mali','MLI','#fdd400','#0a7a3a','#0a7a3a','solid',74,73,72,'442','nat'),
+ T('DR Congo','COD','#1f4fa3','#fdd400','#1f4fa3','solid',73,72,71,'442','nat'),
+ T('South Africa','RSA','#fdd400','#0a7a3a','#0a7a3a','solid',71,71,71,'442','nat'),
+ T('Hungary','HUN','#d71920','#f2f2f2','#f2f2f2','solid',75,75,74,'352','nat'),
+ T('Romania','ROU','#fdd400','#1f4fa3','#fdd400','solid',74,73,73,'442','nat'),
+ T('Greece','GRE','#f2f2f2','#1f4fa3','#1f4fa3','solid',74,73,74,'532','nat'),
+ T('Slovakia','SVK','#f2f2f2','#1f4fa3','#1f4fa3','solid',72,72,72,'442','nat'),
+ T('Slovenia','SVN','#f2f2f2','#0a7a3a','#f2f2f2','solid',72,71,71,'442','nat'),
+ T('Albania','ALB','#d71920','#111111','#111111','solid',72,71,70,'352','nat'),
+ T('Iceland','ISL','#1f4fa3','#f2f2f2','#1f4fa3','solid',67,66,67,'442','nat'),
+ T('Republic of Ireland','IRL','#0a7a3a','#f2f2f2','#f2f2f2','solid',71,71,72,'442','nat'),
+ T('Northern Ireland','NIR','#0a7a3a','#f2f2f2','#f2f2f2','solid',68,68,69,'442','nat'),
+ T('Jamaica','JAM','#fdd400','#0a7a3a','#111111','solid',71,70,70,'442','nat'),
+ T('Panama','PAN','#d71920','#1f4fa3','#1f4fa3','solid',69,69,69,'442','nat'),
+ T('New Zealand','NZL','#111111','#f2f2f2','#111111','solid',66,66,67,'442','nat'),
+ T('China','CHN','#d71920','#fdd400','#d71920','solid',67,67,67,'442','nat'),
+ T('Uzbekistan','UZB','#1f4fa3','#f2f2f2','#1f4fa3','solid',71,71,70,'442','nat'),
+ T('Georgia','GEO','#f2f2f2','#d71920','#f2f2f2','solid',73,72,71,'433','nat'),
 ];
 // [role, number, depth(0-1 from own goal), width(0-1)]
 const FORM={
  '433':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',8,.36,.72],['MF',6,.31,.5],['MF',10,.36,.28],['FW',7,.58,.86],['FW',9,.63,.5],['FW',11,.58,.14]],
  '442':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',7,.42,.9],['MF',8,.37,.62],['MF',6,.37,.38],['MF',11,.42,.1],['FW',9,.62,.62],['FW',10,.62,.38]],
  '4231':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',6,.33,.62],['MF',8,.33,.38],['MF',7,.52,.86],['MF',10,.5,.5],['MF',11,.52,.14],['FW',9,.65,.5]],
+ '352':[['GK',1,.03,.5],['DF',2,.18,.78],['DF',4,.15,.5],['DF',5,.18,.22],['MF',7,.42,.95],['MF',11,.42,.05],['MF',8,.36,.7],['MF',6,.32,.5],['MF',10,.36,.3],['FW',9,.62,.6],['FW',12,.62,.4]],
+ '532':[['GK',1,.03,.5],['DF',2,.2,.92],['DF',4,.16,.7],['DF',5,.15,.5],['DF',6,.16,.3],['DF',3,.2,.08],['MF',8,.38,.7],['MF',10,.34,.5],['MF',7,.38,.3],['FW',9,.6,.62],['FW',11,.6,.38]],
+ '4141':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',6,.3,.5],['MF',7,.48,.88],['MF',8,.46,.63],['MF',10,.46,.37],['MF',11,.48,.12],['FW',9,.65,.5]],
 };
 const DIFF=[
  {spd:.9,err:1.5,tk:.8,gk:.85,react:.16},
@@ -390,6 +469,7 @@ function makeKits(d0,d1){
   return[k0,k1];
 }
 function kitCss(t){
+  if(t.p==='hoops')return `repeating-linear-gradient(0deg,${t.k} 0 5px,${t.c} 5px 10px)`;
   if(t.p==='stripes')return `repeating-linear-gradient(90deg,${t.k} 0 6px,${t.c} 6px 12px)`;
   return `linear-gradient(135deg,${t.k} 62%,${t.c} 62%)`;
 }
@@ -414,6 +494,8 @@ function startMatch(){
   if(career&&career.live){const u=career.up,ob=Math.min(6,career.season-1);d0={...d0,a:d0.a+u.a,m:d0.m+u.m,d:d0.d+u.d};d1={...d1,a:d1.a+ob,m:d1.m+ob,d:d1.d+ob};}
   const kits=makeKits(d0,d1);
   teams=[mkTeam(0,d0,kits[0]),mkTeam(1,d1,kits[1])];
+  teams.forEach((Tm,i)=>{const o=teams[1-i],ov=x=>(x.a+x.m+x.d)/3,gap=clamp((ov(Tm)-ov(o))/120,-.05,.05);
+    Tm.sty={line:gap+(Tm.a-Tm.d>=3?.03:Tm.d-Tm.a>=2?-.03:0),press:Tm.a-Tm.d>=3?1:0,pass:Tm.m>=Math.max(Tm.a,Tm.d)?.06:(Tm.a-Tm.d>=3?-.02:0)};});
   players=teams[0].players.concat(teams[1].players);players.forEach((p,i)=>p.gi=i);
   ball={x:L/2,y:W/2,z:0,vx:0,vy:0,vz:0,owner:null,lastKicker:null,lastTeam:0,noPick:0,roll:0,net:false};
   ms=[[],[]];score=[0,0];half=1;clock=0;stats={shots:[0,0],poss:[0,0]};paused=false;particles=[];pending=null;setPiece=null;
@@ -753,7 +835,7 @@ function homePos(p){
     const w=p.role==='FW'?.35:p.role==='MF'?.5:.55;
     let shift=(bd-.5)*w;
     shift+=has?(p.role==='FW'?.1:p.role==='MF'?.08:.04):(p.role==='FW'?-.03:-.02);
-    depth=clamp(depth+shift,p.role==='DF'?.09:.12,.93);
+    depth=clamp(depth+shift+(p.role==='FW'?0:teams[p.team].sty.line),p.role==='DF'?.09:.12,.93);
   }
   const x=d===1?depth*L:L-depth*L;
   const y=clamp(W/2+(p.fy-.5)*W*.92+(ball.y-W/2)*(p.role==='DF'?.28:.2),70,W-70);
@@ -791,7 +873,7 @@ function aiStep(p,dt){
     }else{[tx,ty]=homePos(p);}
   }else if(ball.owner.team!==p.team){
     const o=ball.owner;
-    const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0);
+    const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0)+(Tm.sty.press&&prog(o.x,d)>L*.5?1:0);
     if(rank<n&&(p.role!=='DF'||dist(p,o)<380)){
       tx=o.x+o.vx*.25;ty=o.y+o.vy*.25;sp=base*(rank===0?1.1:1.0);p.sprinting=true;
       if(rank===0&&!p.lunge&&p.tackleCd<=0&&dist(p,o)<30&&o.protect<=0&&p.stun<=0){
@@ -824,7 +906,7 @@ function aiOwner(p,dt,base){
     const q=pickTargetAI(p,0);
     if(q){
       const gain=prog(q.x,d)-prog(p.x,d);
-      if((press<75&&Math.random()<.75)||(gain>140&&Math.random()<.4)||Math.random()<.05){aiPass(p,q,press);return;}
+      if((press<75&&Math.random()<.75)||(gain>140&&Math.random()<.4)||Math.random()<.05+Tm.sty.pass){aiPass(p,q,press);return;}
     }else if(press<40&&Math.random()<.3){
       const f=pickTargetAI(p,2);if(f){doPass(p,f,true,1.3);return;}
     }
@@ -1186,6 +1268,7 @@ function drawPlayer(p){
     for(let i=-2;i<=2;i+=2)ctx.fillRect(-10,i*4.4-2.2,20,4.4);
     ctx.restore();
   }
+  if(!p.isGK&&kit.pat==='hoops'){ctx.save();ctx.beginPath();ctx.ellipse(0,0,8.5,13.5,0,0,7);ctx.clip();ctx.fillStyle=kit.c;for(let i=-1;i<=1;i++)ctx.fillRect(i*6-1.5,-14,3,28);ctx.restore();}
   ctx.fillStyle=p.skin;ctx.beginPath();ctx.arc(1.5,0,6.1,0,7);ctx.fill();
   ctx.fillStyle=p.hair;ctx.beginPath();ctx.arc(1,0,6.3,Math.PI-1.15,Math.PI+1.15);ctx.fill();
   ctx.restore();
@@ -1310,11 +1393,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&(state==='
 
 /* ---------- menu ---------- */
 function renderTeams(){
+  const q=($('tSearch').value||'').toLowerCase().trim();
   for(const[id,key]of[['lstHome','home'],['lstAway','away']]){
     const box=$(id);box.innerHTML='';
     TEAMS.forEach((t,i)=>{
       if(t.g!==settings.tab&&settings[key]!==i)return;
       if(t.g!==settings.tab)return;
+      if(q&&!t.n.toLowerCase().includes(q))return;
       const b=document.createElement('button');b.className='team'+(settings[key]===i?' sel':'');
       b.innerHTML=`<span class="kit" style="background:${kitCss(t)}"></span><b>${t.n}</b><i>${Math.round((t.a+t.m+t.d)/3)}</i>`;
       b.onclick=()=>{
@@ -1348,6 +1433,7 @@ $('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}state='menu';$('endSc
 $('btnResume').onclick=togglePause;
 $('btnQuit').onclick=()=>{if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
 $('btnPause').onclick=()=>{if(net.on)leaveToMenu();else togglePause();};$('btnMute').onclick=toggleMute;
+$('tSearch').addEventListener('input',renderTeams);
 renderTeams();
 
 /* ---------- career & leaderboard ---------- */
