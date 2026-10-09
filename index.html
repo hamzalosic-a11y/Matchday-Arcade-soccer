@@ -1644,6 +1644,7 @@ const store=(k,v)=>{try{const j=JSON.stringify(v);localStorage.setItem(k,JSON.st
 const load=k=>{
   let raw=null;
   try{raw=localStorage.getItem(k);if(raw===null)return null;const o=JSON.parse(raw);if(o&&typeof o.d==='string'&&o.h===sig(o.d+'|md1|'+k))return JSON.parse(o.d);}catch(e){}
+  if(raw!==null){try{localStorage.removeItem(k);}catch(e){}}   // clear it so the warning shows only once
   if(raw!==null&&!tamper){tamper=true;setTimeout(()=>{const p=$('menu')&&$('menu').querySelector('p.sub');if(p)p.textContent='Saved data could not be verified (old or edited), so it was reset.';},0);}
   return null;
 };
@@ -2093,3 +2094,4 @@ requestAnimationFrame(frame);
 </script>
 </body>
 </html>
+
