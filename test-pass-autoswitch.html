@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matchday Auto-Switch Test</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1323;
+      color: #f2efe7;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 12px 0;
+    }
+    button {
+      background: #ffd23f;
+      color: #111;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .log {
+      background: #101d32;
+      border: 1px solid #2b4068;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 180px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .player-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .player {
+      background: #121f38;
+      border: 1px solid #2b4068;
+      border-radius: 10px;
+      padding: 10px;
+    }
+    .player.active {
+      border-color: #ffd23f;
+      box-shadow: 0 0 0 1px #ffd23f;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Pass Auto-Switch Test</h1>
+    <p>This is a quick sandbox to test the updated behavior: when a pass is made, the receiving teammate becomes the active player automatically.</p>
+
+    <div class="row">
+      <button id="reset">Reset</button>
+      <button id="passToNext">Pass to teammate</button>
+      <button id="looseBall">Loose ball scenario</button>
+    </div>
+
+    <div id="status" class="log"></div>
+
+    <div id="players" class="player-list"></div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const playersEl = document.getElementById('players');
+
+    let players = [];
+    let human = null;
+    let ballOwner = null;
+    let ball = { x: 0, y: 0, owner: null };
+
+    function log(msg) {
+      statusEl.textContent += msg + '\n';
+      statusEl.scrollTop = statusEl.scrollHeight;
+    }
+
+    function setHuman(p) {
+      if (!p) return;
+      human = p;
+      log('ACTIVE PLAYER = #' + p.num + ' (' + p.name + ')');
+      renderPlayers();
+    }
+
+    function dist(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function tryControl(p) {
+      const spd = Math.random() * 50;
+      if (p.isGK) return;
+
+      ball.owner = p;
+      ballOwner = p;
+      setHuman(p);
+      log('tryControl -> controlled #' + p.num + ' (' + p.name + ')');
+    }
+
+    function doPass(sender, receiver) {
+      ball.owner = null;
+      ballOwner = null;
+      log('PASS: #' + sender.num + ' -> #' + receiver.num);
+      ball.x = receiver.x;
+      ball.y = receiver.y;
+      receiver.recv = 1;
+      tryControl(receiver);
+    }
+
+    function autoSwitchToNearest() {
+      const candidates = players.filter(p => !p.isGK && p !== human && p.team === human.team);
+      if (!candidates.length) return;
+      const nearest = candidates.sort((a, b) => dist(a, ball) - dist(b, ball))[0];
+      setHuman(nearest);
+      log('AUTO SWITCH -> #' + nearest.num + ' (' + nearest.name + ')');
+    }
+
+    function createPlayer(team, num, name, x, y, isGK = false) {
+      return { team, num, name, x, y, isGK, recv: 0 };
+    }
+
+    function reset() {
+      statusEl.textContent = '';
+      players = [
+        createPlayer(0, 7, 'CM', 150, 260),
+        createPlayer(0, 9, 'ST', 250, 190),
+        createPlayer(0, 6, 'DM', 100, 190),
+        createPlayer(1, 2, 'CB', 520, 260),
+        createPlayer(1, 9, 'ST', 430, 190),
+        createPlayer(1, 1, 'GK', 80, 180, true),
+      ];
+      ball = { x: 150, y: 260, owner: players[0] };
+      human = players[0];
+      ballOwner = players[0];
+      log('RESET');
+      log('INITIAL ACTIVE PLAYER = #' + human.num + ' (' + human.name + ')');
+      renderPlayers();
+    }
+
+    function renderPlayers() {
+      playersEl.innerHTML = '';
+      players.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'player' + (human && human.num === p.num ? ' active' : '');
+        div.innerHTML = `
+          <strong>#${p.num} ${p.name}</strong><br>
+          Team ${p.team + 1}<br>
+          ${p.isGK ? 'GK' : 'Player'}<br>
+          x:${Math.round(p.x)} y:${Math.round(p.y)}
+        `;
+        playersEl.appendChild(div);
+      });
+    }
+
+    document.getElementById('reset').addEventListener('click', reset);
+
+    document.getElementById('passToNext').addEventListener('click', () => {
+      const sender = human;
+      const receiver = players.filter(p => p.team === sender.team && p !== sender && !p.isGK).sort((a, b) => dist(a, sender) - dist(b, sender))[0];
+      if (!receiver) {
+        log('No pass target available');
+        return;
+      }
+      doPass(sender, receiver);
+    });
+
+    document.getElementById('looseBall').addEventListener('click', () => {
+      const loose = players.filter(p => p.team === human.team && p !== human && !p.isGK)[0];
+      if (!loose) return;
+      log('LOOSE BALL: no owner');
+      ball.owner = null;
+      ballOwner = null;
+      autoSwitchToNearest();
+    });
+
+    reset();
+  </script>
+</body>
+</html>
