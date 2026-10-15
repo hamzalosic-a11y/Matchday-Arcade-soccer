@@ -21,8 +21,8 @@ function json(res, status, body) {
 function roll(productId) {
   const chances = CHANCES[productId] || CHANCES.starter;
   const total = chances.reduce((n, x) => n + x.weight, 0);
-  let roll = Math.random() * total;
-  const rarity = (chances.find(x => (roll -= x.weight) < 0) || chances[0]).rarity;
+  let value = Math.random() * total;
+  const rarity = (chances.find(x => (value -= x.weight) < 0) || chances[0]).rarity;
   const eligible = PLAYERS.filter(p => p.rarity === rarity);
   return eligible[Math.floor(Math.random() * eligible.length)];
 }
@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
   }
   const { playerId, purchaseId } = req.body || {};
   if (typeof playerId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playerId) ||
-      typeof purchaseId !== 'string' || !/^[0-9a-f-]{36}$/i.test(purchaseId)) {
+      (typeof purchaseId !== 'string' && typeof purchaseId !== 'number') || !/^\d+$/.test(String(purchaseId))) {
     return json(res, 400, { error: 'Valid player and purchase IDs required.' });
   }
   const url = process.env.SUPABASE_URL;
@@ -42,14 +42,15 @@ module.exports = async function handler(req, res) {
   const headers = { apikey: key, Authorization: 'Bearer ' + key, 'Content-Type': 'application/json', Prefer: 'return=representation' };
   const base = url.replace(/\/$/, '') + '/rest/v1/purchases';
   try {
-    const find = await fetch(base + '?id=eq.' + encodeURIComponent(purchaseId) + '&player_id=eq.' + encodeURIComponent(playerId) + '&payment_status=eq.paid&select=id,product_id,opened,reward', { headers });
+    const filter = '?id=eq.' + encodeURIComponent(String(purchaseId)) + '&player_id=eq.' + encodeURIComponent(playerId) + '&payment_status=eq.paid';
+    const find = await fetch(base + filter + '&select=id,product_id,opened,reward', { headers });
     if (!find.ok) throw new Error('Could not verify purchase');
     const rows = await find.json();
     if (!rows.length) return json(res, 404, { error: 'Paid pack not found for this player.' });
     const purchase = rows[0];
     if (purchase.opened) return json(res, 200, { alreadyOpened: true, reward: purchase.reward });
     const reward = roll(purchase.product_id);
-    const patch = await fetch(base + '?id=eq.' + encodeURIComponent(purchaseId) + '&player_id=eq.' + encodeURIComponent(playerId) + '&opened=eq.false&payment_status=eq.paid', {
+    const patch = await fetch(base + filter + '&opened=eq.false', {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ opened: true, reward })
@@ -57,7 +58,7 @@ module.exports = async function handler(req, res) {
     if (!patch.ok) throw new Error('Could not save pack reward');
     const updated = await patch.json();
     if (updated.length) return json(res, 200, { alreadyOpened: false, reward: updated[0].reward });
-    const latest = await fetch(base + '?id=eq.' + encodeURIComponent(purchaseId) + '&player_id=eq.' + encodeURIComponent(playerId) + '&select=opened,reward', { headers });
+    const latest = await fetch(base + filter + '&select=opened,reward', { headers });
     const latestRows = await latest.json();
     if (latestRows[0] && latestRows[0].opened) return json(res, 200, { alreadyOpened: true, reward: latestRows[0].reward });
     return json(res, 409, { error: 'Pack could not be opened. Please retry.' });
