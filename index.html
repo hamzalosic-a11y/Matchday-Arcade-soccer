@@ -119,10 +119,52 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 .seg#segPitch{flex-wrap:wrap;max-width:100%}
 
 
+
+/* Matchday Stripe shop UI; game rendering/controls remain unchanged */
+#mdStripeShopBtn{position:fixed;z-index:8000;right:12px;top:104px;border:2px solid #fff0a8;border-radius:10px;background:#ffd23f;color:#171300;padding:9px 12px;font:800 14px 'Barlow',sans-serif;box-shadow:0 3px 0 #b38f00;cursor:pointer;touch-action:manipulation}
+#mdStripeShop{position:fixed;z-index:12000;inset:0;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(3,8,18,.94);touch-action:pan-y}
+#mdStripeShop.open{display:flex}
+#mdStripeShop .mdsp-panel{width:min(760px,100%);max-height:94vh;overflow:auto;background:#101d34;border:2px solid #ffd23f;border-radius:16px;padding:16px;color:#f1efe6;box-shadow:0 18px 70px #000}
+#mdStripeShop .mdsp-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#mdStripeShop h2{font:800 34px 'Barlow Condensed',sans-serif;font-style:italic;color:#ffd23f;margin:0}
+#mdStripeShop .mdsp-btn{border:0;border-radius:9px;padding:10px 12px;background:#ffd23f;color:#171300;font-weight:800;cursor:pointer}
+#mdStripeShop .mdsp-close{background:#263a5d;color:#fff;border:1px solid #49618b}
+#mdStripeShop .mdsp-products{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px;margin:14px 0}
+#mdStripeShop .mdsp-card{background:#172744;border:1px solid #354c73;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:8px}
+#mdStripeShop .mdsp-icon{font-size:34px}
+#mdStripeShop .mdsp-card b{font-size:17px}
+#mdStripeShop .mdsp-card p{font-size:13px;line-height:1.4;color:#b8c7df;margin:0;flex:1}
+#mdStripeShop .mdsp-price{color:#ffd23f;font-weight:800}
+#mdStripeShop .mdsp-note{font-size:12px;color:#9fb0cc;line-height:1.45}
+#mdStripeShop .mdsp-status{padding:10px 12px;margin:12px 0;background:#1a2b4c;border-radius:10px;font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+#mdStripeShop .mdsp-owned{border-top:1px solid #354c73;margin-top:16px;padding-top:12px}
+#mdStripeShop .mdsp-owned h3{margin:0 0 8px;font:800 23px 'Barlow Condensed',sans-serif;color:#ffd23f}
+#mdStripeShop .mdsp-purchase{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #293e61}
+#mdStripeShop .mdsp-purchase small{display:block;color:#9fb0cc;margin-top:4px}
+#mdStripeShop .mdsp-reward{color:#9ff0b2;font-weight:700;margin-top:6px}
+@media(max-width:520px){#mdStripeShopBtn{top:104px;right:8px;padding:8px 10px;font-size:12px}#mdStripeShop .mdsp-panel{padding:11px}#mdStripeShop h2{font-size:29px}}
+
 </style>
 </head>
 <body>
 <div id="app">
+
+<button id="mdStripeShopBtn" type="button">🛒 PACK SHOP</button>
+<div id="mdStripeShop" role="dialog" aria-modal="true" aria-labelledby="mdspTitle">
+ <div class="mdsp-panel">
+  <div class="mdsp-head"><h2 id="mdspTitle">MATCHDAY PACK SHOP</h2><button class="mdsp-btn mdsp-close" id="mdspClose" type="button">✕ CLOSE</button></div>
+  <p class="mdsp-note">Buy fictional player-card packs with Stripe Checkout. Prices are set on the server. Only a verified payment unlocks a pack.</p>
+  <div class="mdsp-products">
+   <div class="mdsp-card"><div class="mdsp-icon">🎁</div><b>Starter Pack</b><p>One fictional player card. Mostly common cards.</p><div class="mdsp-price">SEK 9.90</div><button class="mdsp-btn" data-buy="starter">Buy securely</button></div>
+   <div class="mdsp-card"><div class="mdsp-icon">💎</div><b>Pro Pack</b><p>One fictional player card with better rare-card odds.</p><div class="mdsp-price">SEK 29.90</div><button class="mdsp-btn" data-buy="pro">Buy securely</button></div>
+   <div class="mdsp-card"><div class="mdsp-icon">👑</div><b>Legend Pack</b><p>One fictional player card with the best legend-card odds.</p><div class="mdsp-price">SEK 49.90</div><button class="mdsp-btn" data-buy="legend">Buy securely</button></div>
+  </div>
+  <div class="mdsp-status" id="mdspStatus" role="status">Connecting to the secure shop…</div>
+  <div class="mdsp-owned"><div class="mdsp-head"><h3>My packs & cards</h3><button class="mdsp-btn mdsp-close" id="mdspRefresh" type="button">Refresh</button></div><div id="mdspInventory" class="mdsp-note">Your verified purchases will appear here.</div></div>
+  <p class="mdsp-note">Real payments are not active until the site is deployed with Stripe and database secrets configured. Test with Stripe test mode first. Purchases are tied to this browser's guest ID; clearing browser data can lose access.</p>
+ </div>
+</div>
+
 
 <canvas id="gl"></canvas>
   <canvas id="game"></canvas>
@@ -2448,6 +2490,86 @@ requestAnimationFrame(frame);
 })();
 </script>
 
+
+
+<script>
+/* Stripe-backed shop UI. Never grants an item based on the success URL alone. */
+(function(){
+ const $=id=>document.getElementById(id);
+ const modal=$('mdStripeShop'),status=$('mdspStatus'),inventory=$('mdspInventory');
+ let playerId='';
+ try{
+   playerId=localStorage.getItem('matchday_guest_player_id')||'';
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playerId)){
+     playerId=crypto.randomUUID();localStorage.setItem('matchday_guest_player_id',playerId);
+   }
+ }catch(e){status.textContent='Browser storage is blocked. Enable site storage to use the shop.';}
+ const labels={starter:'Starter Player Pack',pro:'Pro Player Pack',legend:'Legend Player Pack'};
+ function setStatus(t){status.textContent=t;}
+ async function loadInventory(){
+   if(!playerId){inventory.textContent='Guest ID unavailable in this browser.';return;}
+   inventory.textContent='Checking verified purchases…';
+   try{
+     const res=await fetch('/api/my-purchases?playerId='+encodeURIComponent(playerId),{cache:'no-store'});
+     const data=await res.json();
+     if(!res.ok)throw new Error(data.error||'Inventory endpoint is not available.');
+     inventory.replaceChildren();
+     if(!data.purchases.length){inventory.textContent='No verified purchases yet.';return;}
+     data.purchases.forEach(p=>{
+       const row=document.createElement('div');row.className='mdsp-purchase';
+       const left=document.createElement('div');
+       const name=document.createElement('b');name.textContent=labels[p.product_id]||'Player Pack';
+       const small=document.createElement('small');small.textContent=p.opened?'Pack opened':'Paid pack — ready to open';
+       left.append(name,small);
+       const right=document.createElement('div');
+       if(p.opened&&p.reward){
+         const reward=document.createElement('div');reward.className='mdsp-reward';
+         reward.textContent=p.reward.name+' · '+p.reward.rating+' OVR · '+p.reward.rarity;
+         right.append(reward);
+       }else{
+         const open=document.createElement('button');open.className='mdsp-btn';open.type='button';open.textContent='Open pack';
+         open.addEventListener('click',()=>openPack(p.id,open));right.append(open);
+       }
+       row.append(left,right);inventory.append(row);
+     });
+   }catch(e){inventory.textContent=e.message+' Deploy on Vercel and configure Stripe/Supabase to enable live inventory.';}
+ }
+ async function openPack(purchaseId,button){
+   button.disabled=true;button.textContent='Opening…';
+   try{
+     const res=await fetch('/api/open-pack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId,purchaseId})});
+     const data=await res.json();
+     if(!res.ok)throw new Error(data.error||'Could not open pack.');
+     setStatus((data.alreadyOpened?'This pack was already opened: ':'You got ')+data.reward.name+' ('+data.reward.rating+' OVR, '+data.reward.rarity+').');
+     await loadInventory();
+   }catch(e){setStatus(e.message);button.disabled=false;button.textContent='Open pack';}
+ }
+ async function buy(productId,button){
+   if(!playerId){setStatus('Could not create your guest ID. Allow browser storage and reload.');return;}
+   button.disabled=true;button.textContent='Starting checkout…';setStatus('Creating a secure Stripe Checkout session…');
+   try{
+     const res=await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId,playerId})});
+     const data=await res.json();
+     if(!res.ok||!data.url)throw new Error(data.error||'Checkout could not start.');
+     window.location.assign(data.url);
+   }catch(e){setStatus(e.message);button.disabled=false;button.textContent='Buy securely';}
+ }
+ $('mdStripeShopBtn').addEventListener('click',()=>{modal.classList.add('open');loadInventory();});
+ $('mdspClose').addEventListener('click',()=>modal.classList.remove('open'));
+ $('mdspRefresh').addEventListener('click',loadInventory);
+ modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open');});
+ modal.querySelectorAll('[data-buy]').forEach(button=>button.addEventListener('click',()=>buy(button.dataset.buy,button)));
+ const params=new URLSearchParams(window.location.search);
+ if(params.get('purchase')==='success'){
+   modal.classList.add('open');setStatus('Checkout returned. Waiting for Stripe webhook confirmation; refresh inventory in a moment.');
+   loadInventory();
+   history.replaceState({},document.title,window.location.pathname);
+ }else if(params.get('purchase')==='cancelled'){
+   modal.classList.add('open');setStatus('Checkout cancelled. You have not been charged.');history.replaceState({},document.title,window.location.pathname);
+ }
+})();
+</script>
 
 </body>
 </html>
