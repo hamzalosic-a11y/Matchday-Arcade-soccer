@@ -171,7 +171,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
       <span class="lbl">View</span><div class="seg" id="segView"><button data-v="1" class="on">3D</button><button data-v="0">2D</button></div>
     </div>
     <button class="go" id="btnStart">Kick off</button>
-    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnSupport" hidden>Support the game</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
+    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
     <div class="help">
       <div class="hg">
         <div><b>Move</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows &nbsp; <b>Sprint</b> <kbd>Shift</kbd></div>
@@ -180,7 +180,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
         <div><b>With the ball:</b> <kbd>J</kbd>/<kbd>Space</kbd> pass &nbsp; <kbd>L</kbd> lobbed pass &nbsp; hold <kbd>K</kbd> to charge a shot, release to fire. Point up or down while shooting to aim at a post.</div>
         <div><b>Without the ball:</b> <kbd>J</kbd>/<kbd>Space</kbd> switch player &nbsp; <kbd>K</kbd> tackle (hold <kbd>Shift</kbd> to slide) &nbsp; <kbd>L</kbd> call a teammate to press</div>
       </div>
-      <div style="margin-top:8px"><span id="helpTxt">Touch: drag on the left side to move, buttons on the right. Teams use real club and nation names and colours; players are generic and numbered.</span> <a id="privLink" hidden target="_blank" rel="noopener" style="color:var(--acc)">Privacy policy</a></div>
+      <div style="margin-top:8px">Touch: drag on the left side to move, buttons on the right. Teams use real club and nation names and colours; players are generic and numbered.</div>
     </div>
   </div>
 
@@ -193,7 +193,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
       <div class="tr"><button id="auIn">Log in</button><button id="auUp">Create account</button></div>
       <p class="sub" style="margin:0;font-size:13px">No email needed. You stay logged in on this device.</p>
     </div>
-    <div class="tr" style="margin-top:10px"><button id="auOut" hidden>Log out</button><button id="auDel" hidden>Delete my account</button><button id="auBack">Back</button></div>
+    <div class="tr" style="margin-top:10px"><button id="auOut" hidden>Log out</button><button id="auBack">Back</button></div>
   </div>
   <div class="screen" id="onScr" hidden style="justify-content:center">
     <h1>RANKED<span>1v1</span></h1><p class="sub">Beat real players to climb from Bronze to Champion. Higher ranks unlock bigger stadiums. 2-minute halves; the host attacks right, the guest left.</p>
@@ -226,7 +226,6 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <table class="st" id="endStats"></table>
     <button class="go" id="btnAgain">Rematch</button>
     <button class="go alt" id="btnMenu">Change teams</button>
-    <button class="go alt" id="btnSupport2" hidden>Support the game</button>
   </div>
 </div>
 
@@ -453,26 +452,6 @@ const SPR={
 for(const[n,l]of Object.entries(SP))l.split(',').forEach(k=>{const t=TEAMS.find(x=>x.s===k);if(t)t.sty=n;});
 for(const t of TEAMS)t.gk=clamp(Math.round(t.d*.55+36+([...t.s].reduce((a,c)=>a*31+c.charCodeAt(0),7)%7)-3),60,90);
 const SVC=.22;
-const SUPPORT_URL='',PRIVACY_URL='privacy.html';   // SUPPORT_URL: paste your Ko-fi / Patreon / PayPal page to show a Support button
-const RELEASE=true;   // true = original (fictional) clubs and nations, safe to publish and earn from. false = real names (private use only)
-if(RELEASE){
-  const A1='Ald,Brack,Cind,Dun,Elm,Fox,Glen,Hart,Iron,Jade,Kest,Lark,Mist,North,Oak,Pine,Quill,Raven,Stone,Thorn,Umber,Vale,Wolf,Yew,Zeph'.split(',');
-  const B1='moor,field,wick,mere,worth,hollow,marrow,haven,crest,bridge,stead'.split(',');
-  const SUF=['FC','United','City','Athletic','Rovers','Town','Wanderers'];
-  const N1='Ald,Bor,Cal,Dar,Esk,Fen,Gal,Hov,Isk,Jor,Kal,Lor,Mer,Nor,Ost,Pel,Qar,Rov,Sal,Tor,Ulm,Var,Wen,Xar,Yor,Zel'.split(',');
-  const N2='ovia,eria,mark,lund,dor,via,esh,anya'.split(',');
-  const used=new Set();let ci=0,ni=0;
-  for(const t of TEAMS){
-    let k=t.g==='nat'?ni++:ci++,n;
-    do{n=t.g==='nat'?N1[(k*7+1)%26]+N2[(k*3+((k/26)|0))%8]:A1[(k*7)%25]+B1[(k*3+((k/25)|0))%11]+' '+SUF[(k+((k/25)|0))%7];k+=1000;}while(used.has(n));
-    used.add(n);t.n=n;
-  }
-  const cu=new Set();
-  for(const t of TEAMS){const L=t.n.replace(/[^A-Za-z]/g,'').toUpperCase();let c=L.slice(0,3),i=0;while(cu.has(c)){c=L.slice(0,2)+'ABCDEFGHJKLMNPQRSTUVWXYZ'[i++%24];}cu.add(c);t.s=c;}
-  $('helpTxt').textContent='Touch: drag on the left side to move, buttons on the right. All clubs, nations and players are fictional.';
-  if(PRIVACY_URL){$('privLink').href=PRIVACY_URL;$('privLink').hidden=false;}
-}
-if(SUPPORT_URL)for(const id of['btnSupport','btnSupport2']){$(id).hidden=false;$(id).onclick=()=>window.open(SUPPORT_URL,'_blank','noopener');}
 const SKINS=['#f1c9a5','#e0ac82','#c68642','#8d5524','#f5d6b8','#a86a3c','#6b4226'];
 const HAIR=['#1b1209','#3a2412','#6b4a1e','#c9a25a','#0e0e0e'];
 
@@ -2080,7 +2059,7 @@ function dtInit(){
   }
   autoBuild();dtSave();
 }
-const dtSave=()=>{DT.rev=(DT.rev||0)+1;store(DTK+(ACC.uid?'.'+ACC.uid:''),DT);cloudDT();};
+const dtSave=()=>store(DTK+(ACC.uid?'.'+ACC.uid:''),DT);
 const dtOK=()=>{dtInit();return DT.sq.length===11&&DT.sq.every(Boolean);};
 function dreamData(){
   dtInit();
@@ -2119,7 +2098,7 @@ function renderDt(){
   }
   const free=DT.free!==new Date().toDateString(),F=FORM[DT.f];
   const spare=DT.pl.filter(p=>p.rar===0&&p.pos!=='GK'&&!DT.sq.includes(p.id)).length;
-  b.innerHTML=`<div class="tr">${free?`<button data-a="free">Free daily pack</button>`:''}${PACKS.map((p,i)=>`<button data-a="pack" data-p="${i}" ${DT.coins<p.cost?'disabled':''}>${p.n} · ${p.cost}</button>`).join('')}</div>${shopHtml()}
+  b.innerHTML=`<div class="tr">${free?`<button data-a="free">Free daily pack</button>`:''}${PACKS.map((p,i)=>`<button data-a="pack" data-p="${i}" ${DT.coins<p.cost?'disabled':''}>${p.n} · ${p.cost}</button>`).join('')}</div>
   <div class="tr">${Object.keys(FORM).map(f=>`<button data-a="form" data-f="${f}" style="${f===DT.f?'border-color:var(--acc);color:var(--acc)':''}">${f.split('').join('-')}</button>`).join('')}</div>
   ${['FW','MF','DF','GK'].map(r=>`<div class="sq">${sq.map((p,i)=>F[i][0]===r?`<div data-a="slot" data-i="${i}">${cardHtml(p)}</div>`:'').join('')}</div>`).join('')}
   <div class="tr"><button data-a="auto">Auto-build best XI</button><button data-a="sell">Sell spare Bronze (+${spare*25})</button></div>
@@ -2146,13 +2125,6 @@ $('dtBody').addEventListener('click',e=>{
   else if(a==='sell'){const keep=new Set(DT.sq),sold=DT.pl.filter(p=>p.rar===0&&p.pos!=='GK'&&!keep.has(p.id));DT.pl=DT.pl.filter(p=>!sold.includes(p));DT.coins+=sold.length*25;dtSave();}
   else if(a==='cpu'){playDreamCPU();return;}
   else if(a==='ranked'){onDream=true;$('dtScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Dream Team ranked: your squad plays real opponents.');return;}
-  else if(a==='buy'){
-    const x=STORE.find(q=>q.id===t.dataset.id);if(!x||!x.url)return;
-    if(!age18)dtNote='Tick the age box first.';
-    else{window.open(x.url+(x.url.includes('?')?'&':'?')+'client_reference_id='+encodeURIComponent(ACC.uid),'_blank','noopener');dtNote='Finish paying in the new tab, then press "I\'ve paid: refresh".';}
-  }
-  else if(a==='refresh'){loadCredits().then(()=>{dtNote=(CR.bronze+CR.gold+CR.elite)?'Your packs are ready to open.':'Nothing yet. It can take a few seconds after paying.';renderDt();});return;}
-  else if(a==='openp'){redeemPack(t.dataset.k).then(()=>renderDt());return;}
   else if(a==='menu'){$('dtScr').hidden=true;$('menu').hidden=false;return;}
   renderDt();
 });
@@ -2169,7 +2141,6 @@ const UNAME=/^[A-Za-z0-9_]{3,14}$/;
 const authSay=t=>{$('auSt').textContent=t;};
 async function sbc(){await loadSb();sb=sb||window.supabase.createClient(ONLINE.url,ONLINE.key);return sb;}
 function switchProfile(){
-  clearTimeout(cdT);   // a pending cloud backup belongs to the previous account
   const sf=ACC.uid?'.'+ACC.uid:'';
   Object.assign(RK,{rating:1000,w:0,d:0,l:0,games:0,streak:0},load(RKK+sf,true)||{});
   Object.assign(RK2,{rating:1000,w:0,d:0,l:0,games:0,streak:0},load('matchday.rk2.v1'+sf,true)||{});
@@ -2179,7 +2150,7 @@ function switchProfile(){
 function refreshAcc(){
   const on=!!ACC.uid;
   $('btnAcc').textContent=on?ACC.name:'Account';
-  $('auBox').hidden=on;$('auOut').hidden=!on;$('auDel').hidden=!on;
+  $('auBox').hidden=on;$('auOut').hidden=!on;
   authSay(on?`Logged in as ${ACC.name}. Your username is permanent.`:'Log in to play ranked. Your username is permanent.');
   $('onName').value=ACC.name||'(log in first)';
 }
@@ -2204,7 +2175,6 @@ async function fetchProfile(sess){
     if(u)try{await fetch(ONLINE.url+'/rest/v1/profiles',{method:'POST',headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify({id:sess.user.id,username:u})});}catch(e){}}
   applyAcc(sess,u);
   await restoreRanks();
-  await restoreDT();await loadCredits();
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
 const synth=u=>u.toLowerCase()+'@example.com';   // no real email needed: the username is turned into an internal address
@@ -2246,18 +2216,6 @@ $('btnAcc').onclick=()=>{for(const id of['menu','onScr','careerScr','lbScr','dtS
 $('auBack').onclick=()=>{authBack='menu';$('authScr').hidden=true;$('menu').hidden=false;};
 $('auShow').onchange=()=>{$('auPass').type=$('auShow').checked?'text':'password';};
 $('auIn').onclick=doLogin;$('auUp').onclick=doSignUp;$('auOut').onclick=doLogout;
-let delArm=false;
-$('auDel').onclick=async()=>{
-  if(!delArm){delArm=true;$('auDel').textContent='Click again to permanently delete';authSay('This deletes your account, username and ranked history. It cannot be undone.');return;}
-  delArm=false;$('auDel').textContent='Delete my account';
-  try{
-    const c=await sbc(),{error}=await c.rpc('delete_my_account');
-    if(error){authSay('Could not delete: '+error.message);return;}
-    const uid=ACC.uid;try{await c.auth.signOut();}catch(e){}
-    [RKK,'matchday.rk2.v1',DTK].forEach(b=>{try{localStorage.removeItem(b+'.'+uid);localStorage.removeItem(b+'.'+uid+'.bak');}catch(e){}});
-    applyAcc(null);authSay('Your account and ranked data have been deleted.');
-  }catch(e){authSay('Could not reach the server.');}
-};
 
 /* ---------- 3D view: a small WebGL renderer written for this game (no libraries) ---------- */
 let view3d=true,GL=null;
@@ -2447,59 +2405,6 @@ function render3D(dt){
 }
 
 $('btnView').onclick=()=>{if(GL){view3d=!view3d;settings.view=view3d?1:0;syncView();}};
-
-/* ---------- pack shop (real money via Stripe payment links) ---------- */
-// Fill in "url" with the Stripe Payment Link for each item (see STORE-SETUP.md). Items with no url stay hidden.
-// "label" and "price" are only the text on the button: set the real price in Stripe.
-const STORE=[
- {id:'bronze5',kind:'bronze',qty:5,label:'5 Bronze packs',price:'$0.99',url:''},
- {id:'gold1',kind:'gold',qty:1,label:'1 Gold pack',price:'$0.99',url:''},
- {id:'gold5',kind:'gold',qty:5,label:'5 Gold packs',price:'$3.99',url:''},
- {id:'elite1',kind:'elite',qty:1,label:'1 Elite pack',price:'$1.99',url:''},
- {id:'elite5',kind:'elite',qty:5,label:'5 Elite packs',price:'$7.99',url:''}];
-const KIND={bronze:0,gold:1,elite:2};
-let CR={bronze:0,gold:0,elite:0},age18=false,dtNote='';
-function shopHtml(){
-  const items=STORE.filter(x=>x.url);
-  if(!ACC.uid||!items.length)return '';
-  const open=['bronze','gold','elite'].filter(k=>CR[k]>0).map(k=>`<button data-a="openp" data-k="${k}">Open ${k} pack (${CR[k]} left)</button>`).join('');
-  const odds=['bronze','gold','elite'].map(k=>{const w=PACKS[KIND[k]].w;return `${k[0].toUpperCase()+k.slice(1)} pack: Bronze ${w[0]}% · Silver ${w[1]}% · Gold ${w[2]}% · Elite ${w[3]}% · Legend ${w[4]}%`;}).join('<br>');
-  return `<div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%">
-    <p class="sub" style="margin:0">Premium packs (real money). You own: Bronze ×${CR.bronze} · Gold ×${CR.gold} · Elite ×${CR.elite}</p>
-    ${dtNote?`<p class="sub" style="margin:0;color:var(--acc)">${esc(dtNote)}</p>`:''}
-    <div class="tr">${open}</div>
-    <label style="font-size:13px;color:var(--mut)"><input type="checkbox" id="age18" ${age18?'checked':''}> I am 18 or older, or I have a parent's or guardian's permission to buy</label>
-    <div class="tr">${items.map(x=>`<button data-a="buy" data-id="${x.id}">${esc(x.label)} · ${esc(x.price)}</button>`).join('')}<button data-a="refresh">I've paid: refresh</button></div>
-    <p class="sub" style="margin:0;font-size:12px">Odds for the 5 players in each pack:<br>${odds}<br>Players are fictional and exist only inside this game. Purchases are final unless the law says otherwise.</p></div>`;
-}
-async function loadCredits(){
-  if(!ACC.uid||!ONLINE.url)return;
-  try{const r=await fetch(ONLINE.url+'/rest/v1/pack_credits?uid=eq.'+ACC.uid+'&select=bronze,gold,elite',{headers:oh()});const q=await r.json(),c=(q&&q[0])||{};CR={bronze:c.bronze|0,gold:c.gold|0,elite:c.elite|0};}catch(e){}
-}
-async function redeemPack(kind){   // the server takes the credit first, so a pack can only be opened once
-  try{
-    const r=await fetch(ONLINE.url+'/rest/v1/rpc/redeem_pack',{method:'POST',headers:{...oh(),'Content-Type':'application/json'},body:JSON.stringify({k:kind})});
-    if(await r.json()!==true){dtNote='No '+kind+' packs left to open.';await loadCredits();return false;}
-    CR[kind]=Math.max(0,CR[kind]-1);
-    const pk=PACKS[KIND[kind]],cards=[];for(let i=0;i<5;i++)cards.push(genPlayer(roll(pk.w)));
-    cards.sort((x,y)=>x.rar-y.rar||x.ovr-y.ovr);DT.pl.push(...cards);dtSave();dv='reveal';dvData={pack:pk.n,cards,i:0};dtNote='';return true;
-  }catch(e){dtNote='Could not reach the server.';return false;}
-}
-let cdT=null;
-function cloudDT(){   // backup of your squad, so bought players survive a cleared browser or a new phone
-  if(!ACC.uid||!ONLINE.url||!DT)return;clearTimeout(cdT);
-  cdT=setTimeout(()=>{if(!ACC.uid||!DT)return;fetch(ONLINE.url+'/rest/v1/dt_saves?on_conflict=uid',{method:'POST',headers:{...oh(),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({uid:ACC.uid,data:DT,rev:DT.rev||1})}).catch(()=>{});},1500);
-}
-async function restoreDT(){
-  if(!ACC.uid)return;
-  try{
-    const r=await fetch(ONLINE.url+'/rest/v1/dt_saves?uid=eq.'+ACC.uid+'&select=data,rev',{headers:oh()});const q=await r.json(),row=q&&q[0];
-    if(row&&row.data&&Array.isArray(row.data.pl)&&row.data.pl.length&&(!DT||(row.rev||0)>(DT.rev||0))){DT=row.data;DT.rev=row.rev||1;store(DTK+'.'+ACC.uid,DT);}
-    else if(DT&&DT.pl&&(!row||(DT.rev||0)>(row.rev||0)))cloudDT();
-  }catch(e){}
-}
-$('dtBody').addEventListener('change',e=>{if(e.target&&e.target.id==='age18')age18=e.target.checked;});
-addEventListener('focus',()=>{if(ACC.uid&&!$('dtScr').hidden&&STORE.some(x=>x.url))loadCredits().then(renderDt);});
 
 /* ---------- loop ---------- */
 function resize(){
