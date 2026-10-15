@@ -18,9 +18,7 @@ module.exports = async function handler(req, res) {
   if (!url || !key) return json(res, 503, { error: 'Inventory database is not configured yet.' });
   try {
     const endpoint = url.replace(/\/$/, '') + '/rest/v1/purchases?player_id=eq.' + encodeURIComponent(playerId) + '&payment_status=eq.paid&select=id,product_id,opened,reward,created_at&order=created_at.desc';
-    const response = await fetch(endpoint, {
-      headers: { apikey: key, Authorization: 'Bearer ' + key }
-    });
+    const response = await fetch(endpoint, { headers: { apikey: key, Authorization: 'Bearer ' + key } });
     if (!response.ok) throw new Error('Inventory lookup failed: ' + response.status);
     return json(res, 200, { purchases: await response.json() });
   } catch (err) {
