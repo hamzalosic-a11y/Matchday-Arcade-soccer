@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Matchday — 3D prototype</title>
+  <style>
+    html,body{height:100%;margin:0;background:#0a1322;color:#fff;font-family:system-ui,Arial}
+    #container{width:100%;height:100%;overflow:hidden;display:flex;flex-direction:column}
+    #canvasWrap{flex:1;position:relative}
+    #ui{position:absolute;left:12px;top:12px;z-index:10}
+    button{padding:8px 12px;border-radius:6px;border:0;background:#ffd23f;color:#111;font-weight:700}
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="canvasWrap">
+      <div id="ui"><button id="btnAdd">Add player</button> <button id="btnReset">Reset</button></div>
+      <canvas id="c"></canvas>
+    </div>
+    <div style="padding:8px;max-width:980px;margin:0 auto;font-size:13px;color:#cfd8e6">
+      This is a standalone 3D prototype showing how glTF player models can be positioned and animated. It uses a public sample model (CesiumMan) for testing — replace with your own glb for better results.
+    </div>
+  </div>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.155.0/build/three.module.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.155.0/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'https://unpkg.com/three@0.155.0/examples/jsm/controls/OrbitControls.js';
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setClearColor(0x0a1322,1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50,2,0.1,2000);
+camera.position.set(0, 140, 280);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0,16,0);
+controls.maxPolarAngle = Math.PI/2 - 0.05;
+controls.enableDamping = true;
+
+const hemi = new THREE.HemisphereLight(0xbfeaff,0x20253a,0.9);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff,1.2);
+dir.position.set(100,200,100);
+dir.castShadow = true;
+scene.add(dir);
+
+// simple pitch
+const pitchGeo = new THREE.PlaneGeometry(500,300,1,1);
+const pitchMat = new THREE.MeshStandardMaterial({color:0x2f8f5b, roughness:0.8, metalness:0});
+const pitch = new THREE.Mesh(pitchGeo,pitchMat);
+pitch.rotation.x = -Math.PI/2;
+pitch.position.y = 0;
+scene.add(pitch);
+
+// grid lines for reference
+const grid = new THREE.GridHelper(500,20,0x153a26,0x123318);
+grid.position.y=0.01;
+scene.add(grid);
+
+let mixers = [];
+let instances = [];
+
+const loader = new GLTFLoader();
+const SAMPLE = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb';
+
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio, 2);
+  const w = canvas.clientWidth || canvas.offsetWidth || window.innerWidth;
+  const h = canvas.clientHeight || canvas.offsetHeight || window.innerHeight - 120;
+  if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(dpr);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+}
+
+let clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  mixers.forEach(m=>m.update(dt));
+  controls.update();
+  renderer.render(scene,camera);
+}
+
+function addPlayerAt(x,z){
+  loader.load(SAMPLE, gltf=>{
+    const root = gltf.scene;
+    root.scale.set(8,8,8);
+    root.traverse(c=>{if(c.isMesh){c.castShadow=true;c.receiveShadow=true}});
+    root.position.set(x,0,z);
+    root.rotation.y = Math.PI; // face camera
+    scene.add(root);
+    instances.push(root);
+    if(gltf.animations && gltf.animations.length){
+      const m = new THREE.AnimationMixer(root);
+      mixers.push(m);
+      const action = m.clipAction(gltf.animations[0]);
+      action.play();
+    }
+  }, undefined, e=>console.error('GLTF load error',e));
+}
+
+// populate with a few players in a circle
+function populate(){
+  clearPlayers();
+  const R = 120;
+  for(let i=0;i<8;i++){
+    const a = i/8*Math.PI*2;
+    addPlayerAt(Math.cos(a)*R, Math.sin(a)*R);
+  }
+}
+
+function clearPlayers(){
+  for(const p of instances) scene.remove(p);
+  instances.length = 0; mixers.length = 0;
+}
+
+window.addEventListener('resize', resize);
+
+// simple motion to demonstrate control: rotate each player slowly
+function demoStep(){
+  const t = performance.now()*0.001;
+  for(let i=0;i<instances.length;i++){
+    const p = instances[i];
+    if(!p) continue;
+    p.position.x += Math.cos(t + i)*0.1;
+    p.position.z += Math.sin(t + i)*0.08;
+    p.rotation.y = Math.atan2(-p.position.z, -p.position.x) + Math.PI/2;
+  }
+}
+
+setInterval(demoStep, 30);
+
+// UI
+document.getElementById('btnAdd').addEventListener('click', ()=>{
+  const x = (Math.random()-0.5)*240; const z=(Math.random()-0.5)*160;
+  addPlayerAt(x,z);
+});
+document.getElementById('btnReset').addEventListener('click', ()=>populate());
+
+populate();
+resize();
+animate();
+</script>
+</body>
+</html>
