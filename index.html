@@ -117,10 +117,42 @@ table.lg tr.me{background:var(--panel2);color:var(--acc)}
 button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #tSearch{margin:0 0 10px;width:min(820px,100%);text-align:left;-webkit-user-select:text;user-select:text}
 .seg#segPitch{flex-wrap:wrap;max-width:100%}
+
+/* Matchday in-game coin shop */
+#mdShopBtn{position:fixed;z-index:9000;right:14px;top:56px;background:#ffd23f;color:#171300;border:2px solid #fff0a8;border-radius:12px;padding:10px 14px;font:800 16px 'Barlow',sans-serif;box-shadow:0 4px 0 #b38f00;cursor:pointer;touch-action:manipulation}
+#mdShop{position:fixed;z-index:10000;inset:0;background:rgba(3,8,18,.88);display:none;align-items:center;justify-content:center;padding:14px;touch-action:pan-y}
+#mdShop.open{display:flex}
+#mdShop .shopbox{width:min(720px,100%);max-height:90vh;overflow:auto;background:#101d34;border:2px solid #ffd23f;border-radius:18px;padding:18px;color:#f1efe6;box-shadow:0 18px 70px #000}
+#mdShop .shophead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#mdShop h2{font:800 38px 'Barlow Condensed',sans-serif;font-style:italic;margin:0;color:#ffd23f}
+#mdShop .shopclose{background:#263a5d;border:1px solid #49618b;color:white;border-radius:9px;padding:8px 12px;font-weight:800;cursor:pointer}
+#mdShop .shopbalance{margin:12px 0;padding:12px;border-radius:12px;background:#1a2b4c;font-weight:700;text-align:center}
+#mdShop .shopgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+#mdShop .shopitem{background:#172744;border:1px solid #354c73;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+#mdShop .shopitem .emoji{font-size:34px}
+#mdShop .shopitem b{font-size:18px}
+#mdShop .shopitem p{margin:0;color:#b8c7df;font-size:13px;line-height:1.4;flex:1}
+#mdShop .shopitem button{border:0;border-radius:9px;padding:10px;background:#ffd23f;color:#171300;font-weight:800;cursor:pointer}
+#mdShop .shopitem button:disabled{background:#42516a;color:#c1c9d7;cursor:default}
+#mdShop .shopnote{color:#9fb0cc;font-size:12px;line-height:1.4;margin:14px 0 0}
+#mdShop .shopowned{font-size:12px;color:#8fe0a0}
+@media(max-width:520px){#mdShopBtn{top:52px;right:8px;padding:8px 10px;font-size:14px}#mdShop .shopbox{padding:12px}#mdShop h2{font-size:30px}}
+
 </style>
 </head>
 <body>
 <div id="app">
+
+<button id="mdShopBtn" type="button" aria-label="Open in-game shop">🛒 SHOP</button>
+<div id="mdShop" role="dialog" aria-modal="true" aria-labelledby="mdShopTitle">
+  <div class="shopbox">
+    <div class="shophead"><h2 id="mdShopTitle">MATCHDAY SHOP</h2><button class="shopclose" id="mdShopClose" type="button">✕ CLOSE</button></div>
+    <div class="shopbalance">🪙 Your coins: <span id="mdCoinCount">1,000</span></div>
+    <div class="shopgrid" id="mdShopGrid"></div>
+    <p class="shopnote">Demo shop: purchases use virtual coins only. No real money is charged. Coins and owned items are saved in this browser on this device.</p>
+  </div>
+</div>
+
   <canvas id="gl"></canvas>
   <canvas id="game"></canvas>
 
@@ -2444,5 +2476,71 @@ initAuth();
 requestAnimationFrame(frame);
 })();
 </script>
+
+<script>
+/* Matchday virtual shop — browser-local demo economy */
+(function(){
+  const key='matchday_shop_v1';
+  const items=[
+    {id:'starter',icon:'🎁',name:'Starter Pack',price:250,desc:'A small pack with a random player card and a coin refund chance.'},
+    {id:'pro',icon:'💎',name:'Pro Pack',price:600,desc:'A premium-style player card pack with a higher chance of rare cards.'},
+    {id:'legend',icon:'👑',name:'Legend Pack',price:1200,desc:'A legendary-themed card pack for your collection.'},
+    {id:'goldkit',icon:'👕',name:'Golden Kit',price:450,desc:'Unlock the exclusive golden team kit cosmetic.'},
+    {id:'stadium',icon:'🏟️',name:'Stadium Upgrade',price:800,desc:'Add a stadium upgrade badge to your collection.'},
+    {id:'boost',icon:'⚡',name:'Match Boost',price:300,desc:'Own a boost token for your collection. It does not change match physics yet.'}
+  ];
+  const cards=['R. Storm','A. Silva','M. Frost','J. Blaze','K. Rocket','D. Viper','L. Phoenix','T. Shadow'];
+  let data;
+  try{data=JSON.parse(localStorage.getItem(key)||'null')}catch(e){data=null}
+  if(!data||typeof data.coins!=='number')data={coins:1000,owned:[],cards:[]};
+  if(!Array.isArray(data.owned))data.owned=[];
+  if(!Array.isArray(data.cards))data.cards=[];
+  const $=id=>document.getElementById(id);
+  const modal=$('mdShop'),grid=$('mdShopGrid');
+  function save(){try{localStorage.setItem(key,JSON.stringify(data))}catch(e){}}
+  function render(){
+    $('mdCoinCount').textContent=data.coins.toLocaleString();
+    grid.innerHTML='';
+    items.forEach(item=>{
+      const owned=data.owned.includes(item.id);
+      const el=document.createElement('div');el.className='shopitem';
+      const icon=document.createElement('div');icon.className='emoji';icon.textContent=item.icon;
+      const title=document.createElement('b');title.textContent=item.name;
+      const desc=document.createElement('p');desc.textContent=item.desc;
+      const price=document.createElement('button');price.type='button';
+      price.textContent=owned&&['goldkit','stadium'].includes(item.id)?'✓ OWNED':'🪙 '+item.price.toLocaleString()+' COINS';
+      price.disabled=(owned&&['goldkit','stadium'].includes(item.id))||data.coins<item.price;
+      price.addEventListener('click',()=>buy(item));
+      el.append(icon,title,desc);
+      if(owned) {const tag=document.createElement('div');tag.className='shopowned';tag.textContent='✓ In your collection';el.append(tag)}
+      el.append(price);grid.append(el);
+    });
+    if(data.cards.length){
+      const collection=document.createElement('div');collection.className='shopitem';collection.style.gridColumn='1 / -1';
+      const title=document.createElement('b');title.textContent='Your Player Cards ('+data.cards.length+')';
+      const list=document.createElement('p');list.textContent=data.cards.join('  •  ');
+      collection.append(title,list);grid.append(collection);
+    }
+  }
+  function buy(item){
+    if(data.coins<item.price)return;
+    if(data.owned.includes(item.id)&&['goldkit','stadium'].includes(item.id))return;
+    data.coins-=item.price;
+    if(['starter','pro','legend'].includes(item.id)){
+      const n=cards[Math.floor(Math.random()*cards.length)];
+      const tier=item.id==='legend'?'LEGEND':item.id==='pro'?'RARE':'COMMON';
+      data.cards.unshift(tier+' — '+n);
+      if(item.id==='starter'&&Math.random()<.35){data.coins+=100;}
+    }else data.owned.push(item.id);
+    save();render();
+  }
+  $('mdShopBtn').addEventListener('click',()=>{render();modal.classList.add('open')});
+  $('mdShopClose').addEventListener('click',()=>modal.classList.remove('open'));
+  modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open')});
+  render();
+})();
+</script>
+
 </body>
 </html>
