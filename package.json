@@ -1,0 +1,10 @@
+{
+  "name": "matchday-arcade-soccer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Matchday Arcade Soccer with secure Stripe Checkout",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "stripe": "^18.5.0"
+  }
+}
