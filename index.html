@@ -2021,9 +2021,9 @@ $('onBack').onclick=()=>{netLeave();$('onScr').hidden=true;$('menu').hidden=fals
 /* ---------- Dream Team ---------- */
 const DTK='matchday.dt.v1',NBASE=TEAMS.length;
 const RAR=[{n:'Bronze',c:'#cd7f32',lo:55,hi:64},{n:'Silver',c:'#c9d2de',lo:65,hi:74},{n:'Gold',c:'#ffd23f',lo:75,hi:84},{n:'Elite',c:'#b46bff',lo:85,hi:91},{n:'Legend',c:'#ff4d8d',lo:92,hi:97}];
-const PACKS=[{n:'Bronze pack',cost:300,w:[70,25,5,0,0]},{n:'Gold pack',cost:1000,w:[10,40,45,5,0]},{n:'Elite pack',cost:2500,w:[0,10,50,36,4]}];
-const FN='Luca,Mateo,Noah,Kofi,Hiro,Andre,Viktor,Sami,Rafa,Dario,Emil,Tariq,Jonas,Mehdi,Ivan,Felix,Yusuf,Nico,Oskar,Bruno,Amir,Leon,Tomas,Idris,Kenji,Marek,Pablo,Soren,Theo,Zane'.split(',');
-const LN='Almeida,Brandt,Castro,Demir,Eriksen,Fofana,Garcia,Hassan,Ito,Jovanovic,Kovac,Lindqvist,Mbaye,Novak,Okafor,Petrov,Quintero,Rossi,Santos,Tanaka,Ulrich,Vargas,Weber,Xavier,Yilmaz,Zielinski,Bakker,Duarte,Farouk,Haugen,Lombardi,Moreau,Nasser,Ortega,Pires,Rahimi,Sorensen,Traore,Varga,Wolfe'.split(',');
+const PACKS=[{n:'Bronze pack',cost:300,w:[70,25,5,0,0],tag:'Starter',desc:'Mostly Bronze, with a chance of Silver or Gold'},{n:'Silver pack',cost:650,w:[35,45,18,2,0],tag:'Value',desc:'Better odds for Silver and Gold'},{n:'Gold pack',cost:1000,w:[10,40,45,5,0],tag:'Popular',desc:'Gold players are most likely'},{n:'Elite pack',cost:2500,w:[0,10,50,36,4],tag:'Elite',desc:'Strong chance of Elite, small Legend chance'},{n:'Diamond pack',cost:4500,w:[0,5,25,55,15],tag:'Premium',desc:'Elite players are likely, Legend possible'},{n:'Legend pack',cost:8000,w:[0,0,10,50,40],tag:'Ultimate',desc:'High chance of Elite or Legend'}];
+const FN='Luca,Mateo,Noah,Kofi,Hiro,Andre,Viktor,Sami,Rafa,Dario,Emil,Tariq,Jonas,Mehdi,Ivan,Felix,Yusuf,Nico,Oskar,Bruno,Amir,Leon,Tomas,Idris,Kenji,Marek,Pablo,Soren,Theo,Zane,Adrian,Axel,Callum,Diego,Elias,Enzo,Farid,Frederik,Gabriel,Haruto,Isak,Jamir,Karim,Leo,Malik,Marco,Nabil,Oliver,Oscar,Robin,Samir,Thiago,Victor,Wilmer,Anders,Bastian,Cem,Damian,Elian,Filip,Gustav,Henrik,Ismail,Jamal,Kian,Lucas,Milan,Nils,Otto,Pedro,Rayan,Stefan,Tim,Valentin,William,Zlatan'.split(',');
+const LN='Almeida,Brandt,Castro,Demir,Eriksen,Fofana,Garcia,Hassan,Ito,Jovanovic,Kovac,Lindqvist,Mbaye,Novak,Okafor,Petrov,Quintero,Rossi,Santos,Tanaka,Ulrich,Vargas,Weber,Xavier,Yilmaz,Zielinski,Bakker,Duarte,Farouk,Haugen,Lombardi,Moreau,Nasser,Ortega,Pires,Rahimi,Sorensen,Traore,Varga,Wolfe,Abadi,Andersson,Bello,Berg,Costa,Diaz,Elmas,Fischer,Grimaldi,Haddad,Ibrahim,Jensen,Kamara,Larsson,Moreno,Nakamura,Olsson,Popov,Reyes,Sato,Thompson,Uddin,Valente,Walker,Young,Alvarez,Bianchi,Clarke,Diallo,Edwards,Fernandes,Green,Hernandez,Johansson,Khan,Lopez,Marin,Nordin,Osei,Peterson,Quispe,Romero,Silva,Toure,Vidal,White,Yaqub,Zoric'.split(',');
 const SHIRTS=[
  {id:'classic',n:'Classic gold',k:'#ffd23f',c:'#111111',sh:'#111111',p:'solid',cost:0},
  {id:'crimson',n:'Crimson hoops',k:'#c4122e',c:'#f2f2f2',sh:'#f2f2f2',p:'hoops',cost:250},
@@ -2040,7 +2040,8 @@ function genPlayer(r,role){
   const R=RAR[r],o=R.lo+Math.floor(Math.random()*(R.hi-R.lo+1));
   role=role||pick(['GK','DF','DF','DF','MF','MF','MF','FW','FW']);
   const B={GK:[o-25,o-30,o-25,o-30],DF:[o-4,o-20,o-8,o+2],MF:[o-4,o-6,o+3,o-8],FW:[o+3,o+3,o-6,o-30]}[role],c=v=>clamp(Math.round(v+rand(-6,6)),30,99);
-  return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),nm:pick(FN)+' '+pick(LN),pos:role,ovr:o,pac:c(B[0]),sht:c(B[1]),pas:c(B[2]),def:c(B[3]),gk:role==='GK'?o:0,rar:r,nat:pick(TEAMS.filter(t=>t.g==='nat')).n};
+  let nm;let tries=0;do{nm=pick(FN)+' '+pick(LN);tries++;}while(DT&&Array.isArray(DT.pl)&&DT.pl.some(p=>p.nm===nm)&&tries<40);
+  return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),nm,pos:role,ovr:o,pac:c(B[0]),sht:c(B[1]),pas:c(B[2]),def:c(B[3]),gk:role==='GK'?o:0,rar:r,nat:pick(TEAMS.filter(t=>t.g==='nat')).n};
 }
 function autoBuild(){
   const used=new Set();
@@ -2098,14 +2099,15 @@ function renderDt(){
   }
   const free=DT.free!==new Date().toDateString(),F=FORM[DT.f];
   const spare=DT.pl.filter(p=>p.rar===0&&p.pos!=='GK'&&!DT.sq.includes(p.id)).length;
-  b.innerHTML=`<div class="tr">${free?`<button data-a="free">Free daily pack</button>`:''}${PACKS.map((p,i)=>`<button data-a="pack" data-p="${i}" ${DT.coins<p.cost?'disabled':''}>${p.n} · ${p.cost}</button>`).join('')}</div>
+  b.innerHTML=`<p class="sub" style="margin:4px 0 0">PLAYER PACK STORE · Spend earned coins only — no real-money purchases. Every pack contains 5 fictional players.</p>
+  <div class="tr">${free?`<button data-a="free">🎁 Free daily pack</button>`:''}${PACKS.map((p,i)=>`<button data-a="pack" data-p="${i}" ${DT.coins<p.cost?'disabled':''} title="${p.desc}" style="border-color:${i===PACKS.length-1?'#ff4d8d':i>=3?'#b46bff':'var(--line)'}">${p.n} · ${p.cost} coins<br><small>${p.tag}</small></button>`).join('')}</div>
   <div class="tr">${Object.keys(FORM).map(f=>`<button data-a="form" data-f="${f}" style="${f===DT.f?'border-color:var(--acc);color:var(--acc)':''}">${f.split('').join('-')}</button>`).join('')}</div>
   ${['FW','MF','DF','GK'].map(r=>`<div class="sq">${sq.map((p,i)=>F[i][0]===r?`<div data-a="slot" data-i="${i}">${cardHtml(p)}</div>`:'').join('')}</div>`).join('')}
   <div class="tr"><button data-a="auto">Auto-build best XI</button><button data-a="sell">Sell spare Bronze (+${spare*25})</button></div>
   <p class="sub" style="margin:6px 0 0">Merch: your own shirts (${DT.shirts.length}/${SHIRTS.length}). Tap to buy or wear.</p>
   <div class="tr">${SHIRTS.map(x=>{const own=DT.shirts.includes(x.id);return `<button data-a="shirt" data-id="${x.id}" ${!own&&DT.coins<x.cost?'disabled':''} style="${x.id===DT.shirt?'border-color:var(--acc)':''}"><span style="display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:middle;margin-right:6px;border:2px solid #fff;background:${kitCss(x)}"></span>${x.n} · ${own?(x.id===DT.shirt?'worn':'owned'):x.cost}</button>`;}).join('')}</div>
   <div class="tr"><button class="go" data-a="cpu" style="font-size:24px;padding:10px 26px;margin:0">Play vs CPU</button>${on?`<button class="go" data-a="ranked" style="font-size:24px;padding:10px 26px;margin:0">Play ranked</button>`:''}<button data-a="menu">Back</button></div>
-  <p class="sub" style="margin:6px 0 0">Collection (best 30). Tap a squad card to swap a player. Matches earn coins; all players are fictional.</p>
+  <p class="sub" style="margin:6px 0 0">Collection (best 30). Tap a squad card to swap a player. Win matches to earn coins, claim a free daily pack, or save for Diamond and Legend packs. All player names are fictional.</p>
   <div class="sq">${DT.pl.slice().sort((a,b)=>b.ovr-a.ovr).slice(0,30).map(p=>cardHtml(p,DT.sq.includes(p.id))).join('')}</div>`;
 }
 $('dtBody').addEventListener('click',e=>{
@@ -2114,6 +2116,7 @@ $('dtBody').addEventListener('click',e=>{
     const pk=a==='free'?PACKS[0]:PACKS[+t.dataset.p];
     if(a==='free'){if(DT.free===day)return;DT.free=day;}else{if(DT.coins<pk.cost)return;DT.coins-=pk.cost;}
     const cards=[];for(let i=0;i<5;i++)cards.push(genPlayer(roll(pk.w)));
+    // Guarantee that every pack has five generated fictional players with different card IDs.
     cards.sort((x,y)=>x.rar-y.rar||x.ovr-y.ovr);DT.pl.push(...cards);dtSave();dv='reveal';dvData={pack:pk.n,cards,i:0};
   }else if(a==='next'){dvData.i++;if(dvData.i>=dvData.cards.length)dv='hub';}
   else if(a==='slot'){dv='pick';dvData={slot:+t.dataset.i};}
