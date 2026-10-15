@@ -14,11 +14,18 @@ async function savePurchase(session) {
   if (!url || !key) throw new Error('Supabase server credentials are missing');
   const productId = session.metadata && session.metadata.productId;
   const playerId = session.metadata && session.metadata.playerId;
-  if (!['starter', 'pro', 'legend'].includes(productId) || !playerId) {
+  const prices = { starter: 990, pro: 2990, legend: 4990 };
+  if (!Object.prototype.hasOwnProperty.call(prices, productId) ||
+      typeof playerId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playerId)) {
     throw new Error('Checkout metadata is invalid');
   }
+  if (session.payment_status !== 'paid' || session.currency !== 'sek' || session.amount_total !== prices[productId]) {
+    throw new Error('Checkout payment amount or status is invalid');
+  }
 
-  const response = await fetch(url.replace(/\/$/, '') + '/rest/v1/purchases?on_conflict=checkout_session_id', {
+  const endpoint = url.replace(/\/$/, '') + '/rest/v1/purchases?on_conflict=checkout_session_id';
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       apikey: key,
@@ -27,12 +34,16 @@ async function savePurchase(session) {
       Prefer: 'resolution=ignore-duplicates,return=minimal'
     },
     body: JSON.stringify([{
-      player_id: playerId,
+      session_id: session.id,
       checkout_session_id: session.id,
+      player_id: playerId,
       product_id: productId,
+      kind: 'player_pack',
+      qty: 1,
       amount_total: session.amount_total,
       currency: session.currency,
       payment_status: session.payment_status,
+      status: 'paid',
       opened: false
     }])
   });
@@ -51,8 +62,7 @@ module.exports = async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   let event;
   try {
-    const body = await rawBody(req);
-    event = stripe.webhooks.constructEvent(body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(await rawBody(req), req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error('Stripe webhook signature verification failed:', err.message);
     return res.status(400).send('Invalid webhook signature');
