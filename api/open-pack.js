@@ -1,30 +1,48 @@
-const PLAYERS = [
-  { name: 'R. Storm', rating: 74, rarity: 'COMMON' },
-  { name: 'A. Silva', rating: 76, rarity: 'COMMON' },
-  { name: 'M. Frost', rating: 78, rarity: 'COMMON' },
-  { name: 'J. Blaze', rating: 82, rarity: 'RARE' },
-  { name: 'K. Rocket', rating: 84, rarity: 'RARE' },
-  { name: 'D. Viper', rating: 86, rarity: 'RARE' },
-  { name: 'L. Phoenix', rating: 90, rarity: 'LEGEND' },
-  { name: 'T. Shadow', rating: 93, rarity: 'LEGEND' }
+const crypto = require('crypto');
+
+const RARITIES = [
+  { name: 'Bronze', lo: 55, hi: 64, index: 0 },
+  { name: 'Silver', lo: 65, hi: 74, index: 1 },
+  { name: 'Gold', lo: 75, hi: 84, index: 2 },
+  { name: 'Elite', lo: 85, hi: 91, index: 3 },
+  { name: 'Legend', lo: 92, hi: 97, index: 4 }
 ];
 const CHANCES = {
   starter: [{ rarity: 'COMMON', weight: 80 }, { rarity: 'RARE', weight: 18 }, { rarity: 'LEGEND', weight: 2 }],
   pro: [{ rarity: 'COMMON', weight: 45 }, { rarity: 'RARE', weight: 45 }, { rarity: 'LEGEND', weight: 10 }],
   legend: [{ rarity: 'COMMON', weight: 15 }, { rarity: 'RARE', weight: 45 }, { rarity: 'LEGEND', weight: 40 }]
 };
-function json(res, status, body) {
-  res.status(status).setHeader('Content-Type', 'application/json');
-  res.setHeader('Cache-Control', 'no-store');
-  return res.end(JSON.stringify(body));
-}
+const FIRST = 'Luca,Mateo,Noah,Kofi,Hiro,Andre,Viktor,Sami,Rafa,Dario,Emil,Tariq,Jonas,Mehdi,Ivan,Felix,Yusuf,Nico,Oskar,Bruno,Amir,Leon,Tomas,Idris,Kenji,Marek,Pablo,Theo,Zane,Adrian,Axel,Diego,Elias,Enzo,Farid,Gabriel,Isak,Karim,Leo,Malik,Nabil,Oliver,Rayan,Samir,Thiago,Victor,Anders,Cem,Jamal,Kian,Milan,Oscar,Zlatan'.split(',');
+const LAST = 'Almeida,Brandt,Castro,Demir,Eriksen,Fofana,Garcia,Hassan,Ito,Jovanovic,Kovac,Lindqvist,Mbaye,Novak,Okafor,Petrov,Rossi,Santos,Tanaka,Vargas,Weber,Xavier,Yilmaz,Zielinski,Andersson,Bello,Berg,Costa,Diaz,Elmas,Fischer,Haddad,Ibrahim,Jensen,Kamara,Larsson,Moreno,Olsson,Popov,Reyes,Sato,Thompson,Uddin,Walker,Young,Zoric'.split(',');
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 function roll(productId) {
   const chances = CHANCES[productId] || CHANCES.starter;
   const total = chances.reduce((n, x) => n + x.weight, 0);
   let value = Math.random() * total;
-  const rarity = (chances.find(x => (value -= x.weight) < 0) || chances[0]).rarity;
-  const eligible = PLAYERS.filter(p => p.rarity === rarity);
-  return eligible[Math.floor(Math.random() * eligible.length)];
+  const bucket = (chances.find(x => (value -= x.weight) < 0) || chances[0]).rarity;
+  const rarityIndex = bucket === 'LEGEND' ? 4 : bucket === 'RARE' ? (Math.random() < 0.75 ? 2 : 3) : (Math.random() < 0.8 ? 0 : 1);
+  const rarity = RARITIES[rarityIndex];
+  const ovr = rarity.lo + Math.floor(Math.random() * (rarity.hi - rarity.lo + 1));
+  const pos = pick(['GK','DF','DF','DF','MF','MF','MF','FW','FW']);
+  const base = {
+    GK: [ovr - 25, ovr - 30, ovr - 25, ovr - 30],
+    DF: [ovr - 4, ovr - 20, ovr - 8, ovr + 2],
+    MF: [ovr - 4, ovr - 6, ovr + 3, ovr - 8],
+    FW: [ovr + 3, ovr + 3, ovr - 6, ovr - 30]
+  }[pos];
+  const stat = n => Math.max(30, Math.min(99, Math.round(n + (Math.random() * 12 - 6))));
+  const name = pick(FIRST) + ' ' + pick(LAST);
+  return {
+    id: crypto.randomUUID(), nm: name, pos, ovr,
+    pac: stat(base[0]), sht: stat(base[1]), pas: stat(base[2]), def: stat(base[3]),
+    gk: pos === 'GK' ? ovr : 0, rar: rarityIndex, nat: 'World XI',
+    name, rating: ovr, rarity: rarity.name
+  };
+}
+function json(res, status, body) {
+  res.status(status).setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.end(JSON.stringify(body));
 }
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
