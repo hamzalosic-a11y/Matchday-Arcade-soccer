@@ -2506,6 +2506,20 @@ requestAnimationFrame(frame);
  }catch(e){status.textContent='Browser storage is blocked. Enable site storage to use the shop.';}
  const labels={starter:'Starter Player Pack',pro:'Pro Player Pack',legend:'Legend Player Pack'};
  function setStatus(t){status.textContent=t;}
+ function addRewardToDreamTeam(reward){
+   if(!reward||typeof reward.id!=='string'||typeof reward.nm!=='string'||!Number.isFinite(Number(reward.ovr)))return false;
+   try{
+     if(typeof dtInit!=='function'||typeof dtSave!=='function'||typeof DT==='undefined')return false;
+     dtInit();
+     if(DT.pl.some(p=>p.id===reward.id))return true;
+     const player={id:reward.id,nm:reward.nm,pos:reward.pos,ovr:Number(reward.ovr),pac:Number(reward.pac)||0,sht:Number(reward.sht)||0,pas:Number(reward.pas)||0,def:Number(reward.def)||0,gk:Number(reward.gk)||0,rar:Number(reward.rar)||0,nat:reward.nat||'World XI'};
+     DT.pl.push(player);
+     dtSave();
+     const dtScreen=$('dtScr');
+     if(dtScreen&&!dtScreen.hidden&&typeof renderDt==='function')renderDt();
+     return true;
+   }catch(e){console.warn('Could not add pack reward to Dream Team:',e);return false;}
+ }
  async function loadInventory(){
    if(!playerId){inventory.textContent='Guest ID unavailable in this browser.';return;}
    inventory.textContent='Checking verified purchases…';
@@ -2523,6 +2537,7 @@ requestAnimationFrame(frame);
        left.append(name,small);
        const right=document.createElement('div');
        if(p.opened&&p.reward){
+         addRewardToDreamTeam(p.reward);
          const reward=document.createElement('div');reward.className='mdsp-reward';
          reward.textContent=p.reward.name+' · '+p.reward.rating+' OVR · '+p.reward.rarity;
          right.append(reward);
@@ -2540,7 +2555,8 @@ requestAnimationFrame(frame);
      const res=await fetch('/api/open-pack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId,purchaseId})});
      const data=await res.json();
      if(!res.ok)throw new Error(data.error||'Could not open pack.');
-     setStatus((data.alreadyOpened?'This pack was already opened: ':'You got ')+data.reward.name+' ('+data.reward.rating+' OVR, '+data.reward.rarity+').');
+     const added=addRewardToDreamTeam(data.reward);
+     setStatus((data.alreadyOpened?'This pack was already opened: ':'You got ')+data.reward.name+' ('+data.reward.rating+' OVR, '+data.reward.rarity+').'+(added?' Added to your Dream Team collection!':' Open Dream Team to see your card after the game updates.'));
      await loadInventory();
    }catch(e){setStatus(e.message);button.disabled=false;button.textContent='Open pack';}
  }
