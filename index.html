@@ -2493,43 +2493,43 @@ function draw3dPlayer(p){
   const k=teams[p.team].kit,col=hexc(p.isGK?k.gk:k.p),trim=hexc(k.c),shorts=hexc(k.sh),skin=hexc(p.skin),hair=hexc(p.hair);
   const slide=p.lunge&&p.lunge.slide,fall=p.stun>.2&&!p.lunge;
   const run=Math.sin(p.ph),kick=p.kick>0?Math.min(1,p.kick*2):0;
-  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(1.02,1.18,.82));
+  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(.94,1.12,.76));
   if(slide||fall)b=m4.mul(b,m4.mul(m4.T(0,6,0),m4.RZ(1.25)));
   if(p.air&&p.air.type==='bike')b=m4.mul(b,m4.mul(m4.T(0,18,0),m4.mul(m4.RZ(Math.min(1,(1-p.air.t/.7)*1.6)*Math.PI*.9),m4.T(0,-18,0))));
   const part=(Mx,geo,c)=>drawG(geo,m4.mul(b,Mx),c);
   // Rounded shorts, torso and shoulder line make the low-poly players less blocky.
-  part(TRS(0,18,0,10,7,15),GL.sph,shorts);
-  part(TRS(0,28,0,8.6,15.5,8.2),GL.sph,col);
+  part(TRS(0,18,0,8.4,6,10.8),GL.sph,shorts);
+  // Athletic tapered jersey: narrower waist, defined shoulders, and a slimmer front-to-back profile.\n  part(TRS(-.2,28,0,7.7,14.2,6.5),GL.sph,col);\n  part(TRS(-.1,36.5,0,7.9,4.1,6.4),GL.sph,col);
   // Kit trim and jersey patterns sit just above the shirt surface.
-  if(!p.isGK&&k.pat==='stripes')for(const z of[-6.5,0,6.5])part(TRS(0,28,z,8.8,12.5,1.2),GL.box,trim);
-  if(!p.isGK&&k.pat==='hoops')for(const y of[23,29,34])part(TRS(0,y,0,8.8,1.8,8.4),GL.box,trim);
-  part(TRS(0,35.5,0,3.4,1.3,7),GL.box,trim);
+  if(!p.isGK&&k.pat==='stripes')for(const z of[-6.5,0,6.5])part(TRS(-.2,28,z,7.9,11.5,1.05),GL.box,trim);
+  if(!p.isGK&&k.pat==='hoops')for(const y of[23,29,34])part(TRS(-.2,y,0,7.9,1.6,6.6),GL.box,trim);
+  part(TRS(-.2,35.8,0,2.8,1,5.8),GL.box,trim);
   for(const s of[-1,1]){
     const legSwing=run*s*.58+(s===1?kick*.85:0);
-    const hip=m4.mul(m4.T(0,17,s*4.4),m4.RZ(legSwing));
-    part(m4.mul(hip,TRS(0,-4,0,6.2,8.5,6.6)),GL.sph,shorts);
-    part(m4.mul(hip,TRS(0,-11,0,4.8,9.5,5.2)),GL.sph,trim);
-    part(m4.mul(hip,TRS(0,-16.1,0,5.2,3.2,6.5)),GL.sph,shorts);
+    const hip=m4.mul(m4.T(0,16.5,s*3.7),m4.RZ(legSwing));
+    part(m4.mul(hip,TRS(0,-4,0,4.8,7.2,4.7)),GL.sph,shorts);
+    part(m4.mul(hip,TRS(0,-11.5,0,3.5,10.5,3.5)),GL.sph,skin);
+    part(m4.mul(hip,TRS(0,-16.5,0,3.8,2.5,4.1)),GL.sph,skin);
     // Football boots with a dark sole and a small coloured upper.
-    part(m4.mul(hip,TRS(1.8,-19.2,1.2,6.2,2.4,8.5)),GL.box,[.075,.085,.1,1]);
-    part(m4.mul(hip,TRS(2,-18,1.2,5.8,2.7,7.8)),GL.sph,trim);
-    const arm=m4.mul(m4.T(0,32,s*10.2),m4.RZ(-run*s*.36-kick*.2));
-    part(m4.mul(arm,TRS(0,-5.8,0,3.5,11.5,3.6)),GL.sph,skin);
-    part(m4.mul(arm,TRS(0,-2.1,0,4,5.2,4)),GL.sph,p.isGK?col:skin);
+    part(m4.mul(hip,TRS(1.8,-20.1,1.2,4.6,1.8,6.6)),GL.box,[.075,.085,.1,1]);
+    part(m4.mul(hip,TRS(2,-19,1.2,4.3,2,5.8)),GL.sph,trim);
+    const arm=m4.mul(m4.T(0,34,s*8.2),m4.RZ(-run*s*.36-kick*.2));
+    part(m4.mul(arm,TRS(0,-5.8,0,2.7,10.2,2.7)),GL.sph,skin);
+    part(m4.mul(arm,TRS(0,-2.1,0,3,4.2,3)),GL.sph,p.isGK?col:skin);
   }
   // Neck, shaped head and small facial details make the player read as a human rather than a toy.
-  part(TRS(0,36.5,0,3.2,4.5,3.5),GL.sph,skin);
-  part(TRS(0,42.5,0,5.6,7.1,5.4),GL.sph,skin);
+  part(TRS(0,36.8,0,2.5,4,2.8),GL.sph,skin);
+  part(TRS(0,42.8,0,4.8,6.2,4.6),GL.sph,skin);
   // Hair sits on the crown instead of covering most of the face.
-  part(TRS(-.5,47,0,5.8,3.1,5.7),GL.sph,hair);
-  part(TRS(-1.8,44.9,0,4.7,1.5,5.3),GL.sph,hair);
+  part(TRS(-.3,47.3,0,4.9,2.4,4.7),GL.sph,hair);
+  part(TRS(-1.5,45.3,0,3.8,1.1,4.5),GL.sph,hair);
   // Ears, eyes, brows and nose face the direction of travel.
   for(const s of[-1,1]){
-    part(TRS(0,42.3,s*5.2,1.5,2.1,1.2),GL.sph,skin);
-    part(TRS(4.65,43.4,s*2.05,.65,.72,.58),GL.sph,[.075,.055,.04,1]);
-    part(TRS(4.8,44.5,s*2.05,1.1,.42,.72),GL.sph,hair);
+    part(TRS(0,42.5,s*4.5,1.1,1.6,1),GL.sph,skin);
+    part(TRS(4.1,43.2,s*1.7,.48,.52,.42),GL.sph,[.075,.055,.04,1]);
+    part(TRS(4.2,44.1,s*1.7,.75,.28,.5),GL.sph,hair);
   }
-  part(TRS(5.45,41.7,0,1.7,1.5,1.65),GL.sph,skin);
+  part(TRS(4.8,41.8,0,1.1,1.1,1.1),GL.sph,skin);
 }
 function render3D(dt){
   if(!GL)return false;
