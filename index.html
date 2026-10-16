@@ -1986,7 +1986,7 @@ async function startOnline(host,hp,gp){
   room.subscribe(st=>{if(st==='SUBSCRIBED'&&!host){netSend('hi',1);net.hi=setInterval(()=>{if(net.on)clearInterval(net.hi);else netSend('hi',1);},1000);}});
 }
 function beginOnline(p){
-  net.on=true;clearInterval(net.hi);net.tx=0;net.lastRx=performance.now();
+  net.on=true;clearInterval(net.hi);net.tx=0;net.lastRx=performance.now();net.lastInputAt=0;net.badInput=0;
   try{if(lobby){sb.removeChannel(lobby);lobby=null;}}catch(e){}
   net.dream=!!p[2];net.theme=p[4];resetDream();settings.home=p[2]?addDream(p[2]):p[0];settings.away=p[3]?addDream(p[3]):p[1];settings.diff=1;settings.half=120;
   if(career)career.live=false;
