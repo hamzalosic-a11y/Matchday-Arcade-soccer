@@ -229,6 +229,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
     <div id="mdGrowthRow">
       <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +150 COINS</div></div>
+      <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 OBJECTIVES</div><b>Complete missions, earn coins</b><p id="mdObjectivesStatus">Play matches, score goals and win games.</p><div class="mdDailyReward">🏅 UP TO 1,050 COINS</div></div>
       <button id="mdShareBtn" type="button">↗ SHARE MATCHDAY</button>
     </div>
     <div class="help">
@@ -1361,7 +1362,7 @@ function finishMatch(){
     if(net.on&&net.host)netSend('end',[score[0],score[1],stats.shots,stats.poss,stats.yc,stats.rc,stats.off,stats.sot,stats.sv]);
     const cm=!!(career&&career.live);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}
     if(dtMatch&&!cm&&!(typeof net!=='undefined'&&net.on)){const g=score[0],o=score[1],c=(g>o?100:g===o?40:20)+g*10;dtInit();DT.coins+=c;dtSave();$('endTeams').textContent='+'+c+' coins';}
-    if(!cm&&!(typeof net!=='undefined'&&net.on)&&score[0]>score[1])completeDailyChallenge();
+    if(!cm&&!(typeof net!=='undefined'&&net.on)){updateObjectives(score[0],score[1]);if(score[0]>score[1])completeDailyChallenge();}
     if(net.on){if(net.host&&net.fin===undefined&&net.ack){if(!net.ack[0]){net.fin=-1;net.disp=true;}applyRanked();}else if(net.host&&net.fin===undefined){net.wait=setTimeout(applyRanked,3000);$('endTeams').textContent='Confirming result…';}else applyRanked();
     }
     $('btnAgain').hidden=cm||net.on;$('btnMenu').textContent=cm?'Continue career':net.on?'Back to menu':(dtMatch?'Dream Team':'Change teams');
@@ -2151,7 +2152,38 @@ function dtInit(){
 }
 const dtSave=()=>store(DTK+(ACC.uid?'.'+ACC.uid:''),DT);
 const DAILY_KEY='matchday.daily-win.v1';
+const OBJECTIVES_KEY='matchday.objectives.v1';
+const OBJECTIVES=[{id:'play3',title:'Play 3 matches',target:3,reward:250},{id:'score5',title:'Score 5 goals',target:5,reward:300},{id:'win2',title:'Win 2 matches',target:2,reward:500}];
 function localDayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function objectiveKey(){return OBJECTIVES_KEY+(ACC.uid?'.'+ACC.uid:'');}
+function readObjectives(){
+  const fresh={played:0,goals:0,wins:0,claimed:[]};
+  try{const x=JSON.parse(localStorage.getItem(objectiveKey())||'null');if(x&&typeof x==='object')return {...fresh,...x,claimed:Array.isArray(x.claimed)?x.claimed:[]};}catch(e){}
+  return fresh;
+}
+function saveObjectives(o){try{localStorage.setItem(objectiveKey(),JSON.stringify(o));}catch(e){}}
+function refreshObjectives(){
+  const el=$('mdObjectivesStatus');if(!el)return;
+  const o=readObjectives();
+  el.innerHTML=OBJECTIVES.map(m=>{
+    const progress=m.id==='play3'?o.played:m.id==='score5'?o.goals:o.wins;
+    const done=Math.min(m.target,Number(progress)||0),claimed=o.claimed.includes(m.id);
+    return '<div style="margin-top:7px"><b>'+m.title+'</b> · '+done+'/'+m.target+' · '+(claimed?'✓ Claimed':done>=m.target?'✓ Complete':'+'+m.reward+' coins')+'</div>';
+  }).join('');
+  const card=$('mdObjectivesCard');if(card)card.setAttribute('aria-label','Objectives: play 3 matches, score 5 goals, win 2 matches');
+}
+function updateObjectives(goals,opponentGoals){
+  const o=readObjectives();o.played=(Number(o.played)||0)+1;o.goals=(Number(o.goals)||0)+Math.max(0,Number(goals)||0);
+  if(goals>opponentGoals)o.wins=(Number(o.wins)||0)+1;
+  let reward=0,finished=[];
+  for(const m of OBJECTIVES){
+    const progress=m.id==='play3'?o.played:m.id==='score5'?o.goals:o.wins;
+    if(progress>=m.target&&!o.claimed.includes(m.id)){o.claimed.push(m.id);reward+=m.reward;finished.push(m.title);}
+  }
+  saveObjectives(o);
+  if(reward){dtInit();DT.coins+=reward;dtSave();$('endTeams').textContent='🎯 OBJECTIVES COMPLETE · +'+reward+' COINS'+(finished.length?' · '+finished.join(', '):'');}
+  refreshObjectives();
+}
 function refreshDailyChallenge(){
   const el=$('mdDailyStatus');if(!el)return;
   let saved='';try{saved=localStorage.getItem(DAILY_KEY)||'';}catch(e){}
@@ -2176,6 +2208,7 @@ $('mdShareBtn').addEventListener('click',async()=>{
   }catch(e){if(e&&e.name!=='AbortError'){window.prompt('Copy the game link:',shareData.url);}}
 });
 refreshDailyChallenge();
+refreshObjectives();
 const dtOK=()=>{dtInit();return DT.sq.length===11&&DT.sq.every(Boolean);};
 function dreamData(){
   dtInit();
@@ -2297,9 +2330,11 @@ async function claimQusqusGift(sess,username){
     });
     if(!r.ok)return;
     const amount=await r.json();
-    if(amount===1000){
-      dtInit();DT.coins=(Number(DT.coins)||0)+1000;dtSave();
-      authSay('Gift claimed: QUSQUS_GG received 1,000 Dream Team coins!');
+    if(amount===8000){
+      dtInit();
+      DT.coins=Math.max(8000,Number(DT.coins)||0);
+      dtSave();
+      authSay('QUSQUS_GG gift upgraded: your balance is now enough for one Legend Pack (8,000 coins)!');
       if(!$('dtScr').hidden)renderDt();
     }
   }catch(e){console.warn('Gift claim could not be checked.');}
