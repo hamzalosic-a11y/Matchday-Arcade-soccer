@@ -2493,29 +2493,29 @@ function draw3dPlayer(p){
   const k=teams[p.team].kit,col=hexc(p.isGK?k.gk:k.p),trim=hexc(k.c),shorts=hexc(k.sh),skin=hexc(p.skin),hair=hexc(p.hair);
   const slide=p.lunge&&p.lunge.slide,fall=p.stun>.2&&!p.lunge;
   const run=Math.sin(p.ph),kick=p.kick>0?Math.min(1,p.kick*2):0;
-  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(1.2,1.2,1.2));
+  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(1.02,1.18,.82));
   if(slide||fall)b=m4.mul(b,m4.mul(m4.T(0,6,0),m4.RZ(1.25)));
   if(p.air&&p.air.type==='bike')b=m4.mul(b,m4.mul(m4.T(0,18,0),m4.mul(m4.RZ(Math.min(1,(1-p.air.t/.7)*1.6)*Math.PI*.9),m4.T(0,-18,0))));
   const part=(Mx,geo,c)=>drawG(geo,m4.mul(b,Mx),c);
   // Rounded shorts, torso and shoulder line make the low-poly players less blocky.
-  part(TRS(0,18,0,12,8,20),GL.sph,shorts);
-  part(TRS(0,28,0,11.5,17,20),GL.sph,col);
+  part(TRS(0,18,0,10,7,15),GL.sph,shorts);
+  part(TRS(0,28,0,9.4,17,15.5),GL.sph,col);
   // Kit trim and jersey patterns sit just above the shirt surface.
-  if(!p.isGK&&k.pat==='stripes')for(const z of[-6.5,0,6.5])part(TRS(0,28,z,11.8,14,3),GL.box,trim);
-  if(!p.isGK&&k.pat==='hoops')for(const y of[23,29,34])part(TRS(0,y,0,11.8,2.2,19),GL.box,trim);
+  if(!p.isGK&&k.pat==='stripes')for(const z of[-6.5,0,6.5])part(TRS(0,28,z,9.7,14,2.4),GL.box,trim);
+  if(!p.isGK&&k.pat==='hoops')for(const y of[23,29,34])part(TRS(0,y,0,9.7,2.2,15.5),GL.box,trim);
   part(TRS(0,35.5,0,3.4,1.3,7),GL.box,trim);
   for(const s of[-1,1]){
     const legSwing=run*s*.58+(s===1?kick*.85:0);
-    const hip=m4.mul(m4.T(0,17,s*5.1),m4.RZ(legSwing));
+    const hip=m4.mul(m4.T(0,17,s*4.4),m4.RZ(legSwing));
     part(m4.mul(hip,TRS(0,-4,0,6.2,8.5,6.6)),GL.sph,shorts);
     part(m4.mul(hip,TRS(0,-11,0,4.8,9.5,5.2)),GL.sph,trim);
     part(m4.mul(hip,TRS(0,-16.1,0,5.2,3.2,6.5)),GL.sph,shorts);
     // Football boots with a dark sole and a small coloured upper.
     part(m4.mul(hip,TRS(1.8,-19.2,1.2,6.2,2.4,8.5)),GL.box,[.075,.085,.1,1]);
     part(m4.mul(hip,TRS(2,-18,1.2,5.8,2.7,7.8)),GL.sph,trim);
-    const arm=m4.mul(m4.T(0,32,s*11.8),m4.RZ(-run*s*.36-kick*.2));
-    part(m4.mul(arm,TRS(0,-5.8,0,4.4,11.5,4.5)),GL.sph,skin);
-    part(m4.mul(arm,TRS(0,-2.1,0,4.9,5.2,5)),GL.sph,p.isGK?col:skin);
+    const arm=m4.mul(m4.T(0,32,s*9.7),m4.RZ(-run*s*.36-kick*.2));
+    part(m4.mul(arm,TRS(0,-5.8,0,3.5,11.5,3.6)),GL.sph,skin);
+    part(m4.mul(arm,TRS(0,-2.1,0,4,5.2,4)),GL.sph,p.isGK?col:skin);
   }
   part(TRS(0,42,0,6.7,6.7,6.7),GL.sph,skin);
   part(TRS(-1.6,44,0,6.9,5.3,6.9),GL.sph,hair);
@@ -2553,16 +2553,18 @@ function render3D(dt){
   // Keep these lightweight box meshes so the stadium remains fast on school laptops.
   const concrete=[.20,.25,.32,1],seatBand=[.12,.17,.24,1],rail=[.68,.74,.82,1];
   for(let tier=0;tier<5;tier++){
-    const y=27+tier*31,depth=48,height=18;
+    const y=27+tier*31,depth=48,height=18,offset=150+tier*55+depth/2;
+    // Long-side stands are entirely beyond the touchlines.
     for(const side of [-1,1]){
-      const z=side*(116+tier*55+depth/2);
+      const z=side<0?-offset:W+offset;
       drawG(GL.box,TRS(L/2,y,z,L+260,height,depth),tier%2?concrete:seatBand);
-      drawG(GL.box,TRS(L/2,y+height/2+2,z-side*(depth/2-2),L+260,3,3),rail);
+      drawG(GL.box,TRS(L/2,y+height/2+2,z+(side<0?1:-1)*(depth/2-2),L+260,3,3),rail);
     }
+    // End stands are entirely beyond the goal lines.
     for(const side of [-1,1]){
-      const x=side*(116+tier*55+depth/2);
+      const x=side<0?-offset:L+offset;
       drawG(GL.box,TRS(x,y,W/2,depth,height,W+260),tier%2?concrete:seatBand);
-      drawG(GL.box,TRS(x-side*(depth/2-2),y+height/2+2,W/2,3,3,W+260),rail);
+      drawG(GL.box,TRS(x+(side<0?1:-1)*(depth/2-2),y+height/2+2,W/2,3,3,W+260),rail);
     }
   }
   // Upper concourse fascia and roof canopies with repeating support columns.
@@ -2576,12 +2578,10 @@ function render3D(dt){
   drawG(GL.box,TRS(-310,224,W/2,16,22,W+470),fascia);
   drawG(GL.box,TRS(L+310,224,W/2,16,22,W+470),fascia);
   for(let x=80;x<L;x+=260)for(const side of [-1,1]){
-    drawG(GL.box,TRS(x,120,side*405,12,230,12),concrete);
-    drawG(GL.box,TRS(x,120,W+side*405,12,230,12),concrete);
+    drawG(GL.box,TRS(x,120,side<0?-405:W+405,12,230,12),concrete);
   }
   for(let z=100;z<W;z+=240)for(const side of [-1,1]){
-    drawG(GL.box,TRS(side*405,120,z,12,230,12),concrete);
-    drawG(GL.box,TRS(L+side*405,120,z,12,230,12),concrete);
+    drawG(GL.box,TRS(side<0?-405:L+405,120,z,12,230,12),concrete);
   }
   // Floodlights: steel masts, lamp banks and bright individual light panels.
   for(const[x,z]of[[-125,-125],[L+125,-125],[-125,W+125],[L+125,W+125]]){
