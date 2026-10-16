@@ -496,7 +496,7 @@ const SPR={
  balanced:{line:0,press:1,pass:0,long:0,wide:1,tempo:1,shoot:0,counter:0}};
 for(const[n,l]of Object.entries(SP))l.split(',').forEach(k=>{const t=TEAMS.find(x=>x.s===k);if(t)t.sty=n;});
 for(const t of TEAMS)t.gk=clamp(Math.round(t.d*.55+36+([...t.s].reduce((a,c)=>a*31+c.charCodeAt(0),7)%7)-3),60,90);
-const SVC=.22;
+const SVC=.08; // Lower keeper save bonus so shots on target are more likely to score
 const SKINS=['#f1c9a5','#e0ac82','#c68642','#8d5524','#f5d6b8','#a86a3c','#6b4226'];
 const HAIR=['#1b1209','#3a2412','#6b4a1e','#c9a25a','#0e0e0e'];
 
@@ -914,8 +914,8 @@ function shotOnTarget(p,vx,vy,spd,vz,d0,yo,sb){
   const yh=yo!==undefined?yo:p.y+vy*t;
   if(yh<GY0+3||yh>GY1-3||ball.z+vz*t-450*t*t>BAR-4)return;          // wide or over: not on target
   const G=teams[1-p.team].players[0],gk=G.gk||teams[1-p.team].gkr||72;
-  const sv0=clamp(.54+(gk-60)*.012,.5,.88),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
-  const S=pen?clamp(.2+(gk-60)*.002,.12,.34):clamp(sv0+SVC-.30*place-(spd-650)/2500+(d0-250)/1800+(sb||0),.12,.95);
+  const sv0=clamp(.42+(gk-60)*.009,.4,.72),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
+  const S=pen?clamp(.2+(gk-60)*.002,.12,.34):clamp(sv0+SVC-.42*place-(spd-650)/2100+(d0-250)/2300+(sb||0),.08,.88);
   ball.sv={t:1-p.team,will:Math.random()<S,yh,S};
 }
 function aiAir(p){
