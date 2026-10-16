@@ -144,6 +144,16 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #mdStripeShop .mdsp-reward{color:#9ff0b2;font-weight:700;margin-top:6px}
 @media(max-width:520px){#mdStripeShopBtn{top:104px;right:8px;padding:8px 10px;font-size:12px}#mdStripeShop .mdsp-panel{padding:11px}#mdStripeShop h2{font-size:29px}}
 
+
+#mdGrowthRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch;margin:12px 0 4px}
+#mdDailyCard{min-width:0;text-align:left;background:linear-gradient(135deg,rgba(255,210,63,.14),rgba(58,166,85,.12));border:1px solid rgba(255,210,63,.5);border-radius:12px;padding:12px 14px}
+.mdGrowthEyebrow{font-size:11px;font-weight:800;letter-spacing:.13em;color:var(--acc);margin-bottom:5px}
+#mdDailyCard>b{font-family:'Barlow Condensed',sans-serif;font-size:22px}
+#mdDailyCard p{font-size:13px;color:var(--mut);margin:4px 0 7px}
+.mdDailyReward{font-size:12px;font-weight:800;color:var(--acc)}
+#mdShareBtn{border:1px solid var(--line);border-radius:12px;padding:12px;max-width:145px;background:var(--panel2);color:var(--text);font:800 13px 'Barlow Condensed',sans-serif;cursor:pointer}
+#mdShareBtn:hover{border-color:var(--acc);color:var(--acc)}
+@media(max-width:520px){#mdGrowthRow{grid-template-columns:1fr}#mdShareBtn{max-width:none;width:100%;padding:10px}#mdDailyCard{padding:10px 12px}}
 </style>
 </head>
 <body>
@@ -217,6 +227,10 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     </div>
     <button class="go" id="btnStart">Kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
+    <div id="mdGrowthRow">
+      <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +150 COINS</div></div>
+      <button id="mdShareBtn" type="button">↗ SHARE MATCHDAY</button>
+    </div>
     <div class="help">
       <div class="hg">
         <div><b>Move</b> <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows &nbsp; <b>Sprint</b> <kbd>Shift</kbd></div>
@@ -1347,6 +1361,7 @@ function finishMatch(){
     if(net.on&&net.host)netSend('end',[score[0],score[1],stats.shots,stats.poss,stats.yc,stats.rc,stats.off,stats.sot,stats.sv]);
     const cm=!!(career&&career.live);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}
     if(dtMatch&&!cm&&!(typeof net!=='undefined'&&net.on)){const g=score[0],o=score[1],c=(g>o?100:g===o?40:20)+g*10;dtInit();DT.coins+=c;dtSave();$('endTeams').textContent='+'+c+' coins';}
+    if(!cm&&!(typeof net!=='undefined'&&net.on)&&score[0]>score[1])completeDailyChallenge();
     if(net.on){if(net.host&&net.fin===undefined&&net.ack){if(!net.ack[0]){net.fin=-1;net.disp=true;}applyRanked();}else if(net.host&&net.fin===undefined){net.wait=setTimeout(applyRanked,3000);$('endTeams').textContent='Confirming result…';}else applyRanked();
     }
     $('btnAgain').hidden=cm||net.on;$('btnMenu').textContent=cm?'Continue career':net.on?'Back to menu':(dtMatch?'Dream Team':'Change teams');
@@ -2106,6 +2121,32 @@ function dtInit(){
   autoBuild();dtSave();
 }
 const dtSave=()=>store(DTK+(ACC.uid?'.'+ACC.uid:''),DT);
+const DAILY_KEY='matchday.daily-win.v1';
+function localDayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function refreshDailyChallenge(){
+  const el=$('mdDailyStatus');if(!el)return;
+  let saved='';try{saved=localStorage.getItem(DAILY_KEY)||'';}catch(e){}
+  el.textContent=saved===localDayKey()?'Completed today — come back tomorrow for another challenge!':'Win a match today to earn 150 bonus Dream Team coins.';
+  const card=$('mdDailyCard');if(card)card.setAttribute('aria-label',saved===localDayKey()?'Daily challenge completed':'Daily challenge: win one match today for 150 coins');
+}
+function completeDailyChallenge(){
+  let saved='';try{saved=localStorage.getItem(DAILY_KEY)||'';}catch(e){}
+  if(saved===localDayKey())return;
+  dtInit();DT.coins+=150;dtSave();
+  try{localStorage.setItem(DAILY_KEY,localDayKey());}catch(e){}
+  refreshDailyChallenge();
+  $('endTeams').textContent='🏆 DAILY CHALLENGE COMPLETE · +150 BONUS COINS';
+}
+$('mdShareBtn').addEventListener('click',async()=>{
+  const shareData={title:'Matchday – Arcade Soccer',text:'Play Matchday Arcade Soccer with me! Pick your team and kick off.',url:'https://matchdayarcadesoccer.vercel.app'};
+  const b=$('mdShareBtn'),old=b.textContent;
+  try{
+    if(navigator.share)await navigator.share(shareData);
+    else if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(shareData.url);b.textContent='✓ LINK COPIED';setTimeout(()=>{b.textContent=old;},1800);}
+    else{window.prompt('Copy the game link:',shareData.url);}
+  }catch(e){if(e&&e.name!=='AbortError'){window.prompt('Copy the game link:',shareData.url);}}
+});
+refreshDailyChallenge();
 const dtOK=()=>{dtInit();return DT.sq.length===11&&DT.sq.every(Boolean);};
 function dreamData(){
   dtInit();
