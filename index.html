@@ -2517,10 +2517,19 @@ function draw3dPlayer(p){
     part(m4.mul(arm,TRS(0,-5.8,0,3.5,11.5,3.6)),GL.sph,skin);
     part(m4.mul(arm,TRS(0,-2.1,0,4,5.2,4)),GL.sph,p.isGK?col:skin);
   }
-  part(TRS(0,42,0,6.7,6.7,6.7),GL.sph,skin);
-  part(TRS(-1.6,44,0,6.9,5.3,6.9),GL.sph,hair);
-  // A simple nose gives the head a readable forward direction.
-  part(TRS(4.5,41.8,0,2.2,2.2,2.4),GL.sph,skin);
+  // Neck, shaped head and small facial details make the player read as a human rather than a toy.
+  part(TRS(0,36.5,0,3.2,4.5,3.5),GL.sph,skin);
+  part(TRS(0,42.5,0,5.6,7.1,5.4),GL.sph,skin);
+  // Hair sits on the crown instead of covering most of the face.
+  part(TRS(-.5,47,0,5.8,3.1,5.7),GL.sph,hair);
+  part(TRS(-1.8,44.9,0,4.7,1.5,5.3),GL.sph,hair);
+  // Ears, eyes, brows and nose face the direction of travel.
+  for(const s of[-1,1]){
+    part(TRS(0,42.3,s*5.2,1.5,2.1,1.2),GL.sph,skin);
+    part(TRS(4.65,43.4,s*2.05,.65,.72,.58),GL.sph,[.075,.055,.04,1]);
+    part(TRS(4.8,44.5,s*2.05,1.1,.42,.72),GL.sph,hair);
+  }
+  part(TRS(5.45,41.7,0,1.7,1.5,1.65),GL.sph,skin);
 }
 function render3D(dt){
   if(!GL)return false;
