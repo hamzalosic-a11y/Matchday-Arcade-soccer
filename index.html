@@ -2490,43 +2490,24 @@ function proj(x,y,h){
   return w<=0?null:[(cx/w*.5+.5)*cv.width,(1-(cy/w*.5+.5))*cv.height];
 }
 function draw3dPlayer(p){
-  const k=teams[p.team].kit,col=hexc(p.isGK?k.gk:k.p),trim=hexc(k.c),shorts=hexc(k.sh),skin=hexc(p.skin),hair=hexc(p.hair);
-  const slide=p.lunge&&p.lunge.slide,fall=p.stun>.2&&!p.lunge;
-  const run=Math.sin(p.ph),kick=p.kick>0?Math.min(1,p.kick*2):0;
-  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(1.02,1.18,.82));
+  const k=teams[p.team].kit,col=hexc(p.isGK?k.gk:k.p),sock=hexc(k.c),sh=hexc(k.sh),skin=hexc(p.skin),hair=hexc(p.hair);
+  const slide=p.lunge&&p.lunge.slide,fall=p.stun>.2&&!p.lunge,sw=Math.sin(p.ph)*.75;
+  let b=m4.mul(m4.mul(m4.T(p.x,p.air?10:0,p.y),m4.RY(-p.face-((p.sk&&p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:0))),m4.S(1.2,1.2,1.2));
   if(slide||fall)b=m4.mul(b,m4.mul(m4.T(0,6,0),m4.RZ(1.25)));
   if(p.air&&p.air.type==='bike')b=m4.mul(b,m4.mul(m4.T(0,18,0),m4.mul(m4.RZ(Math.min(1,(1-p.air.t/.7)*1.6)*Math.PI*.9),m4.T(0,-18,0))));
   const part=(Mx,geo,c)=>drawG(geo,m4.mul(b,Mx),c);
-  const block=(x,y,z,sx,sy,sz,c)=>part(TRS(x,y,z,sx,sy,sz),GL.box,c);
-  // Classic chunky arcade-football body.
-  block(0,18,0,10,7,14,shorts);
-  block(0,28,0,9.5,16,13.5,col);
-  block(0,35.5,0,10.2,4,13.8,col);
-  if(!p.isGK&&k.pat==='stripes')for(const z of[-6,0,6])block(0,28,z,9.7,13.5,1.5,trim);
-  if(!p.isGK&&k.pat==='hoops')for(const y of[23,29,34])block(0,y,0,9.7,1.8,13.8,trim);
-  block(0,37.5,0,3.6,2.8,4.4,skin);
-  for(const side of[-1,1]){
-    const swing=run*side*.55+(side===1?kick*.8:0);
-    const hip=m4.mul(m4.T(0,16.5,side*4.5),m4.RZ(swing));
-    part(m4.mul(hip,TRS(0,-4,0,5.7,8,5.8)),GL.box,shorts);
-    part(m4.mul(hip,TRS(0,-11,0,4.6,9,4.8)),GL.box,trim);
-    part(m4.mul(hip,TRS(0,-16.5,0,4.8,3,5.8)),GL.box,shorts);
-    part(m4.mul(hip,TRS(1.5,-19,1.4,6.2,2.5,8)),GL.box,[.06,.07,.09,1]);
-    const arm=m4.mul(m4.T(0,32,side*10),m4.RZ(-run*side*.3-kick*.15));
-    part(m4.mul(arm,TRS(0,-3.5,0,3.8,7,4)),GL.box,p.isGK?col:skin);
-    part(m4.mul(arm,TRS(0,-9,0,3.1,6,3.2)),GL.box,skin);
-    part(m4.mul(arm,TRS(0,-12.3,0,3,2.4,3)),GL.box,skin);
+  for(const s of[-1,1]){
+    const a=sw*s+(p.kick>0&&s===1?.9:0),hip=m4.mul(m4.T(0,18,s*5),m4.RZ(a));
+    part(m4.mul(hip,TRS(0,-3.5,0,7.5,8,7.5)),GL.box,sh);
+    part(m4.mul(hip,TRS(0,-12.5,0,6,10,6)),GL.box,sock);
+    const arm=m4.mul(m4.T(0,33,s*12.5),m4.RZ(-a*.9));
+    part(m4.mul(arm,TRS(0,-6.5,0,4.6,13,4.6)),GL.box,p.isGK?col:skin);
   }
-  // Square head and simple hair block for the original blocky game style.
-  block(0,43,0,6.8,7,6.5,skin);
-  block(-.8,47,0,7,2.8,6.8,hair);
-  block(-2.5,44.5,0,2,3.5,6.6,hair);
-  // Small square eyes and nose face forward.
-  for(const side of[-1,1]){
-    block(5.9,43.8,side*2,0.6,.8,.8,[.94,.92,.82,1]);
-    block(6.25,43.8,side*2,0.35,.55,.35,[.1,.08,.06,1]);
-  }
-  block(6.5,41.8,0,1.1,1.1,1.2,skin);
+  part(TRS(0,27,0,11,17,21),GL.box,col);
+  if(!p.isGK&&k.pat==='stripes')for(const z of[-7,0,7])part(TRS(0,27,z,11.6,17,3.2),GL.box,sock);
+  if(!p.isGK&&k.pat==='hoops')for(const y of[22.5,29.5])part(TRS(0,y,0,11.6,3.2,21.2),GL.box,sock);
+  part(TRS(0,41.5,0,6.6,6.6,6.6),GL.sph,skin);
+  part(TRS(-1.4,43.4,0,6.9,5.4,6.9),GL.sph,hair);
 }
 function render3D(dt){
   if(!GL)return false;
