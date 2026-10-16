@@ -1989,7 +1989,7 @@ function netLeave(){
 }
 function hostTx(dt){
   net.tx+=dt;if(net.tx<.05)return;net.tx=0;
-  if(performance.now()-net.lastRx>8000&&state!=='end'){net.fin=-1;showMsg('Connection lost','',2500);finishMatch();return;}
+  if(performance.now()-net.lastRx>8000&&state!=='end'){net.fin=1;showMsg('Opponent disconnected — you win by forfeit','',3000);finishMatch();return;}
   netSend('snap',[state,half,R(clock),score[0],score[1],R(ball.x),R(ball.y),R(ball.z),R(ball.vx),R(ball.vy),R(ball.roll),ball.owner?ball.owner.gi:-1,human2?human2.gi:-1,human2?human2.stam:1,human2?human2.charge:0,
     players.map(p=>[R(p.x),R(p.y),Math.round(p.face*100)/100,R(p.ph),(p.lunge&&p.lunge.slide?1:0)|(p.stun>.2&&!p.lunge?2:0)|(p.kick>0?4:0)|(p.sprinting?8:0)|(p.air?16:0)|(p.sk?32:0)|(p.air&&p.air.type==='bike'?64:0)])]);
 }
@@ -2015,7 +2015,7 @@ function guestFrame(dt){
     net.tx=0;netSend('in',[Math.round(inp.mx*100)/100,Math.round(inp.my*100)/100,inp.sprint?1:0,inp.shoot?1:0,inp.passP?1:0,inp.shootP?1:0,inp.lobP?1:0,inp.shootR?1:0,inp.skillP?1:0,inp.finP?1:0,inp.chipP?1:0]);
     inp.passP=inp.shootP=inp.lobP=inp.shootR=inp.skillP=inp.finP=inp.chipP=false;
   }
-  if(performance.now()-net.lastRx>8000&&state!=='end'){net.fin=-1;showMsg('Connection lost','',2500);finishMatch();}
+  if(performance.now()-net.lastRx>8000&&state!=='end'){net.fin=1;showMsg('Opponent disconnected — you win by forfeit','',3000);finishMatch();}
 }
 const RKK='matchday.rk.v1';
 const RK=Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:'Player',rating:1000,w:0,d:0,l:0,games:0},load(RKK,true)||{});
