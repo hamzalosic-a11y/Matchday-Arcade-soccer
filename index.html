@@ -228,8 +228,9 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <button class="go" id="btnStart">Kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
     <div id="mdGrowthRow">
-      <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +150 COINS</div></div>
-      <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 HARD OBJECTIVES</div><b>Prove you are a top player</b><p id="mdObjectivesStatus">Complete tougher missions for bigger rewards.</p><div class="mdDailyReward">🏅 UP TO 600 COINS</div></div>
+      <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +50 COINS</div></div>
+      <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 HARD OBJECTIVES</div><b>Prove you are a top player</b><p id="mdObjectivesStatus">Complete tougher missions for smaller rewards.</p><div class="mdDailyReward">🏅 UP TO 600 COINS</div></div>
+      <div id="mdSeasonCard"><div class="mdGrowthEyebrow">🏆 SEASON PASS · FREE</div><b>Season 1: Road to Glory</b><p id="mdSeasonStatus">Play matches to earn XP and unlock 10 rewards.</p><div class="mdDailyReward" id="mdSeasonReward">NEXT REWARD: 50 COINS</div><button id="mdSeasonClaim" type="button" disabled>No reward ready</button></div>
       <button id="mdShareBtn" type="button">↗ SHARE MATCHDAY</button>
     </div>
     <div class="help">
@@ -2190,7 +2191,7 @@ function updateObjectives(goals,opponentGoals){
   }
   saveObjectives(o);
   if(reward){dtInit();DT.coins+=reward;dtSave();$('endTeams').textContent='🎯 OBJECTIVES COMPLETE · +'+reward+' COINS'+(finished.length?' · '+finished.join(', '):'');}
-  refreshObjectives();
+  refreshObjectives();refreshSeason();
 }
 function refreshDailyChallenge(){
   const el=$('mdDailyStatus');if(!el)return;
