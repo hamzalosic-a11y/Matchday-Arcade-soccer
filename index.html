@@ -928,8 +928,8 @@ function shotOnTarget(p,vx,vy,spd,vz,d0,yo,sb){
   const yh=yo!==undefined?yo:p.y+vy*t;
   if(yh<GY0+3||yh>GY1-3||ball.z+vz*t-450*t*t>BAR-4)return;          // wide or over: not on target
   const G=teams[1-p.team].players[0],gk=G.gk||teams[1-p.team].gkr||72;
-  const sv0=clamp(.46+(gk-60)*.009,.43,.76),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
-  const S=pen?clamp(.22+(gk-60)*.002,.14,.36):clamp(sv0+SVC-.39*place-(spd-650)/2200+(d0-250)/2500+(sb||0),.10,.90);
+  const sv0=clamp(.49+(gk-60)*.009,.46,.79),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
+  const S=pen?clamp(.24+(gk-60)*.002,.16,.38):clamp(sv0+SVC-.37*place-(spd-650)/2200+(d0-250)/2500+(sb||0),.12,.91);
   ball.sv={t:1-p.team,will:Math.random()<S,yh,S};
 }
 function aiAir(p){
@@ -2023,7 +2023,26 @@ function applyIn(p){
   inp2.passP=inp2.passP||!!p[4];inp2.shootP=inp2.shootP||!!p[5];inp2.lobP=inp2.lobP||!!p[6];inp2.shootR=inp2.shootR||!!p[7];inp2.skillP=inp2.skillP||!!p[8];inp2.finP=inp2.finP||!!p[9];inp2.chipP=inp2.chipP||!!p[10];
 }
 function applySnap(p){
-  net.lastRx=performance.now();if(state==='end'||!players.length)return;
+  if(state==='end'||!players.length)return;
+  // Reject malformed/impossible snapshots before they can corrupt the game state.
+  const states=['play','goal','kickoff','halftime','end'];
+  const finite=(v,lo,hi)=>typeof v==='number'&&Number.isFinite(v)&&v>=lo&&v<=hi;
+  const idx=(v,allowNone=false)=>Number.isInteger(v)&&(allowNone&&v===-1||v>=0&&v<players.length);
+  const valid=Array.isArray(p)&&p.length===16&&states.includes(p[0])&&
+    (p[1]===1||p[1]===2)&&finite(p[2],0,settings.half*2+90)&&
+    finite(p[3],0,30)&&Number.isInteger(p[3])&&finite(p[4],0,30)&&Number.isInteger(p[4])&&
+    finite(p[5],-180,L+180)&&finite(p[6],-180,W+180)&&finite(p[7],-50,600)&&
+    finite(p[8],-2600,2600)&&finite(p[9],-2600,2600)&&finite(p[10],-10000,10000)&&
+    idx(p[11],true)&&idx(p[12],true)&&finite(p[13],0,1.1)&&finite(p[14],0,2.5)&&
+    Array.isArray(p[15])&&p[15].length===players.length&&
+    p[15].every(a=>Array.isArray(a)&&a.length===5&&finite(a[0],-100,L+100)&&finite(a[1],-100,W+100)&&finite(a[2],-20,20)&&finite(a[3],-10000,10000)&&Number.isInteger(a[4])&&a[4]>=0&&a[4]<=127);
+  if(!valid){
+    net.badSnapshot=(net.badSnapshot||0)+1;
+    if(net.badSnapshot>=5&&net.on){net.fin=-1;net.disp=true;showMsg('Suspicious game data — ranked result voided','Invalid snapshots were rejected.',3000);finishMatch();}
+    return;
+  }
+  net.lastRx=performance.now();
+  net.badSnapshot=0;
   state=p[0];half=p[1];clock=p[2];score=[p[3],p[4]];
   net.bx=p[5];net.by=p[6];ball.z=p[7];ball.vx=p[8];ball.vy=p[9];ball.roll=p[10];
   ball.owner=p[11]>=0?players[p[11]]:null;human=p[12]>=0?players[p[12]]:null;
@@ -2267,6 +2286,24 @@ async function restoreRanks(){   // your rank lives on the server, so no update 
     }catch(e){}
   }
 }
+async function claimQusqusGift(sess,username){
+  if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='qusqus_gg')return;
+  try{
+    const r=await fetch(ONLINE.url+'/rest/v1/rpc/claim_qusqus_gg_gift',{
+      method:'POST',
+      headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},
+      body:'{}',
+      cache:'no-store'
+    });
+    if(!r.ok)return;
+    const amount=await r.json();
+    if(amount===1000){
+      dtInit();DT.coins=(Number(DT.coins)||0)+1000;dtSave();
+      authSay('Gift claimed: QUSQUS_GG received 1,000 Dream Team coins!');
+      if(!$('dtScr').hidden)renderDt();
+    }
+  }catch(e){console.warn('Gift claim could not be checked.');}
+}
 async function fetchProfile(sess){
   let u=null;
   try{const r=await fetch(ONLINE.url+'/rest/v1/profiles?id=eq.'+sess.user.id+'&select=username',{headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token}});const q=await r.json();u=q[0]&&q[0].username;}catch(e){}
@@ -2274,6 +2311,7 @@ async function fetchProfile(sess){
     if(u)try{await fetch(ONLINE.url+'/rest/v1/profiles',{method:'POST',headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify({id:sess.user.id,username:u})});}catch(e){}}
   applyAcc(sess,u);
   await restoreRanks();
+  await claimQusqusGift(sess,u);
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
 const synth=u=>u.toLowerCase()+'@example.com';   // no real email needed: the username is turned into an internal address
