@@ -229,7 +229,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
     <div id="mdGrowthRow">
       <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +150 COINS</div></div>
-      <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 OBJECTIVES</div><b>Complete missions, earn coins</b><p id="mdObjectivesStatus">Play matches, score goals and win games.</p><div class="mdDailyReward">🏅 UP TO 1,050 COINS</div></div>
+      <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 HARD OBJECTIVES</div><b>Prove you are a top player</b><p id="mdObjectivesStatus">Complete tougher missions for bigger rewards.</p><div class="mdDailyReward">🏅 UP TO 4,250 COINS</div></div>
       <button id="mdShareBtn" type="button">↗ SHARE MATCHDAY</button>
     </div>
     <div class="help">
@@ -2152,8 +2152,8 @@ function dtInit(){
 }
 const dtSave=()=>store(DTK+(ACC.uid?'.'+ACC.uid:''),DT);
 const DAILY_KEY='matchday.daily-win.v1';
-const OBJECTIVES_KEY='matchday.objectives.v1';
-const OBJECTIVES=[{id:'play3',title:'Play 3 matches',target:3,reward:250},{id:'score5',title:'Score 5 goals',target:5,reward:300},{id:'win2',title:'Win 2 matches',target:2,reward:500}];
+const OBJECTIVES_KEY='matchday.objectives.v2';
+const OBJECTIVES=[{id:'play10',title:'Play 10 matches',target:10,reward:750},{id:'score30',title:'Score 30 goals',target:30,reward:1500},{id:'win7',title:'Win 7 matches',target:7,reward:2000}];
 function localDayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function objectiveKey(){return OBJECTIVES_KEY+(ACC.uid?'.'+ACC.uid:'');}
 function readObjectives(){
@@ -2170,7 +2170,7 @@ function refreshObjectives(){
     const done=Math.min(m.target,Number(progress)||0),claimed=o.claimed.includes(m.id);
     return '<div style="margin-top:7px"><b>'+m.title+'</b> · '+done+'/'+m.target+' · '+(claimed?'✓ Claimed':done>=m.target?'✓ Complete':'+'+m.reward+' coins')+'</div>';
   }).join('');
-  const card=$('mdObjectivesCard');if(card)card.setAttribute('aria-label','Objectives: play 3 matches, score 5 goals, win 2 matches');
+  const card=$('mdObjectivesCard');if(card)card.setAttribute('aria-label','Hard objectives: play 10 matches, score 30 goals, win 7 matches');
 }
 function updateObjectives(goals,opponentGoals){
   const o=readObjectives();o.played=(Number(o.played)||0)+1;o.goals=(Number(o.goals)||0)+Math.max(0,Number(goals)||0);
