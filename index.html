@@ -510,7 +510,7 @@ const SPR={
  balanced:{line:0,press:1,pass:0,long:0,wide:1,tempo:1,shoot:0,counter:0}};
 for(const[n,l]of Object.entries(SP))l.split(',').forEach(k=>{const t=TEAMS.find(x=>x.s===k);if(t)t.sty=n;});
 for(const t of TEAMS)t.gk=clamp(Math.round(t.d*.55+36+([...t.s].reduce((a,c)=>a*31+c.charCodeAt(0),7)%7)-3),60,90);
-const SVC=.08; // Lower keeper save bonus so shots on target are more likely to score
+const SVC=.10; // Slightly stronger keepers without making every shot a save
 const SKINS=['#f1c9a5','#e0ac82','#c68642','#8d5524','#f5d6b8','#a86a3c','#6b4226'];
 const HAIR=['#1b1209','#3a2412','#6b4a1e','#c9a25a','#0e0e0e'];
 
@@ -928,8 +928,8 @@ function shotOnTarget(p,vx,vy,spd,vz,d0,yo,sb){
   const yh=yo!==undefined?yo:p.y+vy*t;
   if(yh<GY0+3||yh>GY1-3||ball.z+vz*t-450*t*t>BAR-4)return;          // wide or over: not on target
   const G=teams[1-p.team].players[0],gk=G.gk||teams[1-p.team].gkr||72;
-  const sv0=clamp(.42+(gk-60)*.009,.4,.72),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
-  const S=pen?clamp(.2+(gk-60)*.002,.12,.34):clamp(sv0+SVC-.42*place-(spd-650)/2100+(d0-250)/2300+(sb||0),.08,.88);
+  const sv0=clamp(.46+(gk-60)*.009,.43,.76),place=Math.min(1.2,Math.abs(yh-G.y)/(GOAL_W/2));
+  const S=pen?clamp(.22+(gk-60)*.002,.14,.36):clamp(sv0+SVC-.39*place-(spd-650)/2200+(d0-250)/2500+(sb||0),.10,.90);
   ball.sv={t:1-p.team,will:Math.random()<S,yh,S};
 }
 function aiAir(p){
@@ -2009,7 +2009,17 @@ function hostTx(dt){
     players.map(p=>[R(p.x),R(p.y),Math.round(p.face*100)/100,R(p.ph),(p.lunge&&p.lunge.slide?1:0)|(p.stun>.2&&!p.lunge?2:0)|(p.kick>0?4:0)|(p.sprinting?8:0)|(p.air?16:0)|(p.sk?32:0)|(p.air&&p.air.type==='bike'?64:0)])]);
 }
 function applyIn(p){
-  net.lastRx=performance.now();inp2.mx=clamp(+p[0]||0,-1,1);inp2.my=clamp(+p[1]||0,-1,1);inp2.sprint=!!p[2];inp2.shoot=!!p[3];
+  // Ranked host validates client input instead of blindly accepting arbitrary packets.
+  if(!Array.isArray(p)||p.length!==11||!p.slice(0,2).every(v=>typeof v==='number'&&Number.isFinite(v)&&Math.abs(v)<=1.05)||!p.slice(2).every(v=>v===0||v===1||v===false||v===true)){
+    net.badInput=(net.badInput||0)+1;
+    if(net.badInput>=8&&net.on){net.fin=-1;net.disp=true;showMsg('Invalid opponent input — match voided','',3000);finishMatch();}
+    return;
+  }
+  const now=performance.now();
+  // Ignore implausible input spam; legitimate controller updates arrive about 30–50 ms apart.
+  if(net.lastInputAt&&now-net.lastInputAt<18)return;
+  net.lastInputAt=now;net.lastRx=now;
+  inp2.mx=clamp(p[0],-1,1);inp2.my=clamp(p[1],-1,1);inp2.sprint=!!p[2];inp2.shoot=!!p[3];
   inp2.passP=inp2.passP||!!p[4];inp2.shootP=inp2.shootP||!!p[5];inp2.lobP=inp2.lobP||!!p[6];inp2.shootR=inp2.shootR||!!p[7];inp2.skillP=inp2.skillP||!!p[8];inp2.finP=inp2.finP||!!p[9];inp2.chipP=inp2.chipP||!!p[10];
 }
 function applySnap(p){
