@@ -2549,8 +2549,47 @@ function render3D(dt){
   drawG(GL.quad,m4.mul(m4.T(L/2,Hh/2,W+150+D/2),m4.mul(m4.RX(-th),m4.S(L+500,1,len))),st,{tex:GL.tCrowd,uv});
   drawG(GL.quad,m4.mul(m4.T(-150-D/2,Hh/2,W/2),m4.mul(m4.RZ(-th),m4.S(len,1,W+300))),st,{tex:GL.tCrowd,uv:[3,10]});
   drawG(GL.quad,m4.mul(m4.T(L+150+D/2,Hh/2,W/2),m4.mul(m4.RZ(th),m4.S(len,1,W+300))),st,{tex:GL.tCrowd,uv:[3,10]});
-  // floodlights
-  for(const[x,z]of[[-125,-125],[L+125,-125],[-125,W+125],[L+125,W+125]]){drawG(GL.cyl,TRS(x,0,z,5,250,5),[.55,.58,.62,1]);drawG(GL.box,TRS(x,255,z,34,12,22),[1,.98,.85,1],{unlit:1});}
+  // Tiered concrete terraces, coloured seating bands and stadium concourses.
+  // Keep these lightweight box meshes so the stadium remains fast on school laptops.
+  const concrete=[.20,.25,.32,1],seatBand=[.12,.17,.24,1],rail=[.68,.74,.82,1];
+  for(let tier=0;tier<5;tier++){
+    const y=27+tier*31,depth=48,height=18;
+    for(const side of [-1,1]){
+      const z=side*(116+tier*55+depth/2);
+      drawG(GL.box,TRS(L/2,y,z,L+260,height,depth),tier%2?concrete:seatBand);
+      drawG(GL.box,TRS(L/2,y+height/2+2,z-side*(depth/2-2),L+260,3,3),rail);
+    }
+    for(const side of [-1,1]){
+      const x=side*(116+tier*55+depth/2);
+      drawG(GL.box,TRS(x,y,W/2,depth,height,W+260),tier%2?concrete:seatBand);
+      drawG(GL.box,TRS(x-side*(depth/2-2),y+height/2+2,W/2,3,3,W+260),rail);
+    }
+  }
+  // Upper concourse fascia and roof canopies with repeating support columns.
+  const roof=[.055,.085,.14,1],fascia=[.09,.14,.22,1];
+  drawG(GL.box,TRS(L/2,246,-405,L+470,18,190),roof);
+  drawG(GL.box,TRS(L/2,246,W+405,L+470,18,190),roof);
+  drawG(GL.box,TRS(-405,246,W/2,190,18,W+470),roof);
+  drawG(GL.box,TRS(L+405,246,W/2,190,18,W+470),roof);
+  drawG(GL.box,TRS(L/2,224,-310,L+470,22,16),fascia);
+  drawG(GL.box,TRS(L/2,224,W+310,L+470,22,16),fascia);
+  drawG(GL.box,TRS(-310,224,W/2,16,22,W+470),fascia);
+  drawG(GL.box,TRS(L+310,224,W/2,16,22,W+470),fascia);
+  for(let x=80;x<L;x+=260)for(const side of [-1,1]){
+    drawG(GL.box,TRS(x,120,side*405,12,230,12),concrete);
+    drawG(GL.box,TRS(x,120,W+side*405,12,230,12),concrete);
+  }
+  for(let z=100;z<W;z+=240)for(const side of [-1,1]){
+    drawG(GL.box,TRS(side*405,120,z,12,230,12),concrete);
+    drawG(GL.box,TRS(L+side*405,120,z,12,230,12),concrete);
+  }
+  // Floodlights: steel masts, lamp banks and bright individual light panels.
+  for(const[x,z]of[[-125,-125],[L+125,-125],[-125,W+125],[L+125,W+125]]){
+    drawG(GL.cyl,TRS(x,0,z,5,250,5),[.55,.58,.62,1]);
+    drawG(GL.box,TRS(x,255,z,42,13,28),[.17,.21,.27,1]);
+    for(let lx=-1;lx<=1;lx++)for(let lz=-1;lz<=1;lz++)
+      drawG(GL.box,TRS(x+lx*11,263,z+lz*6,8,3,5),night?[.86,.92,1,1]:[1,.96,.78,1],{unlit:1});
+  }
   // goals
   const white=[.96,.96,.96,1];
   for(const gx of[0,L]){
