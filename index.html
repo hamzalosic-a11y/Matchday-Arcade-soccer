@@ -207,7 +207,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 
   <div class="screen" id="menu">
     <h1>MATCH<span>DAY</span></h1>
-    <p class="sub">Pick your side, pick your rival, play a full match.</p>
+    <p class="sub">Pick your side, pick your rival, play a full match.</p><div style="margin:0 0 10px"><button id="mdStatsOpen" type="button" style="border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:8px 12px;font-weight:700;cursor:pointer">📊 Game stats</button></div>
     <div class="row" style="margin-top:0">
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
@@ -612,6 +612,7 @@ function mkTeam(t,data,kit){
   return{data,kit,dir,players:ps,a:data.a,m:data.m,d:data.d,gkr:data.gk||72};
 }
 function startMatch(){
+  if(typeof window.mdTrackMatchStart==='function')window.mdTrackMatchStart();
   initAudio();
   THEME=(typeof net!=='undefined'&&net.on&&net.theme!==undefined)?THEMES[net.theme]:(settings.pitch>=0?THEMES[settings.pitch]:THEMES[(Math.random()*THEMES.length)|0]);WX.length=0;
   let d0=TEAMS[settings.home],d1=TEAMS[settings.away];
@@ -1354,6 +1355,7 @@ function endHalfCheck(){
   else finishMatch();
 }
 function finishMatch(){
+    if(typeof window.mdTrackMatchEnd==='function')window.mdTrackMatchEnd();
     state='end';sfx.whistle(3);
     $('endScore').textContent=`${score[0]} – ${score[1]}`;
     $('endTeams').textContent=`${teams[0].data.n} vs ${teams[1].data.n}`;
@@ -2760,5 +2762,35 @@ requestAnimationFrame(frame);
 })();
 </script>
 
+<div id="mdStatsModal" role="dialog" aria-modal="true" aria-labelledby="mdStatsTitle" style="display:none;position:fixed;z-index:15000;inset:0;background:rgba(3,8,18,.94);padding:18px;overflow:auto;touch-action:pan-y">
+ <section style="max-width:720px;margin:4vh auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;color:var(--text)">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 id="mdStatsTitle" style="margin:0;color:var(--acc);font:800 30px Barlow Condensed,sans-serif">MATCHDAY ANALYTICS</h2><button id="mdStatsClose" type="button" style="padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text)">Close ✕</button></div>
+  <p style="color:var(--mut);font-size:13px">Anonymous aggregate counts. Unique players are browser IDs, not verified real-world people.</p>
+  <div id="mdStatsStatus" style="padding:10px;background:var(--panel2);border-radius:8px;margin:10px 0">Loading stats…</div>
+  <div id="mdStatsCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px"></div>
+  <p style="color:var(--mut);font-size:12px;margin-top:14px">Tracking starts after this update goes live; past visitors cannot be counted retroactively.</p>
+ </section>
+</div>
+<script>
+/* MATCHDAY_ANALYTICS_V1: privacy-light aggregate game usage counters */
+(function(){
+ const base='https://uioscnsawpgoysfvajix.supabase.co';
+ const key='sb_publishable_uqlUv4qNOSXqK5n-jIHduA_fK8DEk9-';
+ const headers={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+ let sid='';
+ try{sid=localStorage.getItem('md_analytics_sid')||'';if(!/^[0-9a-f-]{36}$/i.test(sid)){sid=crypto.randomUUID();localStorage.setItem('md_analytics_sid',sid);}}catch(e){sid=crypto.randomUUID();}
+ function track(type,metadata){if(!sid)return;fetch(base+'/rest/v1/matchday_analytics',{method:'POST',headers:{...headers,'Prefer':'return=minimal'},body:JSON.stringify({session_id:sid,event_type:type,metadata:metadata||{}}),keepalive:true}).catch(()=>{});}
+ window.mdTrackMatchStart=function(){track('match_start',{});};
+ window.mdTrackMatchEnd=function(){track('match_end',{});};
+ const modal=document.getElementById('mdStatsModal'),status=document.getElementById('mdStatsStatus'),cards=document.getElementById('mdStatsCards');
+ const labels=[['unique_players','Unique players (all time)'],['visits','Visits (all time)'],['games_started','Games started (all time)'],['games_finished','Games finished (all time)']];
+ const recent=[['unique_players','Unique players · 14 days'],['visits','Visits · 14 days'],['games_started','Games started · 14 days'],['games_finished','Games finished · 14 days']];
+ async function loadStats(){status.textContent='Loading analytics…';cards.replaceChildren();try{const r=await fetch(base+'/rest/v1/rpc/matchday_analytics_summary',{method:'POST',headers,body:'{}',cache:'no-store'});if(!r.ok)throw new Error('Analytics is not ready yet ('+r.status+').');const d=await r.json(),items=[...labels.map(x=>[x[1],d[x[0]]]),...recent.map(x=>[x[1],d.last_14_days[x[0]]])];items.forEach(function(item){const el=document.createElement('div');el.style.cssText='padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)';const n=document.createElement('div');n.textContent=Number(item[1]||0).toLocaleString();n.style.cssText='font:800 32px Barlow Condensed,sans-serif;color:var(--acc)';const l=document.createElement('div');l.textContent=item[0];l.style.cssText='font-size:12px;color:var(--mut)';el.append(n,l);cards.append(el);});status.textContent='Updated just now.';}catch(e){status.textContent=e.message+' Refresh in a moment after the deployment finishes.';}}
+ document.getElementById('mdStatsOpen').addEventListener('click',function(){modal.style.display='block';loadStats();});
+ document.getElementById('mdStatsClose').addEventListener('click',function(){modal.style.display='none';});
+ modal.addEventListener('click',function(e){if(e.target===modal)modal.style.display='none';});
+ document.addEventListener('keydown',function(e){if(e.key==='Escape')modal.style.display='none';});
+})();
+</script>
 </body>
 </html>
