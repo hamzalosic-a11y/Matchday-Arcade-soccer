@@ -491,7 +491,7 @@ const TEAMS=[
  T('FK Sarajevo','SAR','#7a1f3d','#f2f2f2','#7a1f3d','solid',69,68,68,'442','club'),
  T('Željezničar','ZEL','#1f4fa3','#f2f2f2','#f2f2f2','solid',68,68,67,'442','club'),
  T('HŠK Zrinjski','ZRI','#d71920','#1f4fa3','#f2f2f2','solid',69,68,68,'442','club'),
- T('Borac Banja Luka','BOR','#d71920','#1f4fa3','#1f4fa3','stripes',67,67,67,'442','club'),
+ T('Borac Banja Luka','BOR','#d71920','#1f4fa3','#1f4fa3','stripes',70,70,70,'442','club'),
  T('Costa Rica','CRC','#d71920','#1f4fa3','#1f4fa3','solid',71,70,70,'442','nat'),
  T('Peru','PER','#f2f2f2','#d71920','#f2f2f2','solid',73,73,72,'442','nat'),
  T('Ecuador','ECU','#fdd400','#1f4fa3','#1f4fa3','solid',76,75,75,'442','nat'),
@@ -2594,7 +2594,18 @@ async function claimDavidGoalkeeperGift(sess,username){
       authSay('David gift unlocked: 99-rated ST and CM added to your Dream Team!');
       if(!$('dtScr').hidden)renderDt();
     }
-  }catch(e){console.warn('David player gifts could not be checked.');}
+    const coinGift=await fetch(ONLINE.url+'/rest/v1/rpc/claim_david_8000_coin_gift',{method:'POST',headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},body:'{}',cache:'no-store'});
+    if(coinGift.ok){
+      const amount=await coinGift.json();
+      if(amount===8000){
+        dtInit();
+        DT.coins=Math.max(8000,Number(DT.coins)||0);
+        dtSave();
+        authSay('David gift unlocked: 8,000 Dream Team coins added!');
+        if(!$('dtScr').hidden)renderDt();
+      }
+    }
+  }catch(e){console.warn('David player/coin gifts could not be checked.');}
 }
 async function claimHamzasShawarmaGift(sess,username){
   if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='hamzasshawarma'&&String(username||'').toLowerCase()!=='hamzas_shawarma')return;
