@@ -3,7 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Matchday – Arcade Soccer</title>
+<title>Matchday – Arcade Soccer | Free 3D Football Game</title>
+<meta name="description" content="Play Matchday Arcade Soccer, a free 3D football game. Choose from 200+ clubs and national teams, play quick matches, build your Dream Team, and challenge rivals in ranked mode.">
+<meta name="keywords" content="football game, soccer game, free 3D soccer, arcade football, Dream Team, ranked soccer">
+<meta name="theme-color" content="#0a1322">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Matchday – Arcade Soccer">
+<meta property="og:title" content="Matchday – Arcade Soccer">
+<meta property="og:description" content="Pick your club, build your Dream Team, and kick off. Play the free 3D arcade football game now.">
+<meta property="og:url" content="https://matchdayarcadesoccer.vercel.app/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Matchday – Arcade Soccer">
+<meta name="twitter:description" content="A free 3D arcade football game with 200+ teams, Dream Team, and ranked mode. Pick your side and kick off!">
+<link rel="canonical" href="https://matchdayarcadesoccer.vercel.app/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -208,7 +220,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 
   <div class="screen" id="menu">
     <h1>MATCH<span>DAY</span></h1>
-    <p class="sub">Pick your side, pick your rival, play a full match.</p><div style="margin:0 0 10px"><button id="mdStatsOpen" type="button" style="border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:8px 12px;font-weight:700;cursor:pointer">📊 Game stats</button></div>
+    <p class="sub">Free 3D arcade football · 200+ teams · Build your Dream Team · Challenge your rivals</p><div style="margin:0 0 10px"><button id="mdStatsOpen" type="button" style="border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:8px 12px;font-weight:700;cursor:pointer">📊 Game stats</button></div>
     <div class="row" style="margin-top:0">
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
@@ -2273,7 +2285,7 @@ function completeDailyChallenge(){
   $('endTeams').textContent='🏆 DAILY CHALLENGE COMPLETE · +50 BONUS COINS';
 }
 $('mdShareBtn').addEventListener('click',async()=>{
-  const shareData={title:'Matchday – Arcade Soccer',text:'Play Matchday Arcade Soccer with me! Pick your team and kick off.',url:'https://matchdayarcadesoccer.vercel.app'};
+  const shareData={title:'Matchday – Arcade Soccer',text:'Think you can beat me? Challenge me on Matchday Arcade Soccer — choose from 200+ teams, build your Dream Team, and kick off!',url:'https://matchdayarcadesoccer.vercel.app'};
   const b=$('mdShareBtn'),old=b.textContent;
   try{
     if(navigator.share)await navigator.share(shareData);
