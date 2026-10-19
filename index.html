@@ -2364,7 +2364,7 @@ async function claimQussaiPrimeGift(sess,username){
     const granted=await r.json();
     if(granted===true){
       dtInit();
-      const player={id:'qussai-prime-99-gk',nm:'Qussai Prime',pos:'GK',ovr:99,pac:99,sht:99,pas:99,def:99,gk:99,rar:4,nat:'Norrköping'};
+      const player={id:'qussai-prime-99-gk',nm:'QUSSAI PRIME',pos:'GK',ovr:99,pac:99,sht:99,pas:99,def:99,gk:99,rar:4,nat:'Norrköping'};
       if(!DT.pl.some(p=>p.id===player.id)){
         DT.pl.push(player);
         const gkSlot=DT.sq.findIndex(id=>DT.pl.some(p=>p.id===id&&p.pos==='GK'));
