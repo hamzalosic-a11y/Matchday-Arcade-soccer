@@ -2464,7 +2464,27 @@ async function claimDavidGoalkeeperGift(sess,username){
       authSay('Special gift unlocked: 99 DAVID IS A MAN — 99-rated goalkeeper added to your Dream Team!');
       if(!$('dtScr').hidden)renderDt();
     }
-  }catch(e){console.warn('David goalkeeper gift could not be checked.');}
+    // David's two additional 99-rated cards are granted idempotently on login.
+    dtInit();
+    const extraPlayers=[
+      {id:'david-99-st',nm:'99 DAVID STRIKER',pos:'ST',ovr:99,pac:99,sht:99,pas:99,def:99,gk:99,rar:4,nat:'Norrköping'},
+      {id:'david-99-cm',nm:'99 DAVID MIDFIELD',pos:'CM',ovr:99,pac:99,sht:99,pas:99,def:99,gk:99,rar:4,nat:'Norrköping'}
+    ];
+    let addedExtra=false;
+    for(const player of extraPlayers){
+      if(!DT.pl.some(p=>p.id===player.id)){
+        DT.pl.push(player);
+        const slot=DT.sq.findIndex(id=>DT.pl.some(p=>p.id===id&&p.pos===player.pos));
+        if(slot>=0)DT.sq[slot]=player.id;
+        addedExtra=true;
+      }
+    }
+    if(addedExtra){
+      dtSave();
+      authSay('David gift unlocked: 99-rated ST and CM added to your Dream Team!');
+      if(!$('dtScr').hidden)renderDt();
+    }
+  }catch(e){console.warn('David player gifts could not be checked.');}
 }
 async function claimHamzasShawarmaGift(sess,username){
   if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='hamzasshawarma'&&String(username||'').toLowerCase()!=='hamzas_shawarma')return;
