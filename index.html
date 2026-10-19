@@ -300,6 +300,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <div id="endTeams" class="disp" style="font-size:26px;color:var(--mut)"></div>
     <table class="st" id="endStats"></table>
     <button class="go" id="btnAgain">Rematch</button>
+    <button class="go alt" id="btnShareResult">↗ Challenge a friend</button>
     <button class="go alt" id="btnMenu">Change teams</button>
   </div>
 </div>
@@ -1822,6 +1823,26 @@ $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
 $('btnStart').onclick=()=>{if(career)career.live=false;dtMatch=false;fixDream();startMatch();};
 $('btnAgain').onclick=()=>{if(career)career.live=false;startMatch();};
+$('btnShareResult').onclick=async()=>{
+  const home=teams[0]?.data?.n||'Home team',away=teams[1]?.data?.n||'Away team';
+  const scoreText=String($('endScore').textContent||'').trim();
+  const shareData={
+    title:'Matchday – Arcade Soccer challenge',
+    text:`I just played Matchday Arcade Soccer! ${home} ${scoreText} ${away}. Think you can beat my result? Pick your team and challenge me!`,
+    url:'https://matchdayarcadesoccer.vercel.app'
+  };
+  const b=$('btnShareResult'),old=b.textContent;
+  try{
+    if(navigator.share)await navigator.share(shareData);
+    else if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(shareData.text+' '+shareData.url);
+      b.textContent='✓ CHALLENGE COPIED';
+      setTimeout(()=>{b.textContent=old;},1800);
+    }else window.prompt('Copy your challenge:',shareData.text+' '+shareData.url);
+  }catch(e){
+    if(e&&e.name!=='AbortError')window.prompt('Copy your challenge:',shareData.text+' '+shareData.url);
+  }
+};
 $('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}state='menu';$('endScr').hidden=true;if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
 $('btnResume').onclick=togglePause;
 $('btnQuit').onclick=()=>{if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
