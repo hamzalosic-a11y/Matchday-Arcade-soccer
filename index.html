@@ -2999,7 +2999,7 @@ function render3D(dt){
   }
   // weather
   if(THEME.snow||THEME.rain){
-    const N=THEME.snow?260:420,wx=GL.wx;
+    const N=THEME.snow?(isTouch?70:180):(isTouch?100:260),wx=GL.wx;
     if(wx.length!==N*3){wx.length=0;for(let i=0;i<N;i++)wx.push(cx+(Math.random()-.5)*1800,Math.random()*520,cz+(Math.random()-.5)*1300);}
     for(let i=0;i<N;i++){const j=i*3;wx[j+1]-=dt*(THEME.snow?55+(i%7)*9:620);if(THEME.snow)wx[j]+=Math.sin(gameTime*1.4+i)*dt*28;else wx[j]-=dt*90;
       if(wx[j+1]<0){wx[j+1]=520;wx[j]=cx+(Math.random()-.5)*1800;wx[j+2]=cz+(Math.random()-.5)*1300;}}
@@ -3027,14 +3027,14 @@ $('btnView').onclick=()=>{if(GL){view3d=!view3d;settings.view=view3d?1:0;syncVie
 
 /* ---------- loop ---------- */
 function resize(){
-  DPR=Math.min(window.devicePixelRatio||1,((window.matchMedia&&matchMedia('(pointer:coarse)').matches)||innerWidth<700)?1.25:1.6);
+  DPR=Math.min(window.devicePixelRatio||1,((window.matchMedia&&matchMedia('(pointer:coarse)').matches)||innerWidth<700)?1:1.6);
   cw=cv.clientWidth||innerWidth;ch=cv.clientHeight||innerHeight;
   cv.width=Math.round(cw*DPR);cv.height=Math.round(ch*DPR);
   if(GL){GL.cv.width=cv.width;GL.cv.height=cv.height;}
   viewW=cw/ch<.9?800:1150;scale=cv.width/viewW;
 }
 addEventListener('resize',resize);resize();buildCrowd();initGL();resize();syncView();
-let last=0,acc=0;
+let last=0,acc=0,renderAcc=0;
 function frame(ts){
   requestAnimationFrame(frame);
   const dt=Math.min(.1,((ts-last)/1000)||0);last=ts;
@@ -3047,7 +3047,12 @@ function frame(ts){
     if(msgT>0){msgT-=dt;if(msgT<=0)hideMsg();}
     updateHud();drawRadarSafe();
   }
-  render(dt);
+  // Keep gameplay simulation running at its normal fixed step, but cap expensive
+  // 3D match rendering to 30 FPS on touch devices to reduce GPU heat and stutter.
+  if(isTouch&&view3d&&live){
+    renderAcc+=dt;
+    if(renderAcc>=1/30){render(renderAcc);renderAcc=0;}
+  }else{renderAcc=0;render(dt);}
   if(crowdGain&&AC&&!paused){
     roar=Math.max(0,roar-dt*.35);
     let ex=0;
