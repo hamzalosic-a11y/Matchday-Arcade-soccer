@@ -2424,6 +2424,37 @@ async function claimHamzasShawarmaGift(sess,username){
     }
   }catch(e){console.warn('Coin gift could not be checked.');}
 }
+async function claimHamzasShawarmaAdminTeamGift(sess,username){
+  if(!sess||!sess.access_token||String(username||'').toLowerCase().replace(/_/g,'')!=='hamzasshawarma')return;
+  try{
+    const r=await fetch(ONLINE.url+'/rest/v1/rpc/claim_hamzasshawarma_admin_team_gift',{
+      method:'POST',
+      headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},
+      body:'{}',
+      cache:'no-store'
+    });
+    if(!r.ok||await r.json()!==true)return;
+    dtInit();
+    const formation=FORM['433'];
+    const ids=[];
+    const roles=formation.map(slot=>slot[0]);
+    roles.forEach((role,i)=>{
+      const id='admin-full-99-'+i;
+      ids.push(id);
+      if(!DT.pl.some(p=>p.id===id)){
+        DT.pl.push({id,nm:'ADMIN '+role+' '+(i+1),pos:role,ovr:99,pac:99,sht:99,pas:99,def:99,gk:role==='GK'?99:0,rar:4,nat:'Admin'});
+      }
+    });
+    DT.name='Admin';
+    DT.f='433';
+    DT.sq=ids;
+    if(!DT.shirts)DT.shirts=['classic'];
+    if(!DT.shirt)DT.shirt='classic';
+    dtSave();
+    authSay('Admin gift unlocked: full 99-rated Admin team added to your Dream Team!');
+    if(!$('dtScr').hidden)renderDt();
+  }catch(e){console.warn('Admin team gift could not be checked.');}
+}
 async function fetchProfile(sess){
   let u=null;
   try{const r=await fetch(ONLINE.url+'/rest/v1/profiles?id=eq.'+sess.user.id+'&select=username',{headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token}});const q=await r.json();u=q[0]&&q[0].username;}catch(e){}
@@ -2434,7 +2465,7 @@ async function fetchProfile(sess){
   await claimQusqusGift(sess,u);
   await claimQussaiPrimeGift(sess,u);
   await claimDavidGoalkeeperGift(sess,u);
-  await claimHamzasShawarmaGift(sess,u);
+  await claimHamzasShawarmaGift(sess,u);\n  await claimHamzasShawarmaAdminTeamGift(sess,u);
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
 const synth=u=>u.toLowerCase()+'@example.com';   // no real email needed: the username is turned into an internal address
