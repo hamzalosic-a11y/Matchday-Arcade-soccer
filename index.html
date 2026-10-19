@@ -2776,7 +2776,7 @@ requestAnimationFrame(frame);
 (function(){
  const base='https://uioscnsawpgoysfvajix.supabase.co';
  const key='sb_publishable_uqlUv4qNOSXqK5n-jIHduA_fK8DEk9-';
- const headers={'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json'};
+ const headers={'apikey':key,'Content-Type':'application/json'};
  let sid='';
  try{sid=localStorage.getItem('md_analytics_sid')||'';if(!/^[0-9a-f-]{36}$/i.test(sid)){sid=crypto.randomUUID();localStorage.setItem('md_analytics_sid',sid);}}catch(e){sid=crypto.randomUUID();}
  function track(type,metadata){if(!sid)return;fetch(base+'/rest/v1/matchday_analytics',{method:'POST',headers:{...headers,'Prefer':'return=minimal'},body:JSON.stringify({session_id:sid,event_type:type,metadata:metadata||{}}),keepalive:true}).catch(()=>{});}
