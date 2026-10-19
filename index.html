@@ -2351,6 +2351,32 @@ async function claimQusqusGift(sess,username){
     }
   }catch(e){console.warn('Gift claim could not be checked.');}
 }
+async function claimQussaiPrimeGift(sess,username){
+  if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='qusqus_gg')return;
+  try{
+    const r=await fetch(ONLINE.url+'/rest/v1/rpc/claim_qussai_prime_gk_gift',{
+      method:'POST',
+      headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},
+      body:'{}',
+      cache:'no-store'
+    });
+    if(!r.ok)return;
+    const granted=await r.json();
+    if(granted===true){
+      dtInit();
+      const player={id:'qussai-prime-99-gk',nm:'Qussai Prime',pos:'GK',ovr:99,pac:99,sht:99,pas:99,def:99,gk:99,rar:4,nat:'Norrköping'};
+      if(!DT.pl.some(p=>p.id===player.id)){
+        DT.pl.push(player);
+        const gkSlot=DT.sq.findIndex(id=>DT.pl.some(p=>p.id===id&&p.pos==='GK'));
+        if(gkSlot>=0)DT.sq[gkSlot]=player.id;
+        else{const slot=DT.sq.findIndex(id=>DT.pl.some(p=>p.id===id&&p.pos!=='GK'));if(slot>=0)DT.sq[slot]=player.id;}
+        dtSave();
+      }
+      authSay('Special gift unlocked: Qussai Prime — 99-rated goalkeeper added to your Dream Team!');
+      if(!$('dtScr').hidden)renderDt();
+    }
+  }catch(e){console.warn('Qussai Prime gift could not be checked.');}
+}
 async function claimHamzasShawarmaGift(sess,username){
   if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='hamzasshawarma'&&String(username||'').toLowerCase()!=='hamzas_shawarma')return;
   try{
@@ -2379,6 +2405,7 @@ async function fetchProfile(sess){
   applyAcc(sess,u);
   await restoreRanks();
   await claimQusqusGift(sess,u);
+  await claimQussaiPrimeGift(sess,u);
   await claimHamzasShawarmaGift(sess,u);
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
