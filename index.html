@@ -1308,7 +1308,8 @@ function autoSwitch(dt,t){
   let hs=Math.max(0,(t?holdSw2:holdSw)-dt);
   if(!t)pressCall=Math.max(0,pressCall-dt);
   const o=ball.owner,hm=t?human2:human;
-  if(o&&o.team===t&&!o.isGK){if(hm!==o)setHuman(o);}
+  // Give direct control to any teammate who owns the ball, including the goalkeeper after a catch.
+  if(o&&o.team===t){if(hm!==o)setHuman(o);}
   else if(!(hs>0&&hm&&!hm.isGK)){
     const c=near[t][0];
     if(c){
