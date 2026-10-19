@@ -2351,6 +2351,26 @@ async function claimQusqusGift(sess,username){
     }
   }catch(e){console.warn('Gift claim could not be checked.');}
 }
+async function claimHamzasShawarmaGift(sess,username){
+  if(!sess||!sess.access_token||String(username||'').toLowerCase()!=='hamzasshawarma'&&String(username||'').toLowerCase()!=='hamzas_shawarma')return;
+  try{
+    const r=await fetch(ONLINE.url+'/rest/v1/rpc/claim_hamzas_shawarma_gift',{
+      method:'POST',
+      headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},
+      body:'{}',
+      cache:'no-store'
+    });
+    if(!r.ok)return;
+    const amount=await r.json();
+    if(amount===24000){
+      dtInit();
+      DT.coins=Math.max(24000,Number(DT.coins)||0);
+      dtSave();
+      authSay('HamzasShawarma gift applied: Dream Team balance set to at least 24,000 coins!');
+      if(!$('dtScr').hidden)renderDt();
+    }
+  }catch(e){console.warn('Coin gift could not be checked.');}
+}
 async function fetchProfile(sess){
   let u=null;
   try{const r=await fetch(ONLINE.url+'/rest/v1/profiles?id=eq.'+sess.user.id+'&select=username',{headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token}});const q=await r.json();u=q[0]&&q[0].username;}catch(e){}
@@ -2359,6 +2379,7 @@ async function fetchProfile(sess){
   applyAcc(sess,u);
   await restoreRanks();
   await claimQusqusGift(sess,u);
+  await claimHamzasShawarmaGift(sess,u);
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
 const synth=u=>u.toLowerCase()+'@example.com';   // no real email needed: the username is turned into an internal address
