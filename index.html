@@ -261,7 +261,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
       <span class="lbl">View</span><div class="seg" id="segView"><button data-v="1" class="on">3D</button><button data-v="0">2D</button></div>
     </div>
     <button class="go" id="btnStart">Kick off</button>
-    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button></div>
+    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button></div>
     <div id="mdGrowthRow">
       <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +50 COINS</div></div>
       <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 HARD OBJECTIVES</div><b>Prove you are a top player</b><p id="mdObjectivesStatus">Complete tougher missions for smaller rewards.</p><div class="mdDailyReward">🏅 UP TO 600 COINS</div></div>
@@ -322,6 +322,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
     <table class="st" id="endStats"></table>
     <button class="go" id="btnAgain">Rematch</button>
     <button class="go alt" id="btnShareResult">↗ Challenge a friend</button>
+    <button class="go" id="btnCupNext" hidden>Play next cup round →</button>
     <button class="go alt" id="btnMenu">Change teams</button>
   </div>
 </div>
@@ -594,6 +595,20 @@ let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
 const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1};
+// Local 3-round knockout cup; results are based on matches actually played.
+const cup={active:false,round:0,opponents:[],lastResult:'',best:0};
+const cupRoundNames=['Quarter-final','Semi-final','Final'];
+function cupOpponents(home){
+ const pool=TEAMS.map((t,i)=>i).filter(i=>i!==home&&TEAMS[i].g!=='dream');
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ return pool.slice(0,3);
+}
+function startCupRound(){
+ if(!cup.active||cup.round>2)return;
+ settings.away=cup.opponents[cup.round];
+ settings.diff=Math.max(settings.diff,1);settings.half=180;dtMatch=false;
+ startMatch();
+}
 const cam={x:L/2,y:W/2};
 const inp={mx:0,my:0,sprint:false,pass:false,shoot:false,lob:false,skill:false,fin:false,chip:false,passP:false,shootP:false,lobP:false,shootR:false,skillP:false,finP:false,chipP:false};
 const inp2={mx:0,my:0,sprint:false,pass:false,shoot:false,lob:false,skill:false,fin:false,chip:false,passP:false,shootP:false,lobP:false,shootR:false,skillP:false,finP:false,chipP:false};
@@ -695,7 +710,7 @@ function startMatch(){
   ms=[[],[]];evt=0;addShown=false;addT=0;score=[0,0];half=1;clock=0;stats={shots:[0,0],poss:[0,0],yc:[0,0],rc:[0,0],off:[0,0],sot:[0,0],sv:[0,0]};paused=false;particles=[];pending=null;setPiece=null;
   $('n0').textContent=d0.s;$('n1').textContent=d1.s;
   $('c0').style.background=kits[0].p;$('c1').style.background=kits[1].p;
-  $('menu').hidden=true;$('careerScr').hidden=true;$('endScr').hidden=true;$('pauseScr').hidden=true;$('hud').hidden=false;
+  $('menu').hidden=true;$('careerScr').hidden=true;$('endScr').hidden=true;$('pauseScr').hidden=true;$('hud').hidden=false;$('cupScr')&&($('cupScr').hidden=true);
   $('touch').hidden=!isTouch;
   setupKickoff(0);
   cam.x=L/2;cam.y=W/2;
@@ -1433,11 +1448,29 @@ function finishMatch(){
     $('hud').hidden=true;$('touch').hidden=true;hideMsg();
     if(net.on&&net.host)netSend('end',[score[0],score[1],stats.shots,stats.poss,stats.yc,stats.rc,stats.off,stats.sot,stats.sv]);
     const cm=!!(career&&career.live);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}
+    if(cup.active&&!cm&&!(typeof net!=='undefined'&&net.on)){
+      if(score[0]>score[1]){
+        if(cup.round===2){
+          cup.active=false;cup.lastResult='champion';cup.best=Math.max(cup.best,3);
+          try{localStorage.setItem('md_cup_best',String(cup.best));}catch(_){}
+          $('endTeams').textContent='🏆 CUP CHAMPIONS! You won the final!';
+          $('btnCupNext').hidden=true;
+        }else{
+          cup.lastResult='win';cup.pendingNext=true;
+          $('endTeams').textContent='✅ '+cupRoundNames[cup.round]+' won! Next: '+cupRoundNames[cup.round+1];
+          $('btnCupNext').hidden=false;$('btnCupNext').textContent='Play '+cupRoundNames[cup.round+1]+' →';
+        }
+      }else{
+        cup.active=false;cup.lastResult=score[0]===score[1]?'draw':'loss';
+        $('endTeams').textContent=score[0]===score[1]?'Cup run ended: a draw. Win your next cup run!':'Cup run ended. Train up and try again!';
+        $('btnCupNext').hidden=true;
+      }
+    }else $('btnCupNext').hidden=true;
     if(dtMatch&&!cm&&!(typeof net!=='undefined'&&net.on)){const g=score[0],o=score[1],c=(g>o?100:g===o?40:20)+g*10;dtInit();DT.coins+=c;dtSave();$('endTeams').textContent='+'+c+' coins';}
     if(!cm&&!(typeof net!=='undefined'&&net.on)){updateObjectives(score[0],score[1]);addSeasonProgress(score[0],score[0]>score[1]);if(score[0]>score[1])completeDailyChallenge();}
     if(net.on){if(net.host&&net.fin===undefined&&net.ack){if(!net.ack[0]){net.fin=-1;net.disp=true;}applyRanked();}else if(net.host&&net.fin===undefined){net.wait=setTimeout(applyRanked,3000);$('endTeams').textContent='Confirming result…';}else applyRanked();
     }
-    $('btnAgain').hidden=cm||net.on;$('btnMenu').textContent=cm?'Continue career':net.on?'Back to menu':(dtMatch?'Dream Team':'Change teams');
+    $('btnAgain').hidden=cm||net.on||!!cup.lastResult;$('btnMenu').textContent=cm?'Continue career':net.on?'Back to menu':(cup.lastResult?'Cup menu':(dtMatch?'Dream Team':'Change teams'));
     setTimeout(()=>{if(state==='end')$('endScr').hidden=false;},900);
 }
 function step(dt){
@@ -1842,7 +1875,15 @@ $('teamCountryFilter').addEventListener('change',e=>{settings.country=e.target.v
 seg('tabSeg','tab',false);seg('segDiff','diff',true);seg('segLen','half',true);seg('segPitch','pitch',true);seg('segView','view',true);
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
-$('btnStart').onclick=()=>{if(career)career.live=false;dtMatch=false;fixDream();startMatch();};
+$('btnStart').onclick=()=>{cup.active=false;cup.lastResult='';$('btnCupNext').hidden=true;if(career)career.live=false;dtMatch=false;fixDream();startMatch();};
+$('btnCup').onclick=()=>{
+  cup.active=true;cup.round=0;cup.opponents=cupOpponents(settings.home);cup.lastResult='';cup.pendingNext=false;
+  startCupRound();
+};
+$('btnCupNext').onclick=()=>{
+  if(!cup.active||!cup.pendingNext)return;
+  cup.round++;cup.pendingNext=false;cup.lastResult='';startCupRound();
+};
 $('btnAgain').onclick=()=>{if(career)career.live=false;startMatch();};
 $('btnShareResult').onclick=async()=>{
   const home=teams[0]?.data?.n||'Home team',away=teams[1]?.data?.n||'Away team';
@@ -1864,7 +1905,7 @@ $('btnShareResult').onclick=async()=>{
     if(e&&e.name!=='AbortError')window.prompt('Copy your challenge:',shareData.text+' '+shareData.url);
   }
 };
-$('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}state='menu';$('endScr').hidden=true;if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
+$('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}if(cup.active||cup.lastResult){cup.active=false;cup.lastResult='';cup.pendingNext=false;$('btnCupNext').hidden=true;}state='menu';$('endScr').hidden=true;if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
 $('btnResume').onclick=togglePause;
 $('btnQuit').onclick=()=>{if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
 $('btnPause').onclick=()=>{if(net.on)leaveToMenu();else togglePause();};$('btnMute').onclick=toggleMute;
