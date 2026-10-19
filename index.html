@@ -254,6 +254,11 @@ button,select{touch-action:manipulation}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
+
+/* PERFORMANCE: lower fill rate on phones without changing gameplay */
+@media(max-width:700px),(pointer:coarse){
+ canvas#gl,canvas#game{image-rendering:auto}
+}
 </style>
 </head>
 <body>
@@ -1795,7 +1800,7 @@ function drawWeather(dt){
   const w=cv.width,h=cv.height;
   if(THEME.night){const g=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.25,w/2,h/2,Math.max(w,h)*.7);g.addColorStop(0,'rgba(0,8,30,0)');g.addColorStop(1,'rgba(0,8,30,.55)');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
   if(THEME.snow||THEME.rain){
-    if(!WX.length)for(let i=0;i<(THEME.snow?140:220);i++)WX.push({x:Math.random(),y:Math.random(),s:Math.random()});
+    if(!WX.length)for(let i=0;i<(THEME.snow?((isTouch)?55:100):((isTouch)?75:140));i++)WX.push({x:Math.random(),y:Math.random(),s:Math.random()});
     ctx.fillStyle='rgba(255,255,255,.85)';ctx.strokeStyle='rgba(190,210,255,.55)';ctx.lineWidth=1.2*DPR;
     for(const f of WX){
       f.y+=dt*(THEME.snow?.09+f.s*.07:.9+f.s*.5);f.x+=dt*(THEME.snow?Math.sin(f.y*9+f.s*6)*.02:-.12);
@@ -2814,7 +2819,7 @@ const hexc=(h,a)=>{const n=parseInt(h.slice(1),16);return[(n>>16&255)/255,(n>>8&
 const FOG={Grass:'#a9c4e0',Night:'#04070d',Snow:'#e6eef5',Rain:'#6f7c8d'};
 function initGL(){
   try{
-    const cvs=$('gl'),g=cvs.getContext('webgl',{antialias:true,alpha:false})||cvs.getContext('experimental-webgl');
+    const cvs=$('gl'),g=cvs.getContext('webgl',{antialias:false,alpha:false,powerPreference:'high-performance'})||cvs.getContext('experimental-webgl');
     if(!g){view3d=false;return;}
     const sh=(t,s)=>{const o=g.createShader(t);g.shaderSource(o,s);g.compileShader(o);if(!g.getShaderParameter(o,g.COMPILE_STATUS))throw new Error(g.getShaderInfoLog(o));return o;};
     const prog=(v,f,at)=>{const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,v));g.attachShader(p,sh(g.FRAGMENT_SHADER,f));at.forEach((a,i)=>g.bindAttribLocation(p,i,a));g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error('link');return p;};
@@ -3022,7 +3027,7 @@ $('btnView').onclick=()=>{if(GL){view3d=!view3d;settings.view=view3d?1:0;syncVie
 
 /* ---------- loop ---------- */
 function resize(){
-  DPR=Math.min(window.devicePixelRatio||1,2);
+  DPR=Math.min(window.devicePixelRatio||1,((window.matchMedia&&matchMedia('(pointer:coarse)').matches)||innerWidth<700)?1.25:1.6);
   cw=cv.clientWidth||innerWidth;ch=cv.clientHeight||innerHeight;
   cv.width=Math.round(cw*DPR);cv.height=Math.round(ch*DPR);
   if(GL){GL.cv.width=cv.width;GL.cv.height=cv.height;}
