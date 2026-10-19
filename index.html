@@ -126,6 +126,27 @@ table.lg tr.me{background:var(--panel2);color:var(--acc)}
 #dtBody{width:min(780px,100%);display:flex;flex-direction:column;align-items:center;gap:8px}
 .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;cursor:pointer;padding:0}
 @media (max-width:620px){.cols{grid-template-columns:1fr 1fr;gap:8px}.team{font-size:13px;padding:6px}.help .hg{grid-template-columns:1fr}#radar{width:104px;height:66px}#board{font-size:20px}#board .sc{font-size:26px;min-width:34px}}
+/* Mobile polish: respect notches, make controls easier to hit, and free space in landscape. */
+#tShoot{right:calc(18px + env(safe-area-inset-right));bottom:calc(26px + env(safe-area-inset-bottom))}
+#tPass{right:calc(120px + env(safe-area-inset-right));bottom:calc(26px + env(safe-area-inset-bottom))}
+#tLob{right:calc(112px + env(safe-area-inset-right));bottom:calc(108px + env(safe-area-inset-bottom))}
+#tSkill{right:calc(20px + env(safe-area-inset-right));bottom:calc(196px + env(safe-area-inset-bottom))}
+#tFin{right:calc(84px + env(safe-area-inset-right));bottom:calc(182px + env(safe-area-inset-bottom))}
+#tChip{right:calc(142px + env(safe-area-inset-right));bottom:calc(172px + env(safe-area-inset-bottom))}
+#tSprint{right:calc(20px + env(safe-area-inset-right));bottom:calc(124px + env(safe-area-inset-bottom))}
+#touch .tb{min-width:48px;min-height:48px;box-shadow:0 2px 10px rgba(0,0,0,.22);-webkit-tap-highlight-color:transparent}
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
+ #touch .tb{transform:scale(.78);transform-origin:bottom right}
+ #joyBase{width:104px;height:104px}
+ #joyKnob{left:28px;top:28px}
+ #tShoot{right:calc(10px + env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom))}
+ #tPass{right:calc(94px + env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom))}
+ #tLob{right:calc(88px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom))}
+ #tSkill{right:calc(12px + env(safe-area-inset-right));bottom:calc(142px + env(safe-area-inset-bottom))}
+ #tFin{right:calc(64px + env(safe-area-inset-right));bottom:calc(132px + env(safe-area-inset-bottom))}
+ #tChip{right:calc(110px + env(safe-area-inset-right));bottom:calc(126px + env(safe-area-inset-bottom))}
+ #tSprint{right:calc(12px + env(safe-area-inset-right));bottom:calc(90px + env(safe-area-inset-bottom))}
+}
 @media (prefers-reduced-motion: reduce){#msg{animation:none}}
 button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #tSearch{margin:0 0 10px;width:min(820px,100%);text-align:left;-webkit-user-select:text;user-select:text}
@@ -1720,7 +1741,7 @@ function readKeys(){
 }
 function bindBtn(id,name){
   const el=$(id);
-  el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);if(name==='sprint')inp.sprint=true;else action(name,true);});
+  el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);if(name==='sprint')inp.sprint=true;else action(name,true);try{if(navigator.vibrate&&name!=='sprint')navigator.vibrate(10);}catch(_){}});
   const up=e=>{if(name==='sprint')inp.sprint=false;else action(name,false);};
   el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
 }
