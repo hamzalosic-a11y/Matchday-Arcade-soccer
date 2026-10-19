@@ -188,7 +188,73 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 #mdShareBtn{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:12px;max-width:145px;background:var(--panel2);color:var(--text);font:800 13px 'Barlow Condensed',sans-serif;cursor:pointer}
 #mdShareBtn:hover{border-color:var(--acc);color:var(--acc)}
 @media(max-width:520px){#mdGrowthRow{grid-template-columns:1fr}#mdShareBtn{max-width:none;width:100%;padding:10px}#mdDailyCard{padding:10px 12px}}
-#mdCupPanel{margin:16px 0;padding:16px;border:1px solid #344b73;border-radius:16px;background:linear-gradient(135deg,#142541,#0d182b);color:var(--text)}.mdCupTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.mdCupTop small{font-size:10px;letter-spacing:2px;color:#ffd23f;font-weight:800}.mdCupTop h2{font-size:22px;margin:4px 0 12px}.mdCupRecord{text-align:center;border:1px solid #3b527a;border-radius:12px;padding:7px 12px;min-width:65px}.mdCupRecord b{display:block;font-size:24px;color:#ffd23f}.mdCupRecord span{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}.mdCupBracket{display:flex;align-items:stretch;gap:8px}.mdCupStage{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px;padding:10px;border:1px solid #34435f;border-radius:10px;background:#101c30}.mdCupStage small{font-size:9px;color:var(--mut);letter-spacing:1px}.mdCupStage b{font-size:13px}.mdCupStage span{font-size:9px;font-weight:800;color:#9fb0cc}.mdCupStage.won{border-color:#2a9d68;background:#102d29}.mdCupStage.won span{color:#6ee7a8}.mdCupStage.playing{border-color:#ffd23f;background:#302a16}.mdCupStage.playing span{color:#ffd23f}.mdCupArrow{align-self:center;color:#7385a4;font-weight:900}#mdChampionBadge{margin-top:12px;border:1px solid #c79c31;background:#342b13;border-radius:10px;padding:10px;color:#ffdf72;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#mdChampionBadge[hidden]{display:none}#mdChampionBadge span{font-size:11px;color:#d5c28c}@media(max-width:560px){.mdCupBracket{gap:4px}.mdCupStage{padding:7px 5px;gap:5px}.mdCupStage b{font-size:11px}.mdCupStage span{font-size:8px}.mdCupArrow{font-size:10px}}</style>
+#mdCupPanel{margin:16px 0;padding:16px;border:1px solid #344b73;border-radius:16px;background:linear-gradient(135deg,#142541,#0d182b);color:var(--text)}.mdCupTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.mdCupTop small{font-size:10px;letter-spacing:2px;color:#ffd23f;font-weight:800}.mdCupTop h2{font-size:22px;margin:4px 0 12px}.mdCupRecord{text-align:center;border:1px solid #3b527a;border-radius:12px;padding:7px 12px;min-width:65px}.mdCupRecord b{display:block;font-size:24px;color:#ffd23f}.mdCupRecord span{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}.mdCupBracket{display:flex;align-items:stretch;gap:8px}.mdCupStage{display:flex;flex:1;min-width:0;flex-direction:column;gap:6px;padding:10px;border:1px solid #34435f;border-radius:10px;background:#101c30}.mdCupStage small{font-size:9px;color:var(--mut);letter-spacing:1px}.mdCupStage b{font-size:13px}.mdCupStage span{font-size:9px;font-weight:800;color:#9fb0cc}.mdCupStage.won{border-color:#2a9d68;background:#102d29}.mdCupStage.won span{color:#6ee7a8}.mdCupStage.playing{border-color:#ffd23f;background:#302a16}.mdCupStage.playing span{color:#ffd23f}.mdCupArrow{align-self:center;color:#7385a4;font-weight:900}#mdChampionBadge{margin-top:12px;border:1px solid #c79c31;background:#342b13;border-radius:10px;padding:10px;color:#ffdf72;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#mdChampionBadge[hidden]{display:none}#mdChampionBadge span{font-size:11px;color:#d5c28c}@media(max-width:560px){.mdCupBracket{gap:4px}.mdCupStage{padding:7px 5px;gap:5px}.mdCupStage b{font-size:11px}.mdCupStage span{font-size:8px}.mdCupArrow{font-size:10px}}
+/* MOBILE FRIENDLY V2: compact team selection, safe-area spacing, readable controls */
+html,body{width:100%;min-width:0;overscroll-behavior:none}
+button,select,input{font:inherit}
+button,select{touch-action:manipulation}
+.screen{padding-top:max(14px,env(safe-area-inset-top));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(24px,env(safe-area-inset-bottom));padding-left:max(12px,env(safe-area-inset-left));-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#menu{gap:0}
+#menu .sub{max-width:720px;line-height:1.35}
+#menu .row{max-width:100%;row-gap:8px}
+#menu .seg{max-width:100%;flex-wrap:wrap}
+#menu .seg button{min-height:42px}
+#menu .go{min-height:52px;touch-action:manipulation}
+.tr button{min-height:42px;touch-action:manipulation}
+#tSearch, #teamCountryFilter, #cName,#onName,#auUser,#auPass{min-height:44px}
+#radar{max-width:25vw}
+#board{max-width:calc(100vw - 132px);font-size:clamp(16px,4vw,24px)}
+#board>*{padding:7px clamp(4px,1.5vw,10px)}
+#board #clock{min-width:50px;font-size:clamp(14px,3.5vw,20px)}
+#board .sc{min-width:30px;font-size:clamp(22px,5vw,30px)}
+#hud .hbtn{min-height:42px;touch-action:manipulation}
+#touch .tb{user-select:none;-webkit-user-select:none;touch-action:none}
+@media(max-width:700px) and (orientation:portrait){
+ .screen h1{font-size:clamp(48px,15vw,76px)}
+ .screen p.sub{font-size:13px;max-width:95%;margin-bottom:10px}
+ .cols{grid-template-columns:minmax(0,1fr);gap:10px}
+ .col .lst{max-height:23vh;min-height:90px}
+ .team{min-height:38px;font-size:14px}
+ #menu .row{gap:7px;margin-top:9px}
+ #menu .lbl{font-size:12px}
+ #menu .seg button{padding:8px 10px;font-size:13px}
+ #menu .tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+ #menu .tr button{min-width:0;padding:10px 7px}
+ #mdGrowthRow{grid-template-columns:1fr}
+ #mdShareBtn{max-width:none;width:100%}
+ .help{padding:10px 12px;font-size:13px}
+ .help .hg{grid-template-columns:1fr}
+ #mdCupPanel{padding:10px}
+ #mdStripeShopBtn{top:calc(8px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));z-index:8000}
+}
+@media(max-width:420px) and (orientation:portrait){
+ #board{max-width:calc(100vw - 112px)}
+ #board>*{padding:6px 4px}
+ #board #n0,#board #n1{max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #radar{top:58px;right:8px;width:84px;height:53px}
+ #btnPause{left:8px}#btnMute{left:58px}#btnView{left:112px}
+ #tShoot{right:calc(12px + env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:76px;height:76px}
+ #tPass{right:calc(96px + env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));width:62px;height:62px}
+ #tLob{right:calc(94px + env(safe-area-inset-right));bottom:calc(86px + env(safe-area-inset-bottom));width:52px;height:52px}
+ #tSkill{right:calc(12px + env(safe-area-inset-right));bottom:calc(172px + env(safe-area-inset-bottom));width:50px;height:50px}
+ #tFin{right:calc(68px + env(safe-area-inset-right));bottom:calc(158px + env(safe-area-inset-bottom));width:48px;height:48px}
+ #tChip{right:calc(116px + env(safe-area-inset-right));bottom:calc(154px + env(safe-area-inset-bottom));width:46px;height:46px}
+ #tSprint{right:calc(12px + env(safe-area-inset-right));bottom:calc(104px + env(safe-area-inset-bottom));width:58px;height:58px}
+}
+@media(orientation:landscape) and (max-height:520px){
+ .screen{padding-top:8px;padding-bottom:12px}
+ .screen h1{font-size:clamp(36px,8vh,58px)}
+ .screen p.sub{font-size:12px;margin-bottom:6px}
+ #menu .row{margin-top:5px;margin-bottom:2px}
+ #menu .go{margin-top:8px;padding:9px 28px;min-height:42px}
+ #menu .tr{margin-top:7px}
+ .col .lst{max-height:27vh}
+ .help{margin-top:8px;padding:8px 12px}
+ #mdGrowthRow{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+</style>
 </head>
 <body>
 <div id="app">
