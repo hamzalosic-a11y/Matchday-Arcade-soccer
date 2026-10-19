@@ -260,6 +260,8 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
       <span class="lbl">Pitch</span><div class="seg" id="segPitch"></div>
       <span class="lbl">View</span><div class="seg" id="segView"><button data-v="1" class="on">3D</button><button data-v="0">2D</button></div>
     </div>
+    <div class="row" style="margin-top:6px"><span class="lbl">Gameplay style</span><div class="seg" id="segGameplay"><button data-v="competitive" class="on">⚡ Competitive</button><button data-v="authentic">⚽ Authentic</button></div></div>
+    <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
     <button class="go" id="btnStart">Kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button></div>
     <div id="mdCupPanel">
@@ -599,7 +601,7 @@ let state='menu',stTimer=0,half=1,clock=0,score=[0,0],stats={shots:[0,0],poss:[0
 let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near=[[],[]];
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
-const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1};
+const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1,gameplay:'competitive'};
 // Local 3-round knockout cup; results are based on matches actually played.
 const cup={active:false,round:0,opponents:[],lastResult:'',pendingNext:false,best:0,wins:0};
 try{cup.wins=Math.max(0,parseInt(localStorage.getItem('md_cup_wins')||'0',10)||0);}catch(_){}
@@ -716,7 +718,7 @@ function startMatch(){
   const kits=makeKits(d0,d1);
   teams=[mkTeam(0,d0,kits[0]),mkTeam(1,d1,kits[1])];
   teams.forEach((Tm,i)=>{const o=teams[1-i],ov=x=>(x.a+x.m+x.d)/3,gap=clamp((ov(Tm)-ov(o))/120,-.05,.05),P=SPR[Tm.data.sty]||SPR.balanced;
-    Tm.sty=Object.assign({},P,{line:P.line+gap});
+    Tm.sty=Object.assign({},P,{line:P.line+gap});if(settings.gameplay==='authentic'){Tm.sty.line+=.035;Tm.sty.wide*=.94;}
     Tm.players.forEach(p=>{if(!p.isGK){p.pace*=THEME.spd;if(p.role!=='DF')p.pace*=P.tempo;}});});
   players=teams[0].players.concat(teams[1].players);players.forEach((p,i)=>p.gi=i);
   ball={x:L/2,y:W/2,z:0,vx:0,vy:0,vz:0,owner:null,lastKicker:null,lastTeam:0,noPick:0,roll:0,net:false};
@@ -778,7 +780,7 @@ function stepBall(dt){
       ball.vz-=900*h;ball.z+=ball.vz*h;
       if(ball.z<=0){ball.z=0;if(Math.abs(ball.vz)>130){ball.vz=-ball.vz*.55;ball.vx*=.88;ball.vy*=.88;sfx.bounce();}else ball.vz=0;}
     }
-    const k=ball.net?4.5:(ball.z>2?.25:THEME.fric);
+    const k=ball.net?4.5:(ball.z>2?.25:THEME.fric)*(settings.gameplay==='authentic'?1.12:1);
     const f=Math.exp(-k*h);ball.vx*=f;ball.vy*=f;
     if(ball.curl){const a=ball.curl*h,ca=Math.cos(a),sa=Math.sin(a),v0=ball.vx;ball.vx=v0*ca-ball.vy*sa;ball.vy=v0*sa+ball.vy*ca;ball.curl*=Math.exp(-.8*h);if(Math.abs(ball.curl)<.02)ball.curl=0;}
     ball.x+=ball.vx*h;ball.y+=ball.vy*h;
@@ -915,7 +917,7 @@ function doPass(p,q,lob,errMul){
     const v=d*k/(1-Math.exp(-k*Tt));
     kick(p,rx,ry,v,900*Tt/2);
   }else{
-    kick(p,rx,ry,clamp(210+THEME.fric*d,300,1000),0);
+    kick(p,rx,ry,clamp((210+THEME.fric*d)*(settings.gameplay==='competitive'?1.08:.94),300,1000),0);
   }
   q.recv=1.7;
   if(!p.noOff){const d=teams[p.team].dir,set=new Set();for(const t of teams[p.team].players)if(isOff(p,t,d))set.add(t);ball.offs=set;}
@@ -1215,7 +1217,7 @@ function aiStep(p,dt){
   if(p.isGK){gkUpdate(p,dt);return;}
   if(!ball.owner&&near[p.team].indexOf(p)<2&&airReach(p))aiAir(p);
   const dp=dparams(p.team),Tm=teams[p.team],d=Tm.dir;
-  const base=BASE*p.pace*(p.team===1?dp.spd:1);
+  const base=BASE*p.pace*(p.team===1?dp.spd:1)*(settings.gameplay==='competitive'?1.02:.94);
   if(ball.owner===p){aiOwner(p,dt,base);return;}
   let tx,ty,sp=base*.88;
   const rank=near[p.team].indexOf(p);
@@ -1345,11 +1347,11 @@ function humanStep(p,dt){
   if(inp.sprint&&mag>.3&&!p.tired&&p.stam>0){sprinting=true;p.stam=Math.max(0,p.stam-.3*dt);if(p.stam<=0)p.tired=true;}
   else p.stam=Math.min(1,p.stam+.13*dt);
   p.sprinting=sprinting;
-  const sp=BASE*p.pace*(owner?.93:1)*(sprinting?1.22:1)*(p.tired?.9:1)*(p.sk?1.25:1);
+  const sp=BASE*p.pace*(owner?.93:1)*(sprinting?(settings.gameplay==='competitive'?1.22:1.15):1)*(p.tired?.9:1)*(p.sk?1.25:1)*(settings.gameplay==='competitive'?1.05:.94);
   let tvx=0,tvy=0;
   if(mag>.1){const l=Math.hypot(inp.mx,inp.my);tvx=inp.mx/l*sp*mag;tvy=inp.my/l*sp*mag;}
   if(p.thr){tvx=tvy=0;p.vx=p.vy=0;p.sprinting=false;if(mag>.3){const dd=inputDir(p);p.face=Math.atan2(dd.y,dd.x);}}
-  accelTo(p,tvx,tvy,(sprinting?950:1250)*dt);
+  accelTo(p,tvx,tvy,(sprinting?950:(settings.gameplay==='competitive'?1250:1050))*dt);
   if(owner){
     if(inp.skillP)doSkill(p,skillDir(p,inp));
     if(inp.finP&&!p.thr)doFinesse(p,.75);
@@ -1887,6 +1889,8 @@ function seg(id,key,num){
 $('segPitch').innerHTML=THEMES.map((t,i)=>`<button data-v="${i}"${i===0?' class="on"':''}>${t.n}</button>`).join('')+'<button data-v="-1">Random</button>';
 $('teamCountryFilter').addEventListener('change',e=>{settings.country=e.target.value;renderTeams();});
 seg('tabSeg','tab',false);seg('segDiff','diff',true);seg('segLen','half',true);seg('segPitch','pitch',true);seg('segView','view',true);
+function syncGameplayPreset(){const el=$('segGameplay');if(el)[...el.children].forEach(b=>b.classList.toggle('on',b.dataset.v===settings.gameplay));const hint=$('gameplayHint');if(hint)hint.textContent=settings.gameplay==='authentic'?'More realistic pace, tighter team shape, and ball movement that slows naturally.':'Faster movement and passing for responsive arcade matches.';}
+$('segGameplay').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;settings.gameplay=b.dataset.v;syncGameplayPreset();});syncGameplayPreset();
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
 renderCupPanel();
@@ -2122,6 +2126,7 @@ for(const k in sfx){const f=sfx[k];sfx[k]=(...a)=>{f(...a);if(net.on&&net.host)n
 const R=n=>Math.round(n*10)/10,onSt=t=>{$('onSt').textContent=t;};
 const loadSb=()=>new Promise((ok,no)=>{if(window.supabase)return ok();const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc);});
 async function findMatch(){
+  settings.gameplay='competitive';syncGameplayPreset();
   if(!ONLINE.url||!ONLINE.key||ONLINE.key==='PASTE-KEY-HERE'){onSt('The Supabase key is still missing. Open the file in a text editor, find const ONLINE=, and replace PASTE-KEY-HERE with your publishable key.');return;}
   if(!ACC.uid){authBack='ranked';$('btnAcc').onclick();authSay('Log in to play ranked. New here? Pick a username and password, then press Create account.');return;}
   if(onDream&&!dtOK()){onSt('Build a full Dream Team squad first (Dream Team menu).');return;}
