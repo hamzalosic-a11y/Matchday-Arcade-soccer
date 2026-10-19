@@ -46,6 +46,7 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:min(820px,100%)}
 .col h2{margin:0 0 6px;font:800 20px 'Barlow Condensed','Arial Narrow',sans-serif;color:var(--mut)}
 .col .lst{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;max-height:40vh;overflow:auto;display:flex;flex-direction:column;gap:4px;touch-action:pan-y}
+.team-country-heading{padding:8px 9px 4px;color:var(--acc);font:800 12px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--line);margin:5px 2px 2px}
 .team{display:flex;align-items:center;gap:8px;width:100%;padding:7px 8px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text);font:600 15px 'Barlow',sans-serif;text-align:left;cursor:pointer}
 .team:hover{background:var(--panel2)}
 .team.sel{background:var(--panel2);border-color:var(--acc)}
@@ -212,6 +213,7 @@ button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
     <input id="tSearch" placeholder="Search teams…" autocomplete="off">
+    <select id="teamCountryFilter" aria-label="Filter clubs by country" style="background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:600 15px 'Barlow',sans-serif;width:min(280px,90%);text-align:center;margin:8px auto;display:block"><option value="all">All countries</option></select>
     <div class="cols">
       <div class="col"><h2>Your team</h2><div class="lst" id="lstHome"></div></div>
       <div class="col"><h2>Opponent</h2><div class="lst" id="lstAway"></div></div>
@@ -479,6 +481,38 @@ const TEAMS=[
  T('China','CHN','#d71920','#fdd400','#d71920','solid',67,67,67,'442','nat'),
  T('Uzbekistan','UZB','#1f4fa3','#f2f2f2','#1f4fa3','solid',71,71,70,'442','nat'),
  T('Georgia','GEO','#f2f2f2','#d71920','#f2f2f2','solid',73,72,71,'433','nat'),
+
+ T('Leeds United','LEE','#ffffff','#f4c430','#1d428a','solid',77,77,75,'433','club'),
+ T('Sunderland','SUN','#eb172b','#ffffff','#eb172b','stripes',73,72,72,'4231','club'),
+ T('Burnley','BUR','#6c1d45','#99d6ea','#6c1d45','solid',72,71,73,'442','club'),
+ T('Celta Vigo','CEL','#8ac3ee','#ffffff','#8ac3ee','solid',77,78,76,'433','club'),
+ T('Espanyol','ESP','#007fc8','#ffffff','#007fc8','stripes',74,74,75,'4231','club'),
+ T('Genoa','GEN','#c8102e','#1d2951','#1d2951','stripes',73,72,74,'352','club'),
+ T('Udinese','UDI','#111111','#ffffff','#111111','stripes',73,73,73,'352','club'),
+ T('Parma','PAR','#f6c445','#1c4a9a','#1c4a9a','stripes',72,72,72,'433','club'),
+ T('Toulouse','TOU','#5b2b82','#ffffff','#5b2b82','solid',73,74,73,'433','club'),
+ T('Strasbourg','STR','#00a1df','#ffffff','#00a1df','solid',73,73,74,'433','club'),
+ T('Nantes','NAN','#f7d116','#168447','#168447','stripes',72,72,73,'4231','club'),
+ T('Vitória SC','VSC','#111111','#ffffff','#111111','stripes',74,73,75,'433','club'),
+ T('AZ Alkmaar','AZ','#d71920','#ffffff','#d71920','solid',76,76,75,'433','club'),
+ T('Trabzonspor','TRA','#7b1f45','#5bc5f2','#5bc5f2','stripes',75,75,74,'4231','club'),
+ T('Santos','SAN','#ffffff','#111111','#111111','stripes',76,76,74,'433','club'),
+ T('Grêmio','GRE','#00a8e0','#111111','#111111','stripes',77,76,76,'433','club'),
+ T('Racing Club','RAC','#8ac7e8','#ffffff','#8ac7e8','stripes',76,77,75,'433','club'),
+ T('Al-Ittihad','ITT','#f2c230','#111111','#111111','stripes',81,80,77,'433','club'),
+ T('Al-Ahli','AHL','#006b4f','#ffffff','#006b4f','solid',79,79,77,'433','club'),
+ T('Atlanta United','ATL','#a71930','#111111','#a71930','stripes',74,76,72,'433','club'),
+ T('Portland Timbers','POR','#00482b','#d3a029','#00482b','solid',73,73,74,'433','club'),
+ T('Kawasaki Frontale','KAW','#5b9bd5','#111111','#5b9bd5','stripes',75,76,74,'433','club'),
+ T('Hammarby','HAM','#168b54','#ffffff','#168b54','stripes',72,73,72,'433','club'),
+ T('IF Elfsborg','ELF','#f7df00','#111111','#f7df00','solid',70,70,71,'433','club'),
+ T('IFK Norrköping','NOR','#ffffff','#111111','#ffffff','stripes',69,70,69,'433','club'),
+ T('Aberdeen','ABE','#d71920','#ffffff','#d71920','solid',72,72,73,'433','club'),
+ T('Hamburger SV','HSV','#ffffff','#005ca9','#005ca9','stripes',75,75,74,'433','club'),
+ T('Schalke 04','S04','#004d9d','#ffffff','#004d9d','solid',74,73,75,'4231','club'),
+ T('KRC Genk','GENK','#1674c8','#ffffff','#1674c8','solid',75,76,74,'433','club'),
+ T('Al-Duhail','DUH','#c8102e','#ffffff','#c8102e','solid',73,74,72,'433','club'),
+ T('Wydad AC','WYD','#d71920','#ffffff','#d71920','solid',72,72,72,'433','club'),
 ];
 // [role, number, depth(0-1 from own goal), width(0-1)]
 const FORM={
@@ -525,7 +559,7 @@ let state='menu',stTimer=0,half=1,clock=0,score=[0,0],stats={shots:[0,0],poss:[0
 let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near=[[],[]];
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
-const settings={diff:1,half:180,home:0,away:1,tab:'club',pitch:0,view:1};
+const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1};
 const cam={x:L/2,y:W/2};
 const inp={mx:0,my:0,sprint:false,pass:false,shoot:false,lob:false,skill:false,fin:false,chip:false,passP:false,shootP:false,lobP:false,shootR:false,skillP:false,finP:false,chipP:false};
 const inp2={mx:0,my:0,sprint:false,pass:false,shoot:false,lob:false,skill:false,fin:false,chip:false,passP:false,shootP:false,lobP:false,shootR:false,skillP:false,finP:false,chipP:false};
@@ -1708,25 +1742,52 @@ function toggleMute(){muted=!muted;$('btnMute').textContent=muted?'Sound off':'S
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(state==='play'||state==='kickoff')&&!paused)togglePause();});
 
 /* ---------- menu ---------- */
+const CLUB_COUNTRY={
+ 'Real Madrid':'Spain','FC Barcelona':'Spain','Atlético Madrid':'Spain','Real Sociedad':'Spain','Sevilla':'Spain','Valencia':'Spain','Villarreal':'Spain','Athletic Club':'Spain','Real Betis':'Spain','Girona':'Spain','Osasuna':'Spain','Celta Vigo':'Spain','Espanyol':'Spain',
+ 'Manchester City':'England','Liverpool':'England','Arsenal':'England','Chelsea':'England','Manchester United':'England','Tottenham Hotspur':'England','Aston Villa':'England','Newcastle United':'England','West Ham United':'England','Everton':'England','Leicester City':'England','Brighton':'England','Brentford':'England','Fulham':'England','Crystal Palace':'England','Wolverhampton':'England','Nottingham Forest':'England','Bournemouth':'England','Leeds United':'England','Sunderland':'England','Burnley':'England',
+ 'Bayern Munich':'Germany','Borussia Dortmund':'Germany','Bayer Leverkusen':'Germany','RB Leipzig':'Germany','Eintracht Frankfurt':'Germany','VfB Stuttgart':'Germany','Borussia Mönchengladbach':'Germany','Werder Bremen':'Germany','Union Berlin':'Germany','SC Freiburg':'Germany','VfL Wolfsburg':'Germany','Hamburger SV':'Germany','Schalke 04':'Germany',
+ 'Inter':'Italy','Juventus':'Italy','AC Milan':'Italy','Napoli':'Italy','Roma':'Italy','Lazio':'Italy','Atalanta':'Italy','Fiorentina':'Italy','Torino':'Italy','Bologna':'Italy','Genoa':'Italy','Udinese':'Italy','Parma':'Italy',
+ 'Paris Saint-Germain':'France','Olympique de Marseille':'France','Olympique Lyonnais':'France','AS Monaco':'France','Lille':'France','OGC Nice':'France','Stade Rennais':'France','RC Lens':'France','Toulouse':'France','Strasbourg':'France','Nantes':'France',
+ 'Benfica':'Portugal','FC Porto':'Portugal','Sporting CP':'Portugal','SC Braga':'Portugal','Vitória SC':'Portugal',
+ 'Ajax':'Netherlands','PSV Eindhoven':'Netherlands','Feyenoord':'Netherlands','AZ Alkmaar':'Netherlands',
+ 'Celtic':'Scotland','Rangers':'Scotland','Aberdeen':'Scotland',
+ 'Galatasaray':'Türkiye','Fenerbahçe':'Türkiye','Beşiktaş':'Türkiye','Trabzonspor':'Türkiye',
+ 'Flamengo':'Brazil','Palmeiras':'Brazil','Corinthians':'Brazil','São Paulo':'Brazil','Atlético Mineiro':'Brazil','Santos':'Brazil','Grêmio':'Brazil',
+ 'Boca Juniors':'Argentina','River Plate':'Argentina','Racing Club':'Argentina',
+ 'Inter Miami':'United States','LA Galaxy':'United States','Seattle Sounders':'United States','Atlanta United':'United States','Portland Timbers':'United States',
+ 'Malmö FF':'Sweden','AIK':'Sweden','Djurgården':'Sweden','IFK Göteborg':'Sweden','Hammarby':'Sweden','IF Elfsborg':'Sweden','IFK Norrköping':'Sweden',
+ 'Club Brugge':'Belgium','Anderlecht':'Belgium','KRC Genk':'Belgium',
+ 'Shakhtar Donetsk':'Ukraine','Dinamo Zagreb':'Croatia','Red Bull Salzburg':'Austria','Olympiacos':'Greece',
+ 'Al-Hilal':'Saudi Arabia','Al-Nassr':'Saudi Arabia','Al-Ittihad':'Saudi Arabia','Al-Ahli':'Saudi Arabia',
+ 'Al Ahly':'Egypt','Wydad AC':'Morocco','Club América':'Mexico','Monterrey':'Mexico','Urawa Red Diamonds':'Japan','Kawasaki Frontale':'Japan',
+ 'Hajduk Split':'Croatia','FK Sarajevo':'Bosnia and Herzegovina','Željezničar':'Bosnia and Herzegovina','HŠK Zrinjski':'Bosnia and Herzegovina','Borac Banja Luka':'Bosnia and Herzegovina'
+};
+function teamCountry(t){return t.g==='nat'?t.n:(CLUB_COUNTRY[t.n]||'Other');}
+function updateTeamCountryFilter(){
+ const el=$('teamCountryFilter');if(!el)return;
+ if(settings.tab==='nat'){el.style.display='none';return;}
+ el.style.display='block';
+ const countries=[...new Set(TEAMS.filter(t=>t.g==='club').map(teamCountry))].sort((a,b)=>a.localeCompare(b));
+ el.innerHTML='<option value="all">All countries</option>'+countries.map(country=>'<option value="'+country.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+country+'</option>').join('');
+ el.value=countries.includes(settings.country)?settings.country:'all';
+}
 function renderTeams(){
-  const q=($('tSearch').value||'').toLowerCase().trim();fixDream();
-  for(const[id,key]of[['lstHome','home'],['lstAway','away']]){
-    const box=$(id);box.innerHTML='';
-    TEAMS.forEach((t,i)=>{
-      if(t.g!==settings.tab&&settings[key]!==i)return;
-      if(t.g!==settings.tab)return;
-      if(q&&!t.n.toLowerCase().includes(q))return;
-      const b=document.createElement('button');b.className='team'+(settings[key]===i?' sel':'');
-      b.innerHTML=`<span class="kit" style="background:${kitCss(t)}"></span><b>${t.n}</b><i>${Math.round((t.a+t.m+t.d)/3)}</i>`;
-      b.onclick=()=>{
-        settings[key]=i;
-        const other=key==='home'?'away':'home';
-        if(settings[other]===i)settings[other]=TEAMS.findIndex((x,j)=>j!==i&&x.g===t.g);
-        renderTeams();
-      };
-      box.appendChild(b);
-    });
-  }
+ const q=($('tSearch').value||'').toLowerCase().trim();fixDream();updateTeamCountryFilter();
+ for(const[id,key]of[['lstHome','home'],['lstAway','away']]){
+  const box=$(id);box.innerHTML='';
+  let items=TEAMS.map((t,i)=>({t,i})).filter(({t})=>t.g===settings.tab&&(!q||t.n.toLowerCase().includes(q))&&(settings.tab==='nat'||settings.country==='all'||teamCountry(t)===settings.country));
+  if(settings.tab==='club')items.sort((a,b)=>teamCountry(a.t).localeCompare(teamCountry(b.t))||a.t.n.localeCompare(b.t));
+  else items.sort((a,b)=>a.t.n.localeCompare(b.t.n));
+  let lastCountry='';
+  items.forEach(({t,i})=>{
+   if(settings.tab==='club'&&teamCountry(t)!==lastCountry){lastCountry=teamCountry(t);const h=document.createElement('div');h.className='team-country-heading';h.textContent=lastCountry;box.appendChild(h);}
+   const b=document.createElement('button');b.className='team'+(settings[key]===i?' sel':'');
+   b.innerHTML=`<span class="kit" style="background:${kitCss(t)}"></span><b>${t.n}</b><i>${Math.round((t.a+t.m+t.d)/3)}</i>`;
+   b.onclick=()=>{settings[key]=i;const other=key==='home'?'away':'home';if(settings[other]===i)settings[other]=TEAMS.findIndex((x,j)=>j!==i&&x.g===t.g);renderTeams();};
+   box.appendChild(b);
+  });
+  if(!items.length){const empty=document.createElement('div');empty.className='team-country-heading';empty.textContent='No teams found';box.appendChild(empty);}
+ }
 }
 function seg(id,key,num){
   const el=$(id);
@@ -1743,6 +1804,7 @@ function seg(id,key,num){
   });
 }
 $('segPitch').innerHTML=THEMES.map((t,i)=>`<button data-v="${i}"${i===0?' class="on"':''}>${t.n}</button>`).join('')+'<button data-v="-1">Random</button>';
+$('teamCountryFilter').addEventListener('change',e=>{settings.country=e.target.value;renderTeams();});
 seg('tabSeg','tab',false);seg('segDiff','diff',true);seg('segLen','half',true);seg('segPitch','pitch',true);seg('segView','view',true);
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
