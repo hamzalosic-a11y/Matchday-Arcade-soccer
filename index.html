@@ -785,7 +785,7 @@ function startMatch(){
   initAudio();
   THEME=(typeof net!=='undefined'&&net.on&&net.theme!==undefined)?THEMES[net.theme]:(settings.pitch>=0?THEMES[settings.pitch]:THEMES[(Math.random()*THEMES.length)|0]);WX.length=0;
   let d0=TEAMS[settings.home],d1=TEAMS[settings.away];
-  if(career&&career.live){const u=career.up,ob=careerBoost();d0={...d0,a:d0.a+u.a,m:d0.m+u.m,d:d0.d+u.d};d1={...d1,a:d1.a+ob,m:d1.m+ob,d:d1.d+ob};}
+  if(career&&career.live){const u=career.up,ob=careerBoost(),mor=Math.round(((career.morale??70)-50)/25);d0={...d0,a:d0.a+u.a+mor,m:d0.m+u.m+mor,d:d0.d+u.d+mor};d1={...d1,a:d1.a+ob,m:d1.m+ob,d:d1.d+ob};}
   const kits=makeKits(d0,d1);
   teams=[mkTeam(0,d0,kits[0]),mkTeam(1,d1,kits[1])];
   teams.forEach((Tm,i)=>{const o=teams[1-i],ov=x=>(x.a+x.m+x.d)/3,gap=clamp((ov(Tm)-ov(o))/120,-.05,.05),P=SPR[Tm.data.sty]||SPR.balanced;
@@ -2021,7 +2021,7 @@ const load=(k,lenient)=>{
 };
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let career=load(SAVE),lbFrom='menu',endSure=false,ms=[[],[]];
-if(career){career.live=false;career.sc=career.sc||{};}
+if(career){career.live=false;career.sc=career.sc||{};career.budget=Number.isFinite(career.budget)?career.budget:2500000;career.morale=Number.isFinite(career.morale)?career.morale:70;career.mail=Array.isArray(career.mail)?career.mail:[];career.signed=Array.isArray(career.signed)?career.signed:[];career.market=Array.isArray(career.market)?career.market:[];}
 const POSW={FW:6,MF:2.5,DF:.7};
 function credit(i,n,nums){
   const sc=career.sc;if(nums)n=nums.length;
@@ -2049,12 +2049,34 @@ const simG=(a,b)=>[pois(1.35*Math.exp((ovr(a)-ovr(b))/12)),pois(1.35*Math.exp((o
 const sortTab=()=>[...career.tab].sort((x,y)=>y.pts-x.pts||(y.gf-y.ga)-(x.gf-x.ga)||y.gf-x.gf);
 const cupOpp=()=>{const f=career.cup.f,u=f.indexOf(career.team);return career.cup.r==='SF'?f[3-u]:career.cup.fin;};
 const nextOpp=()=>career.stage==='league'?career.opps[career.md]:cupOpp();
+function careerMail(subject,body){
+  const c=career;if(!c)return;
+  c.mail=Array.isArray(c.mail)?c.mail:[];
+  c.mail.unshift({id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),subject,body,day:`Season ${c.season}`,read:false});
+  c.mail=c.mail.slice(0,20);
+}
+function makeTransferMarket(){
+  const first=['Alex','Mateo','Noah','Elias','Luca','Adam','Leo','Samir','Milan','Yusuf','Daniel','Rayan','Oscar','Amir','Nico','Ibrahim','Theo','Isak'];
+  const last=['Silva','Berg','Costa','Lind','Moretti','Haddad','Novak','Andersson','Petrov','Diallo','Santos','Karlsson','Rossi','Demir','Meyer','Ali','Jensen','Kovac'];
+  const pos=['FW','MF','DF','GK'],c=career;
+  c.market=Array.from({length:5},(_,i)=>{
+    const p=pos[Math.floor(Math.random()*pos.length)],rating=62+Math.floor(Math.random()*27);
+    const multiplier=p==='FW'?1.25:p==='GK'?.9:1;
+    return {id:'tm'+c.season+'_'+Date.now().toString(36)+'_'+i,name:first[Math.floor(Math.random()*first.length)]+' '+last[Math.floor(Math.random()*last.length)],pos:p,rating,cost:Math.round((rating*rating*multiplier*115)+25000),boost:p==='FW'?'a':p==='MF'?'m':'d',signed:false};
+  });
+}
 function newSeason(){
   const c=career,g=TEAMS[c.team].g,o=ovr(c.team);
   const pool=TEAMS.map((x,i)=>i).filter(i=>i!==c.team&&TEAMS[i].g===g).sort((x,y)=>Math.abs(ovr(x)-o)-Math.abs(ovr(y)-o)).slice(0,12).sort(()=>Math.random()-.5);
   c.opps=pool.slice(0,7);
   c.tab=[c.team,...c.opps].map(i=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
   c.stage='league';c.md=0;c.cup=null;c.sc={};
+  if(!Array.isArray(c.mail))c.mail=[];
+  if(!Array.isArray(c.signed))c.signed=[];
+  if(!Number.isFinite(c.budget))c.budget=2500000;
+  if(!Number.isFinite(c.morale))c.morale=70;
+  makeTransferMarket();
+  careerMail('Board expectations: Season '+c.season,'The board expects a strong league campaign. Keep morale high, strengthen the squad wisely, and aim for the top four.');
 }
 function addRes(i,gf,ga){const r=career.tab.find(x=>x.i===i);r.p++;r.gf+=gf;r.ga+=ga;if(gf>ga){r.w++;r.pts+=3;}else if(gf===ga){r.d++;r.pts++;}else r.l++;}
 function leagueRound(gf,ga){
@@ -2091,6 +2113,10 @@ function settle(gf,ga,real){
   let m=`${TEAMS[c.team].s} ${gf}–${ga} ${TEAMS[opp].s}. `;
   c.gf+=gf;c.ga+=ga;c.w+=+(gf>ga);c.d+=+(gf===ga);c.l+=+(gf<ga);
   c.coins+=(gf>ga?30:gf===ga?12:5)+gf*2;
+  c.morale=clamp((c.morale??70)+(gf>ga?8:gf===ga?1:-9),0,100);
+  if(gf>ga)careerMail('Great result — the board is pleased!',`${TEAMS[c.team].n} won ${gf}–${ga}. Manager morale rises to ${c.morale}/100. Keep the momentum going.`);
+  else if(gf<ga)careerMail(c.morale<35?'Board warning: pressure is rising':'Disappointing result',`${TEAMS[c.team].n} lost ${gf}–${ga}. The board expects a response. Manager morale is now ${c.morale}/100.`);
+  else careerMail('A point earned',`The match ended ${gf}–${ga}. The board wants consistency. Manager morale is ${c.morale}/100.`);
   m+=c.stage==='league'?leagueRound(gf,ga):cupRound(gf,ga,opp);
   c.msg=m;if(c.stage==='over')goldenBoot();saveAll();
 }
@@ -2141,7 +2167,7 @@ function renderCareer(){
     <input id="cName" maxlength="16" placeholder="Manager name" value="Manager"><button class="go" data-a="new">Start with ${esc(TEAMS[settings.home].n)}</button>
     <div class="tr"><button data-a="menu">Back</button></div>`;return;
   }
-  $('cInfo').textContent=`${TEAMS[c.team].n} · Season ${c.season} · ${c.coins} coins · W${c.w} D${c.d} L${c.l}`;
+  $('cInfo').textContent=`${TEAMS[c.team].n} · Season ${c.season} · ${c.coins} coins · Transfer budget £${Number(c.budget||0).toLocaleString()} · Manager morale ${c.morale??70}/100 · W${c.w} D${c.d} L${c.l}`;
   const t=sortTab();
   let h=c.msg?`<p class="sub" style="color:var(--acc);margin:0">${esc(c.msg)}</p>`:'';
   h+=`<table class="lg"><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>`+
@@ -2153,6 +2179,8 @@ function renderCareer(){
     const lab=c.stage==='league'?`League matchday ${c.md+1} of 7`:(c.cup.r==='SF'?'Champions Cup semi-final':'Champions Cup final');
     h+=`<p class="sub" style="margin:0">${lab}: vs <b>${esc(TEAMS[nextOpp()].n)}</b></p><div class="tr"><button class="go" data-a="play" style="font-size:24px;padding:10px 26px;margin:0">Play match</button></div>`;
   }
+  h+=`<section style="width:min(760px,100%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;text-align:left"><h2 style="margin:0 0 8px;color:var(--acc)">📨 Club inbox · ${(c.mail||[]).filter(x=>!x.read).length} unread</h2>${(c.mail||[]).slice(0,5).map(x=>`<button data-a="mail" data-id="${esc(x.id)}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer"><b>${x.read?'✉':'🔔'} ${esc(x.subject)}</b><small style="display:block;color:var(--mut);margin-top:3px">${esc(x.body)}</small></button>`).join('')||'<p class="sub">No messages yet.</p>'}</section>`;
+  h+=`<section style="width:min(760px,100%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;text-align:left"><h2 style="margin:0 0 4px;color:var(--acc)">🔁 Transfer market</h2><p class="sub" style="margin:0 0 8px">Sign fictional players using your transfer budget. Each signing permanently strengthens your club.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px">${(c.market||[]).map(p=>`<div style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px"><b>${esc(p.name)}</b><div style="color:var(--mut);font-size:12px;margin:4px 0">${esc(p.pos)} · ${p.rating} OVR</div><div style="color:var(--acc);font-weight:800;margin:5px 0">£${Number(p.cost).toLocaleString()}</div><button data-a="sign" data-id="${esc(p.id)}" ${p.signed||c.budget<p.cost?'disabled':''} style="width:100%;padding:8px;border-radius:8px;border:0;background:var(--acc);font-weight:800;cursor:pointer">${p.signed?'Signed ✓':c.budget<p.cost?'Budget too low':'Sign player'}</button></div>`).join('')||'No players available'}</div><h3 style="color:var(--acc);margin:12px 0 5px">Signed players (${(c.signed||[]).length})</h3><p class="sub" style="margin:0">${(c.signed||[]).map(p=>esc(p.name)+' · '+esc(p.pos)+' · '+p.rating+' OVR').join('<br>')||'No signings yet'}</p></section>`;
   h+=`<p class="sub" style="margin:4px 0 0">Train your squad (permanent boosts, max +8)</p><div class="tr">`+
     [['a','Attack'],['m','Midfield'],['d','Defence']].map(([k,n])=>{const cost=40+25*c.up[k];return `<button data-a="up" data-k="${k}" ${c.coins<cost||c.up[k]>=8?'disabled':''}>${n} +${c.up[k]}${c.up[k]>=8?' (max)':` · ${cost}c`}</button>`;}).join('')+`</div>`;
   h+=`<p class="sub" style="margin:4px 0 0">${c.trophies.length?c.trophies.map(x=>'🏆 '+esc(x)).join('<br>'):'No trophies yet'}</p>
@@ -2164,10 +2192,20 @@ $('cBody').addEventListener('click',e=>{
   const a=b.dataset.a,c=career;
   if(a!=='end')endSure=false;
   if(a==='new'){
-    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,diff:settings.diff,season:1,coins:0,up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
+    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
     newSeason();saveAll();
   }else if(a==='play'){playCareer();return;}
   else if(a==='next'){c.season++;c.msg=`Season ${c.season} begins. The rivals have strengthened.`;newSeason();saveAll();}
+  else if(a==='sign'){
+    const p=(c.market||[]).find(x=>x.id===b.dataset.id);
+    if(p&&!p.signed&&c.budget>=p.cost){
+      c.budget-=p.cost;p.signed=true;c.signed=c.signed||[];c.signed.push({...p});
+      const k=p.boost||'m';c.up=c.up||{a:0,m:0,d:0};c.up[k]=Math.min(8,(c.up[k]||0)+1);
+      c.morale=clamp((c.morale??70)+3,0,100);
+      careerMail('New signing: '+p.name,`The club signed ${p.name} (${p.pos}, ${p.rating} OVR) for £${Number(p.cost).toLocaleString()}. Your ${k==='a'?'attack':k==='d'?'defence':'midfield'} receives a permanent +1 boost.`);
+      saveAll();
+    }
+  }else if(a==='mail'){const msg=(c.mail||[]).find(x=>x.id===b.dataset.id);if(msg){msg.read=true;c.msg=msg.subject+': '+msg.body;saveAll();}}
   else if(a==='up'){const k=b.dataset.k,cost=40+25*c.up[k];if(c.coins>=cost&&c.up[k]<8){c.coins-=cost;c.up[k]++;saveAll();}}
   else if(a==='lb'){openLb('career');return;}
   else if(a==='menu'){$('careerScr').hidden=true;$('menu').hidden=false;return;}
