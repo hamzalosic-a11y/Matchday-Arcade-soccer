@@ -790,7 +790,7 @@ const EXTRA_LEAGUE_TEAMS=[
  ['Cruzeiro','CRU','#005ca9','#ffffff',75],
  ['Vasco da Gama','VAS','#111111','#ffffff',74]
 ];
-for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
+for(const [n,code,c1,c2,rating] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,code,c1,c2,c2,'solid',Number(rating)||70,(Number(rating)||70),(Number(rating)||70)-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
  const n=TEAMS[teamIndex]?.n||'';
  for(let d=0;d<ENGLISH_DIVISIONS.length;d++)if(ENGLISH_DIVISIONS[d].teams.includes(n))return d;
