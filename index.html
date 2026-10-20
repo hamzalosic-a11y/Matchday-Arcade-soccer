@@ -627,6 +627,8 @@ const TEAMS=[
  T('Al-Duhail','DUH','#c8102e','#ffffff','#c8102e','solid',73,74,72,'433','club'),
  T('Wydad AC','WYD','#d71920','#ffffff','#d71920','solid',72,72,72,'433','club'),
 ];
+TEAMS.push(T('Borussia Dortmund','BVB','#fbe122','#111111','#fbe122','solid',84,84,82,'4231','club'),T('RB Leipzig','RBL','#dd0741','#ffffff','#dd0741','solid',82,82,81,'4231','club'),T('Bayer Leverkusen','LEV','#e32219','#111111','#e32219','solid',85,84,83,'3421','club'),T('Napoli','NAP','#1591d0','#ffffff','#1591d0','solid',83,83,82,'433','club'),T('AS Roma','ROM','#8e1f2f','#f0b323','#8e1f2f','solid',81,81,82,'3421','club'),T('Tottenham Hotspur','TOT','#ffffff','#132257','#132257','solid',83,83,81,'4231','club'),T('Aston Villa','AVL','#7a003c','#95bfe5','#7a003c','solid',82,82,81,'4231','club'),T('Newcastle United','NEW','#111111','#ffffff','#111111','stripes',82,81,82,'433','club'),T('Benfica','BEN','#e31b23','#ffffff','#e31b23','solid',82,83,81,'4231','club'),T('Sporting CP','SCP','#008b45','#ffffff','#008b45','stripes',81,82,80,'433','club'),T('Ajax','AJA','#d2122e','#ffffff','#d2122e','solid',80,81,79,'433','club'),T('Feyenoord','FEY','#e31b23','#ffffff','#ffffff','halves',79,80,78,'433','club'),T('Galatasaray','GAL','#a90432','#f5a623','#a90432','halves',82,82,80,'4231','club'),T('Fenerbahçe','FEN','#ffed00','#002d72','#002d72','stripes',81,81,80,'4231','club'),T('Celtic','CEL','#ffffff','#168447','#168447','hoops',78,80,78,'433','club'),T('Rangers','RAN','#0c3b8e','#ffffff','#0c3b8e','solid',77,78,77,'4231','club'));
+
 // [role, number, depth(0-1 from own goal), width(0-1)]
 const FORM={
  '433':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',8,.36,.72],['MF',6,.31,.5],['MF',10,.36,.28],['FW',7,.58,.86],['FW',9,.63,.5],['FW',11,.58,.14]],
@@ -2057,9 +2059,9 @@ function careerMail(subject,body){
 }
 function makeTransferMarket(){
   const first=['Alex','Mateo','Noah','Elias','Luca','Adam','Leo','Samir','Milan','Yusuf','Daniel','Rayan','Oscar','Amir','Nico','Ibrahim','Theo','Isak'];
-  const last=['Silva','Berg','Costa','Lind','Moretti','Haddad','Novak','Andersson','Petrov','Diallo','Santos','Karlsson','Rossi','Demir','Meyer','Ali','Jensen','Kovac'];
+  const last=['Silva','Berg','Costa','Lind','Moretti','Haddad','Novak','Andersson','Petrov','Diallo','Santos','Karlsson','Rossi','Demir','Meyer','Ali','Jensen','Kovac','Nordin','Hoxha','Bello','Marin'];
   const pos=['FW','MF','DF','GK'],c=career;
-  c.market=Array.from({length:5},(_,i)=>{
+  c.market=Array.from({length:8},(_,i)=>{
     const p=pos[Math.floor(Math.random()*pos.length)],rating=62+Math.floor(Math.random()*27);
     const multiplier=p==='FW'?1.25:p==='GK'?.9:1;
     return {id:'tm'+c.season+'_'+Date.now().toString(36)+'_'+i,name:first[Math.floor(Math.random()*first.length)]+' '+last[Math.floor(Math.random()*last.length)],pos:p,rating,cost:Math.round((rating*rating*multiplier*115)+25000),boost:p==='FW'?'a':p==='MF'?'m':'d',signed:false};
