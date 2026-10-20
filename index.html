@@ -1215,13 +1215,13 @@ function doShoot(p,power,aim,isAI){
   const Tm=teams[p.team],d=Tm.dir,gx=d===1?L:0;
   const ty=W/2+aim*(GOAL_W/2-14);
   let dx=gx-p.x,dy=ty-p.y;const dd=Math.hypot(dx,dy)||1;
-  const skill=Math.min(1.1,.85+((p.sht||Tm.a)-80)/100);\n  const keeperShot=p.isGK; // Goalkeepers can shoot, but should rarely score from long range
+  const skill=Math.min(1.1,.85+((p.sht||Tm.a)-80)/100);
   const dp=dparams(p.team);
-  let err=(.06+power*.12+dd/950)*(1.5-skill)*(isAI?1:.75)*(p.team===1?dp.err:1)*(keeperShot?2.15:1)*rand(-1,1);
+  let err=(.06+power*.12+dd/950)*(1.5-skill)*(isAI?1:.75)*(p.team===1?dp.err:1)*rand(-1,1);
   if(power>.92)err*=1.4;
   if(p.sprinting)err*=1.25;
   const c=Math.cos(err),s=Math.sin(err);
-  const vx=dx*c-dy*s,vy=dx*s+dy*c,spd=keeperShot?360+power*300:480+power*620,vz=20+power*power*rand(40,200);
+  const vx=dx*c-dy*s,vy=dx*s+dy*c,spd=480+power*620,vz=20+power*power*rand(40,200);
   kick(p,vx,vy,spd,vz);
   stats.shots[p.team]++;
   shotOnTarget(p,vx,vy,spd,vz,dd);
@@ -1355,14 +1355,14 @@ function lungeStep(p,dt){
   const l=p.lunge;l.t-=dt;
   const sp=(l.slide?340:250)*(l.t/l.max*.6+.4);
   p.vx=l.dx*sp;p.vy=l.dy*sp;
-  if(!l.hit&&ball.owner&&ball.owner.team!==p.team&&dist(p,ball.owner)<(ball.owner.isGK?34:26)){l.hit=true;resolveTackle(p,ball.owner,l);}
+  if(!l.hit&&ball.owner&&ball.owner.team!==p.team&&!ball.owner.isGK&&dist(p,ball.owner)<26){l.hit=true;resolveTackle(p,ball.owner,l);}
   if(l.t<=0){p.lunge=null;p.stun=l.slide?(l.hit?.25:.55):(l.hit?0:.18);}
 }
 function resolveTackle(p,o,l){
   if(o.sk){p.stun=Math.max(p.stun,.55);p.lunge=null;return;}   // beaten by the skill move
-  if(o.protect>0)return;
+  if(o.protect>0||o.isGK)return;
   const dp=dparams(p.team);
-  let chance=(l.slide?.72:.58)*(p.team===1?dp.tk:1);\n  if(o.isGK)chance*=.72; // Keepers can be tackled when holding the ball, but are harder to dispossess
+  let chance=(l.slide?.72:.58)*(p.team===1?dp.tk:1);
   if(o.sprinting)chance+=.1;
   if(p.def)chance+=(p.def-70)/250;
   chance=Math.min(.92,chance);
