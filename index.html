@@ -3140,7 +3140,7 @@ const hexc=(h,a)=>{const n=parseInt(h.slice(1),16);return[(n>>16&255)/255,(n>>8&
 const FOG={Grass:'#a9c4e0',Night:'#04070d',Snow:'#e6eef5',Rain:'#6f7c8d'};
 function initGL(){
   try{
-    const cvs=$('gl'),g=cvs.getContext('webgl',{antialias:false,alpha:false,powerPreference:'high-performance'})||cvs.getContext('experimental-webgl');
+    const cvs=$('gl'),g=cvs.getContext('webgl',{antialias:true,alpha:false,powerPreference:'high-performance',depth:true,preserveDrawingBuffer:false})||cvs.getContext('experimental-webgl');
     if(!g){view3d=false;return;}
     const sh=(t,s)=>{const o=g.createShader(t);g.shaderSource(o,s);g.compileShader(o);if(!g.getShaderParameter(o,g.COMPILE_STATUS))throw new Error(g.getShaderInfoLog(o));return o;};
     const prog=(v,f,at)=>{const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,v));g.attachShader(p,sh(g.FRAGMENT_SHADER,f));at.forEach((a,i)=>g.bindAttribLocation(p,i,a));g.linkProgram(p);if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error('link');return p;};
@@ -3215,16 +3215,24 @@ function draw3dPlayer(p){
   if(slide||fall)b=m4.mul(b,m4.mul(m4.T(0,6,0),m4.RZ(1.25)));
   if(p.air&&p.air.type==='bike')b=m4.mul(b,m4.mul(m4.T(0,18,0),m4.mul(m4.RZ(Math.min(1,(1-p.air.t/.7)*1.6)*Math.PI*.9),m4.T(0,-18,0))));
   const part=(Mx,geo,c)=>drawG(geo,m4.mul(b,Mx),c);
+  // Separate shorts, socks and boots give the blocky players a cleaner football silhouette.
+  part(TRS(0,18.5,0,10.4,5.2,17),GL.box,hexc(k.c));
   for(const s of[-1,1]){
     const a=sw*s+(p.kick>0&&s===1?.9:0),hip=m4.mul(m4.T(0,18,s*5),m4.RZ(a));
     part(m4.mul(hip,TRS(0,-3.5,0,7.5,8,7.5)),GL.box,sh);
     part(m4.mul(hip,TRS(0,-12.5,0,6,10,6)),GL.box,sock);
+    // Small dark boots and a bright sole help the feet read clearly at match zoom.
+    part(m4.mul(hip,TRS(1,-18.2,2.1,6.7,3.1,9)),GL.box,[.055,.065,.085,1]);
+    part(m4.mul(hip,TRS(1,-19.7,2.3,6.8,1,8.8)),GL.box,[.82,.86,.9,1]);
     const arm=m4.mul(m4.T(0,33,s*12.5),m4.RZ(-a*.9));
     part(m4.mul(arm,TRS(0,-6.5,0,4.6,13,4.6)),GL.box,p.isGK?col:skin);
   }
   part(TRS(0,27,0,11,17,21),GL.box,col);
   if(!p.isGK&&k.pat==='stripes')for(const z of[-7,0,7])part(TRS(0,27,z,11.6,17,3.2),GL.box,sock);
   if(!p.isGK&&k.pat==='hoops')for(const y of[22.5,29.5])part(TRS(0,y,0,11.6,3.2,21.2),GL.box,sock);
+  // Raised collar and small chest badge add detail without changing the simple blocky art style.
+  part(TRS(0,34.8,10.7,5.1,1.8,1.1),GL.box,sock);
+  part(TRS(-6.7,30.8,10.9,2.1,3.2,1.1),GL.box,sh);
   part(TRS(0,41.5,0,6.6,6.6,6.6),GL.sph,skin);
   part(TRS(-1.4,43.4,0,6.9,5.4,6.9),GL.sph,hair);
 }
