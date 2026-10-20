@@ -72,6 +72,13 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block}
 .lbl{align-self:center;color:var(--mut);font-size:14px}
 .go{margin-top:14px;background:var(--acc);color:#1a1500;border:0;border-radius:12px;padding:14px 38px;font:800 30px 'Barlow Condensed','Arial Narrow',sans-serif;font-style:italic;cursor:pointer;box-shadow:0 5px 0 #b38f00}
 .go:active{transform:translateY(3px);box-shadow:0 2px 0 #b38f00}
+.go{transition:transform .12s ease,filter .12s ease,box-shadow .12s ease;letter-spacing:.025em}
+.go:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.go:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #7fd1ff;outline-offset:3px}
+#menu h1{margin-top:12px;text-shadow:0 8px 30px rgba(255,210,63,.10)}
+#menu .sub{max-width:720px;line-height:1.5}
+#btnQuickMatch{border-color:rgba(255,210,63,.45);box-shadow:0 4px 0 #0c1630}
+@media(max-width:620px){#menu{padding:12px 10px 22px}#menu .cols{gap:8px}#menu .col .lst{max-height:28vh}#menu .team{font-size:13px;padding:7px 5px;gap:5px}#menu .team .kit{flex-basis:18px;height:18px}#menu .team i{font-size:14px}#menu .row{gap:7px}#menu .seg button{padding:8px 9px;font-size:12px}#menu .go{width:min(360px,95%);padding:12px 20px}}
 .go.alt{background:var(--panel2);color:var(--text);box-shadow:0 5px 0 #0c1630;font-size:24px;padding:10px 26px}
 .help{margin-top:16px;width:min(820px,100%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:14px;color:var(--mut);line-height:1.55}
 .help b{color:var(--text);font-weight:600}
@@ -359,7 +366,8 @@ button,select{touch-action:manipulation}
     </div>
     <div class="row" style="margin-top:6px"><span class="lbl">Gameplay style</span><div class="seg" id="segGameplay"><button data-v="competitive" class="on">⚡ Competitive</button><button data-v="authentic">⚽ Authentic</button></div></div>
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
-    <button class="go" id="btnStart">Kick off</button>
+    <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
+    <button class="go" id="btnStart">Choose teams & kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button></div>
     <div id="mdCupPanel">
       <div class="mdCupTop"><div><small>ROAD TO GLORY</small><h2>🏆 Knockout Cup</h2></div><div class="mdCupRecord"><b id="mdCupWins">0</b><span>cup wins</span></div></div>
@@ -2091,6 +2099,18 @@ $('segGameplay').addEventListener('click',e=>{const b=e.target.closest('button[d
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
 renderCupPanel();
+$('btnQuickMatch').onclick=()=>{
+  const clubs=TEAMS.map((t,i)=>({t,i,r:(t.a+t.m+t.d)/3})).filter(x=>x.t.g==='club');
+  if(clubs.length<2)return;
+  const first=clubs[(Math.random()*clubs.length)|0];
+  const opponents=clubs.filter(x=>x.i!==first.i&&Math.abs(x.r-first.r)<=7);
+  const second=(opponents.length?opponents:clubs.filter(x=>x.i!==first.i))[(Math.random()*(opponents.length?opponents.length:clubs.length-1))|0];
+  settings.tab='club';settings.country='all';settings.home=first.i;settings.away=second.i;
+  $('tSearch').value='';
+  [...$('tabSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.v==='club'));
+  renderTeams();cup.active=false;cup.lastResult='';$('btnCupNext').hidden=true;renderCupPanel();
+  if(career)career.live=false;dtMatch=false;fixDream();startMatch();
+};
 $('btnStart').onclick=()=>{cup.active=false;cup.lastResult='';$('btnCupNext').hidden=true;renderCupPanel();if(career)career.live=false;dtMatch=false;fixDream();startMatch();};
 $('btnCup').onclick=()=>{
   cup.active=true;cup.round=0;cup.opponents=cupOpponents(settings.home);cup.lastResult='';cup.pendingNext=false;
