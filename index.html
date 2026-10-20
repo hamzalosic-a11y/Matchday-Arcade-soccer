@@ -2180,7 +2180,8 @@ function updateTeamCountryFilter(){
  el.style.display='block';
  const countries=[...new Set(TEAMS.filter(t=>t.g==='club').map(teamCountry))].sort((a,b)=>a.localeCompare(b));
  el.innerHTML='<option value="all">All countries</option>'+countries.map(country=>'<option value="'+country.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+country+'</option>').join('');
- el.value=countries.includes(settings.country)?settings.country:'all';
+ if(!countries.includes(settings.country))settings.country='all';
+ el.value=settings.country;
 }
 function renderTeams(){
  const q=($('tSearch').value||'').toLowerCase().trim();fixDream();updateTeamCountryFilter();
