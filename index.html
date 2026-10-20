@@ -2076,6 +2076,7 @@ function newSeason(){
   if(!Array.isArray(c.mail))c.mail=[];
   if(!Array.isArray(c.signed))c.signed=[];
   if(!Number.isFinite(c.budget))c.budget=2500000;
+  if(!c.staff||typeof c.staff!=='object')c.staff={};
   if(!Number.isFinite(c.morale))c.morale=70;
   makeTransferMarket();
   careerMail('Board expectations: Season '+c.season,'The board expects a strong league campaign. Keep morale high, strengthen the squad wisely, and aim for the top four.');
@@ -2188,17 +2189,17 @@ function renderCareer(){
     [['a','Attack'],['m','Midfield'],['d','Defence']].map(([k,n])=>{const cost=40+25*c.up[k];return `<button data-a="up" data-k="${k}" ${c.coins<cost||c.up[k]>=8?'disabled':''}>${n} +${c.up[k]}${c.up[k]>=8?' (max)':` · ${cost}c`}</button>`;}).join('')+`</div>`;
   h+=`<p class="sub" style="margin:4px 0 0">${c.trophies.length?c.trophies.map(x=>'🏆 '+esc(x)).join('<br>'):'No trophies yet'}</p>
     <div class="tr"><button data-a="lb">Ranked ladder</button><button data-a="menu">Main menu</button><button data-a="end">${endSure?'Click again to confirm':'End career'}</button></div>`;
-  b.innerHTML=h;
+  h+='<section style="width:min(760px,100%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;text-align:left"><h2 style="color:var(--acc);margin:0 0 6px">🧑‍💼 Manager market</h2><p class="sub">Hire staff to improve your club and morale.</p><div class="tr"><button data-a="hireStaff" data-id="scout" '+((c.staff&&c.staff.scout)||c.budget<500?'disabled':'')+'>'+(c.staff&&c.staff.scout?'✓ Scout hired':'Hire Chief Scout · £500')+'</button><button data-a="hireStaff" data-id="coach" '+((c.staff&&c.staff.coach)||c.budget<900?'disabled':'')+'>'+(c.staff&&c.staff.coach?'✓ Coach hired':'Hire Head Coach · £900')+'</button><button data-a="hireStaff" data-id="director" '+((c.staff&&c.staff.director)||c.budget<1200?'disabled':'')+'>'+(c.staff&&c.staff.director?'✓ Director hired':'Hire Sporting Director · £1,200')+'</button></div><h3 style="color:var(--acc)">Sell players</h3>'+((c.signed||[]).map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border-bottom:1px solid var(--line)"><span>'+esc(p.name)+' · '+esc(p.pos)+' · '+p.rating+' OVR</span><button data-a="sell" data-id="'+esc(p.id)+'">Sell · £'+Math.round((p.cost||0)*.7).toLocaleString()+'</button></div>').join('')||'<p class="sub">No signings yet.</p>')+'<button data-a="refreshMarket" '+(c.coins<(c.staff&&c.staff.scout?15:25)?'disabled':'')+'>🔄 Scout new transfer targets · '+(c.staff&&c.staff.scout?15:25)+' coins</button></section>';b.innerHTML=h;
 }
 $('cBody').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,c=career;
   if(a!=='end')endSure=false;
   if(a==='new'){
-    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
+    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
     newSeason();saveAll();
   }else if(a==='play'){playCareer();return;}
-  else if(a==='next'){c.season++;c.msg=`Season ${c.season} begins. The rivals have strengthened.`;newSeason();saveAll();}
+  else if(a==='next'){c.season++;c.msg=`Season ${c.season} begins. The rivals have strengthened.`;if(c.staff&&c.staff.director)c.budget+=75000;newSeason();saveAll();}
   else if(a==='sign'){
     const p=(c.market||[]).find(x=>x.id===b.dataset.id);
     if(p&&!p.signed&&c.budget>=p.cost){
