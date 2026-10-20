@@ -655,6 +655,73 @@ const TEAMS=[
 ];
 TEAMS.push(T('Borussia Dortmund','BVB','#fbe122','#111111','#fbe122','solid',84,84,82,'4231','club'),T('RB Leipzig','RBL','#dd0741','#ffffff','#dd0741','solid',82,82,81,'4231','club'),T('Bayer Leverkusen','LEV','#e32219','#111111','#e32219','solid',85,84,83,'3421','club'),T('Napoli','NAP','#1591d0','#ffffff','#1591d0','solid',83,83,82,'433','club'),T('AS Roma','ROM','#8e1f2f','#f0b323','#8e1f2f','solid',81,81,82,'3421','club'),T('Tottenham Hotspur','TOT','#ffffff','#132257','#132257','solid',83,83,81,'4231','club'),T('Aston Villa','AVL','#7a003c','#95bfe5','#7a003c','solid',82,82,81,'4231','club'),T('Newcastle United','NEW','#111111','#ffffff','#111111','stripes',82,81,82,'433','club'),T('Benfica','BEN','#e31b23','#ffffff','#e31b23','solid',82,83,81,'4231','club'),T('Sporting CP','SCP','#008b45','#ffffff','#008b45','stripes',81,82,80,'433','club'),T('Ajax','AJA','#d2122e','#ffffff','#d2122e','solid',80,81,79,'433','club'),T('Feyenoord','FEY','#e31b23','#ffffff','#ffffff','halves',79,80,78,'433','club'),T('Galatasaray','GAL','#a90432','#f5a623','#a90432','halves',82,82,80,'4231','club'),T('Fenerbahçe','FEN','#ffed00','#002d72','#002d72','stripes',81,81,80,'4231','club'),T('Celtic','CEL','#ffffff','#168447','#168447','hoops',78,80,78,'433','club'),T('Rangers','RAN','#0c3b8e','#ffffff','#0c3b8e','solid',77,78,77,'4231','club'));
 
+
+/* Career leagues: compact 8-club divisions keep each season playable while supporting promotion/relegation. */
+const ENGLISH_DIVISIONS=[
+ {name:'Premier League',teams:['Manchester City','Liverpool','Arsenal','Manchester United','Chelsea','Tottenham Hotspur','Newcastle United','Aston Villa']},
+ {name:'Championship',teams:['West Ham United','Everton','Leicester City','Brighton & Hove Albion','Fulham','Crystal Palace','Wolverhampton Wanderers','Nottingham Forest']},
+ {name:'League One',teams:['Leeds United','Sunderland','Burnley','Sheffield United','Norwich City','Middlesbrough','Coventry City','Watford']},
+ {name:'League Two',teams:['Portsmouth','Derby County','Birmingham City','Blackburn Rovers','Stoke City','Bristol City','Swansea City','Cardiff City']}
+];
+const EXTRA_LEAGUE_TEAMS=[
+ ['Brighton & Hove Albion','BHA','#0057b8','#ffffff',79],['Crystal Palace','CRY','#1b458f','#c41230',77],
+ ['Wolverhampton Wanderers','WOL','#fdb913','#111111',78],['Nottingham Forest','NFO','#e53233','#ffffff',77],
+ ['Leeds United','LEE','#ffffff','#fdbb30',78],['Sunderland','SUN','#e21b2d','#ffffff',75],
+ ['Burnley','BUR','#6c1d45','#99d6ea',75],['Sheffield United','SHU','#e21b2d','#111111',74],
+ ['Norwich City','NORC','#00a650','#fff200',73],['Middlesbrough','MID','#e21b2d','#ffffff',73],
+ ['Coventry City','COV','#75b8e7','#ffffff',74],['Watford','WAT','#fbe000','#d71920',73],
+ ['Portsmouth','POM','#001489','#ffffff',72],['Derby County','DER','#ffffff','#111111',72],
+ ['Birmingham City','BIR','#008fd5','#ffffff',71],['Blackburn Rovers','BLA','#ffffff','#009fe3',72],
+ ['Stoke City','STK','#e21b2d','#ffffff',71],['Bristol City','BRI','#d71920','#ffffff',71],
+ ['Swansea City','SWA','#ffffff','#111111',71],['Cardiff City','CAR','#0070b5','#d71920',70]
+];
+for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
+function englishDivisionIndex(teamIndex){
+ const n=TEAMS[teamIndex]?.n||'';
+ for(let d=0;d<ENGLISH_DIVISIONS.length;d++)if(ENGLISH_DIVISIONS[d].teams.includes(n))return d;
+ return -1;
+}
+function leagueNameForCareer(c){
+ if(!c)return 'League';
+ if(TEAMS[c.team]?.g==='club'&&((c.division>=0&&c.division<=3)||englishDivisionIndex(c.team)>=0)){
+  const d=Number.isInteger(c.division)?c.division:englishDivisionIndex(c.team);
+  return ENGLISH_DIVISIONS[clamp(d,0,3)].name;
+ }
+ const n=TEAMS[c.team]?.n||'';
+ if(/Real Madrid|Barcelona|Atlético Madrid|Real Sociedad|Sevilla|Valencia|Villarreal|Athletic Club|Girona|Betis|Osasuna/i.test(n))return 'La Liga';
+ if(/Inter|Juventus|AC Milan|Napoli|Roma|Lazio|Atalanta|Fiorentina|Bologna|Torino/i.test(n))return 'Serie A';
+ if(/Bayern Munich|Borussia Dortmund|Bayer Leverkusen|RB Leipzig|Eintracht Frankfurt|Hamburger SV|Schalke/i.test(n))return 'Bundesliga';
+ if(/Paris Saint-Germain|Olympique|Monaco|Lille/i.test(n))return 'Ligue 1';
+ if(/Benfica|Porto|Sporting CP/i.test(n))return 'Primeira Liga';
+ if(/Ajax|PSV|Feyenoord/i.test(n))return 'Eredivisie';
+ if(/Celtic|Rangers|Aberdeen/i.test(n))return 'Scottish Premiership';
+ if(/Galatasaray|Fenerbahçe/i.test(n))return 'Süper Lig';
+ if(/Malmö|AIK|Djurgården|Hammarby|Elfsborg|Norrköping/i.test(n))return 'Allsvenskan';
+ if(/Flamengo|Boca Juniors|River Plate/i.test(n))return 'South American League';
+ if(/Atlanta United|Portland Timbers|Inter Miami|LA Galaxy/i.test(n))return 'MLS';
+ if(/Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli/i.test(n))return 'Saudi Pro League';
+ if(/Kawasaki/i.test(n))return 'J1 League';
+ return 'International League';
+}
+function careerLeagueTeams(c){
+ const d=Number.isInteger(c.division)?c.division:englishDivisionIndex(c.team);
+ if(d>=0&&d<4){
+  const names=ENGLISH_DIVISIONS[d].teams;
+  let ids=names.map(n=>TEAMS.findIndex(t=>t.n===n)).filter(i=>i>=0);
+  if(!ids.includes(c.team))ids[ids.length-1]=c.team;
+  return [...new Set(ids)].slice(0,8);
+ }
+ const league=leagueNameForCareer(c);
+ let ids=TEAMS.map((t,i)=>i).filter(i=>i!==c.team&&TEAMS[i].g==='club'&&leagueNameForCareer({team:i,division:-1})===league);
+ ids.sort((a,b)=>Math.abs(ovr(a)-ovr(c.team))-Math.abs(ovr(b)-ovr(c.team)));
+ ids=ids.slice(0,7);
+ if(ids.length<7){
+  const extras=TEAMS.map((t,i)=>i).filter(i=>i!==c.team&&!ids.includes(i)&&TEAMS[i].g==='club').sort((a,b)=>Math.abs(ovr(a)-ovr(c.team))-Math.abs(ovr(b)-ovr(c.team)));
+  ids=ids.concat(extras.slice(0,7-ids.length));
+ }
+ return [c.team,...ids].slice(0,8);
+}
+
 // [role, number, depth(0-1 from own goal), width(0-1)]
 const FORM={
  '433':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',8,.36,.72],['MF',6,.31,.5],['MF',10,.36,.28],['FW',7,.58,.86],['FW',9,.63,.5],['FW',11,.58,.14]],
@@ -2094,9 +2161,12 @@ function makeTransferMarket(){
   });
 }
 function newSeason(){
-  const c=career,g=TEAMS[c.team].g,o=ovr(c.team);
-  const pool=TEAMS.map((x,i)=>i).filter(i=>i!==c.team&&TEAMS[i].g===g).sort((x,y)=>Math.abs(ovr(x)-o)-Math.abs(ovr(y)-o)).slice(0,12).sort(()=>Math.random()-.5);
-  c.opps=pool.slice(0,7);
+  const c=career;
+  if(!Number.isInteger(c.division))c.division=englishDivisionIndex(c.team);
+  if(c.division<0)c.division=-1;
+  const leagueTeams=careerLeagueTeams(c);
+  c.opps=leagueTeams.filter(i=>i!==c.team).slice(0,7);
+  c.leagueName=leagueNameForCareer(c);
   c.tab=[c.team,...c.opps].map(i=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
   c.stage='league';c.md=0;c.cup=null;c.sc={};
   if(!Array.isArray(c.mail))c.mail=[];
@@ -2105,20 +2175,27 @@ function newSeason(){
   if(!c.staff||typeof c.staff!=='object')c.staff={};
   if(!Number.isFinite(c.morale))c.morale=70;
   makeTransferMarket();
-  careerMail('Board expectations: Season '+c.season,'The board expects a strong league campaign. Keep morale high, strengthen the squad wisely, and aim for the top four.');
+  careerMail('Board expectations: Season '+c.season,'The board expects a strong campaign in '+c.leagueName+'. Finish in the top four, compete for the cup, and build for promotion or avoid relegation.');
 }
 function addRes(i,gf,ga){const r=career.tab.find(x=>x.i===i);r.p++;r.gf+=gf;r.ga+=ga;if(gf>ga){r.w++;r.pts+=3;}else if(gf===ga){r.d++;r.pts++;}else r.l++;}
 function leagueRound(gf,ga){
   const c=career,opp=c.opps[c.md];let m='';
   addRes(c.team,gf,ga);addRes(opp,ga,gf);
   const rest=c.opps.filter(i=>i!==opp).sort(()=>Math.random()-.5);
-  for(let k=0;k<6;k+=2){const[x,y]=simG(rest[k],rest[k+1]);addRes(rest[k],x,y);addRes(rest[k+1],y,x);credit(rest[k],x);credit(rest[k+1],y);}
+  for(let k=0;k+1<rest.length;k+=2){const[x,y]=simG(rest[k],rest[k+1]);addRes(rest[k],x,y);addRes(rest[k+1],y,x);credit(rest[k],x);credit(rest[k+1],y);}
   c.md++;
-  if(c.md>=7){
+  if(c.md>=c.opps.length){
     const t=sortTab(),rank=t.findIndex(r=>r.i===c.team)+1;
-    if(rank===1){c.trophies.push('League Champions, Season '+c.season);c.coins+=80;m+='You won the league! ';}
-    if(rank<=4){c.stage='cup';c.cup={f:t.slice(0,4).map(r=>r.i),r:'SF'};m+=`Finished ${rank}${['st','nd','rd','th'][rank-1]} and qualified for the Champions Cup.`;}
-    else{c.stage='over';m+=`Finished ${rank}th. Top 4 qualify for the cup, so train harder.`;}
+    if(rank===1){c.trophies.push(c.leagueName+' Champions, Season '+c.season);c.coins+=80;m+=' League champions! ';}
+    if(c.division>=0&&c.division<=3){
+      const oldDiv=c.division;
+      if(rank<=2&&oldDiv>0)c.pendingDivision=oldDiv-1;
+      else if(rank>=t.length-1&&oldDiv<3)c.pendingDivision=oldDiv+1;
+      else c.pendingDivision=oldDiv;
+      if(c.pendingDivision!==oldDiv)m+=c.pendingDivision<oldDiv?' Promotion secured! ':' Relegated after a difficult season. ';
+    }
+    if(rank<=4){c.stage='cup';c.cup={f:t.slice(0,4).map(r=>r.i),r:'SF'};m+=`Finished ${rank}${['st','nd','rd','th'][rank-1]} and qualified for the ${c.division>=0?'Domestic Cup':'Champions Cup'}.`;}
+    else{c.stage='over';m+=`Finished ${rank}th. The top four qualify for the cup.`;}
   }
   return m;
 }
@@ -2207,7 +2284,7 @@ function renderCareer(){
   h+=`<p class="sub" style="margin:0">Every match is played, no simulating. Rivals get tougher the more you play: rival boost +${careerBoost()}.</p>`;
   if(c.stage==='over')h+=`<button class="go" data-a="next">Start season ${c.season+1}</button>`;
   else{
-    const lab=c.stage==='league'?`League matchday ${c.md+1} of 7`:(c.cup.r==='SF'?'Champions Cup semi-final':'Champions Cup final');
+    const lab=c.stage==='league'?`${c.leagueName||leagueNameForCareer(c)} · Matchday ${c.md+1} of ${c.opps.length}`:(c.cup.r==='SF'?(c.division>=0?'Domestic Cup semi-final':'Champions Cup semi-final'):(c.division>=0?'Domestic Cup final':'Champions Cup final'));
     h+=`<p class="sub" style="margin:0">${lab}: vs <b>${esc(TEAMS[nextOpp()].n)}</b></p><div class="tr"><button class="go" data-a="play" style="font-size:24px;padding:10px 26px;margin:0">Play match</button></div>`;
   }
   h+=`<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left"><h2 style="margin:0 0 8px;color:#9cffc9">📨 Club inbox · ${(c.mail||[]).filter(x=>!x.read).length} unread</h2>${(c.mail||[]).slice(0,5).map(x=>`<button data-a="mail" data-id="${esc(x.id)}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer"><b>${x.read?'✉':'🔔'} ${esc(x.subject)}</b><small style="display:block;color:var(--mut);margin-top:3px">${esc(x.body)}</small></button>`).join('')||'<p class="sub">No messages yet.</p>'}</section>`;
@@ -2223,10 +2300,10 @@ $('cBody').addEventListener('click',e=>{
   const a=b.dataset.a,c=career;
   if(a!=='end')endSure=false;
   if(a==='new'){
-    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
+    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,division:englishDivisionIndex(settings.home),diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
     newSeason();saveAll();
   }else if(a==='play'){playCareer();return;}
-  else if(a==='next'){c.season++;c.msg=`Season ${c.season} begins. The rivals have strengthened.`;if(c.staff&&c.staff.director)c.budget+=75000;newSeason();saveAll();}
+  else if(a==='next'){c.season++;if(Number.isInteger(c.pendingDivision)){c.division=c.pendingDivision;delete c.pendingDivision;}c.msg=`Season ${c.season} begins in ${leagueNameForCareer(c)}. The rivals have strengthened.`;if(c.staff&&c.staff.director)c.budget+=75000;newSeason();saveAll();}
   else if(a==='sign'){
     const p=(c.market||[]).find(x=>x.id===b.dataset.id);
     if(p&&!p.signed&&c.budget>=p.cost){
