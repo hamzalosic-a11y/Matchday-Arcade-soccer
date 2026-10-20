@@ -953,7 +953,7 @@ const sfx={
   save(){burst(.1,.6,1800);tone(200,.08,'sine',.2,90);},
   catch(){burst(.07,.35,1200);},
   whistle(n){const k=n||1;for(let i=0;i<k;i++){setTimeout(()=>{tone(2900,.35,'triangle',.07,2750);tone(3100,.35,'triangle',.05,2900);},i*420);}},
-  goal(){roar=1;tone(523,.18,'square',.05);setTimeout(()=>tone(659,.18,'square',.05),160);setTimeout(()=>tone(784,.4,'square',.05),320);},
+  goal(){roar=1;burst(.7,.75,850);tone(110,.65,'sawtooth',.16,42);tone(392,.45,'triangle',.12,784);tone(523,.45,'square',.07,1046);setTimeout(()=>{tone(659,.35,'square',.075,880);tone(784,.65,'triangle',.11,1175);burst(.55,.55,1500);},180);setTimeout(()=>{tone(1046,.8,'triangle',.1,784);tone(784,.65,'square',.055,523);},440);},
 };
 
 /* ---------- kits ---------- */
@@ -1448,10 +1448,10 @@ function goalScored(t){
   evt+=1;score[t]++;state='goal';stTimer=3.6;ball.net=true;lastScorer=t;
   const s=ball.lastKicker,own=s&&s.team!==t;
   if(s&&!own)ms[s.team].push(s.num);
-  showMsg(own?'Own goal':'Goal!',s?`${s.nm||'#'+s.num}  ${teams[s.team].data.n}${s.ls&&!own?' · '+s.ls:''}`:teams[t].data.n,3300);
+  showMsg(own?'OWN GOAL!':'GOOOOOAL!',s?`${s.nm||'#'+s.num}  ${teams[s.team].data.n}${s.ls&&!own?' · '+s.ls:''}`:teams[t].data.n,3300);
   sfx.goal();
   const gx=t===0?L:0;
-  for(let i=0;i<110;i++)particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(40,380),vy:rand(-260,260),c:i%2?teams[t].kit.p:teams[t].kit.c,life:rand(1.4,2.8),r:rand(0,6)});
+  for(let i=0;i<240;i++){const colors=[teams[t].kit.p,teams[t].kit.c,'#ffd23f','#ffffff','#ff4d6d'];particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(60,520),vy:rand(-420,320),c:colors[i%colors.length],life:rand(1.5,3.4),r:rand(2,8)});}
 }
 function checkBounds(){
   if(ball.net)return;
