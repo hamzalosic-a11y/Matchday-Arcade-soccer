@@ -1346,6 +1346,10 @@ function aiForce(p,f){
 }
 
 /* ---------- tackles & fouls ---------- */
+function gkSafeZone(gk){
+  const d=teams[gk.team].dir,ownGoalX=d===1?0:L;
+  return Math.abs(gk.x-ownGoalX)<PEN_D+75&&Math.abs(gk.y-W/2)<PEN_W/2+65;
+}
 function tryTackle(p,slide){
   if(p.tackleCd>0||p.stun>0||p.lunge)return;
   p.tackleCd=slide?1.3:.75;
@@ -1355,12 +1359,12 @@ function lungeStep(p,dt){
   const l=p.lunge;l.t-=dt;
   const sp=(l.slide?340:250)*(l.t/l.max*.6+.4);
   p.vx=l.dx*sp;p.vy=l.dy*sp;
-  if(!l.hit&&ball.owner&&ball.owner.team!==p.team&&!ball.owner.isGK&&dist(p,ball.owner)<26){l.hit=true;resolveTackle(p,ball.owner,l);}
+  if(!l.hit&&ball.owner&&ball.owner.team!==p.team&&(!ball.owner.isGK||!gkSafeZone(ball.owner))&&dist(p,ball.owner)<30){l.hit=true;resolveTackle(p,ball.owner,l);}
   if(l.t<=0){p.lunge=null;p.stun=l.slide?(l.hit?.25:.55):(l.hit?0:.18);}
 }
 function resolveTackle(p,o,l){
   if(o.sk){p.stun=Math.max(p.stun,.55);p.lunge=null;return;}   // beaten by the skill move
-  if(o.protect>0||o.isGK)return;
+  if(o.protect>0||(o.isGK&&gkSafeZone(o)))return;
   const dp=dparams(p.team);
   let chance=(l.slide?.72:.58)*(p.team===1?dp.tk:1);
   if(o.sprinting)chance+=.1;
@@ -1515,13 +1519,18 @@ function aiStep(p,dt){
   }else if(ball.owner.team!==p.team){
     const o=ball.owner;
     const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0)+(Tm.sty.press&&prog(o.x,d)>L*.5?1:0)+(Tm.sty.press>=2&&prog(o.x,d)>L*.35?1:0);
-    if(rank<n&&!o.isGK&&(p.role!=='DF'||dist(p,o)<380)){
+    if(rank<n&&(!o.isGK||!gkSafeZone(o))&&(p.role!=='DF'||dist(p,o)<430)){
       tx=o.x+o.vx*.25;ty=o.y+o.vy*.25;sp=base*(rank===0?1.1:1.0);p.sprinting=true;
       if(rank===0&&!p.lunge&&p.tackleCd<=0&&dist(p,o)<30&&o.protect<=0&&p.stun<=0){
         if(Math.random()<dp.tk*1.6*dt){p.face=Math.atan2(o.y-p.y,o.x-p.x);tryTackle(p,Math.random()<.12);}
       }
     }else{
       [tx,ty]=homePos(p);
+      if(o.isGK&&gkSafeZone(o)){
+        // Respect the keeper's protected six-yard/penalty area; press outside it.
+        let rx=p.x-o.x,ry=p.y-o.y,rd=Math.hypot(rx,ry)||1;
+        if(rd<112){tx=o.x+rx/rd*118;ty=o.y+ry/rd*118;}
+      }
       if(Math.abs(o.x-ownGoalX)<650&&(p.role==='DF'||p.role==='MF'))ty=ty+(o.y-ty)*.3;
     }
   }else{
@@ -1600,6 +1609,8 @@ function gkUpdate(p,dt){
 }
 function gkDistribute(p){
   const inp=IN(p),d=teams[p.team].dir;let q=null,lob=false;
+  // Keepers can occasionally try a long-range shot instead of always passing.
+  if(Math.random()<.035){doShoot(p,.96,rand(-.16,.16),true);return;}
   const mag=Math.hypot(inp.mx,inp.my);
   if(mag>.35){
     lob=inp.lob||inp.sprint;q=pickTarget(p,inp.mx/mag,inp.my/mag,lob)||pickTarget(p,inp.mx/mag,inp.my/mag,!lob);
