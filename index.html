@@ -673,7 +673,12 @@ const EXTRA_LEAGUE_TEAMS=[
  ['Portsmouth','POM','#001489','#ffffff',72],['Derby County','DER','#ffffff','#111111',72],
  ['Birmingham City','BIR','#008fd5','#ffffff',71],['Blackburn Rovers','BLA','#ffffff','#009fe3',72],
  ['Stoke City','STK','#e21b2d','#ffffff',71],['Bristol City','BRI','#d71920','#ffffff',71],
- ['Swansea City','SWA','#ffffff','#111111',71],['Cardiff City','CAR','#0070b5','#d71920',70]
+ ['Swansea City','SWA','#ffffff','#111111',71],['Cardiff City','CAR','#0070b5','#d71920',70],
+ ['SC Freiburg','FRE','#d71920','#111111',75],['Stade Rennais','REN','#d71920','#111111',76],['OGC Nice','NIC','#111111','#e21b2d',75],['RC Lens','LEN','#f5d500','#d71920',76],
+ ['SC Braga','BRA2','#d71920','#ffffff',76],['Vitória SC','VSC','#111111','#ffffff',73],['Boavista','BOA','#111111','#ffffff',71],['Rio Ave','RIO','#168b54','#ffffff',70],['Famalicão','FAM','#005ca9','#ffffff',70],
+ ['AZ Alkmaar','AZA','#d71920','#ffffff',76],['FC Twente','TWE','#d71920','#ffffff',74],['FC Utrecht','UTR','#d71920','#ffffff',72],['Heerenveen','HEE','#0067b1','#ffffff',70],['NEC Nijmegen','NEC','#d71920','#111111',70],
+ ['Heart of Midlothian','HEA','#d71920','#ffffff',73],['Hibernian','HIB','#168b54','#ffffff',70],['Motherwell','MOT','#fbe122','#d71920',68],['Dundee United','DUN','#f58220','#111111',68],['Dundee FC','DUF','#111111','#ffffff',67],
+ ['Trabzonspor','TRA','#8b1d2c','#5ca6d9',76],['İstanbul Başakşehir','IBA','#f58220','#111111',74],['Beşiktaş','BES','#111111','#ffffff',77],['Adana Demirspor','ADS','#005ca9','#ffffff',70]
 ];
 for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
@@ -690,12 +695,12 @@ function leagueNameForCareer(c){
  const n=TEAMS[c.team]?.n||'';
  if(/Real Madrid|Barcelona|Atlético Madrid|Real Sociedad|Sevilla|Valencia|Villarreal|Athletic Club|Girona|Betis|Osasuna/i.test(n))return 'La Liga';
  if(/Inter|Juventus|AC Milan|Napoli|Roma|Lazio|Atalanta|Fiorentina|Bologna|Torino/i.test(n))return 'Serie A';
- if(/Bayern Munich|Borussia Dortmund|Bayer Leverkusen|RB Leipzig|Eintracht Frankfurt|Hamburger SV|Schalke/i.test(n))return 'Bundesliga';
- if(/Paris Saint-Germain|Olympique|Monaco|Lille/i.test(n))return 'Ligue 1';
- if(/Benfica|Porto|Sporting CP/i.test(n))return 'Primeira Liga';
- if(/Ajax|PSV|Feyenoord/i.test(n))return 'Eredivisie';
- if(/Celtic|Rangers|Aberdeen/i.test(n))return 'Scottish Premiership';
- if(/Galatasaray|Fenerbahçe/i.test(n))return 'Süper Lig';
+ if(/Bayern Munich|Borussia Dortmund|Bayer Leverkusen|RB Leipzig|Eintracht Frankfurt|Hamburger SV|Schalke|SC Freiburg/i.test(n))return 'Bundesliga';
+ if(/Paris Saint-Germain|Olympique|Monaco|Lille|Stade Rennais|OGC Nice|RC Lens/i.test(n))return 'Ligue 1';
+ if(/Benfica|Porto|Sporting CP|SC Braga|Vitória SC|Boavista|Rio Ave|Famalicão/i.test(n))return 'Primeira Liga';
+ if(/Ajax|PSV|Feyenoord|AZ Alkmaar|FC Twente|FC Utrecht|Heerenveen|NEC Nijmegen/i.test(n))return 'Eredivisie';
+ if(/Celtic|Rangers|Aberdeen|Heart of Midlothian|Hibernian|Motherwell|Dundee United|Dundee FC/i.test(n))return 'Scottish Premiership';
+ if(/Galatasaray|Fenerbahçe|Trabzonspor|İstanbul Başakşehir|Beşiktaş|Adana Demirspor/i.test(n))return 'Süper Lig';
  if(/Malmö|AIK|Djurgården|Hammarby|Elfsborg|Norrköping/i.test(n))return 'Allsvenskan';
  if(/Flamengo|Boca Juniors|River Plate/i.test(n))return 'South American League';
  if(/Atlanta United|Portland Timbers|Inter Miami|LA Galaxy/i.test(n))return 'MLS';
