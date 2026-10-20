@@ -1546,6 +1546,30 @@ function aiStep(p,dt){
     [tx,ty]=homePos(p);
     tx+=d*Math.sin(gameTime*.6+p.idx*2)*32;ty+=Math.cos(gameTime*.5+p.idx*3)*38;
     if(Tm.sty.counter&&p.role!=='DF'&&gameTime-(ball.ownT||0)<3.5)tx+=d*130;
+    // Attacking support: forwards make timed runs, midfielders offer safer passing angles,
+    // and wide players stretch the defence instead of bunching around the ball carrier.
+    const carrier=ball.owner;
+    if(carrier&&carrier.team===p.team&&carrier!==p){
+      const gap=dist(p,carrier),towardGoal=prog(carrier.x,d);
+      const lane=(p.fy<.34?-1:p.fy>.66?1:0);
+      if(p.role==='FW'){
+        const run=clamp(105+(carrier.role==='MF'?55:0)+Math.max(0,500-gap)*.12,90,190);
+        tx=carrier.x+d*run;
+        ty=clamp(carrier.y+lane*clamp(75+gap*.12,75,145),75,W-75);
+      }else if(p.role==='MF'){
+        tx=carrier.x-d*clamp(65+gap*.18,65,150);
+        ty=clamp(carrier.y+(p.y<carrier.y?-1:1)*clamp(80+gap*.08,80,135),65,W-65);
+      }else if(p.role==='DF'&&towardGoal<L*.68){
+        // Keep defenders behind the ball as a safe recycle option.
+        tx=carrier.x-d*clamp(125+gap*.12,125,210);
+        ty=clamp(carrier.y+(p.y<carrier.y?-1:1)*95,70,W-70);
+      }
+      // Never deliberately send a runner beyond the current offside line.
+      if(p.role!=='DF'){
+        const limit=Math.max(prog(carrier.x,d),offProg(p.team))-24;
+        if(prog(tx,d)>limit)tx=d===1?limit:L-limit;
+      }
+    }
     if(setPiece&&setPiece.team===p.team&&ball.owner===setPiece.taker&&p.role!=='DF'){
       const atkX=d===1?L:0;tx=atkX-d*(110+(p.idx%4)*32);ty=W/2+((p.idx%3)-1)*85;
     }else if(p.role!=='DF'){const lim=Math.max(prog(ball.x,d),offProg(p.team))-8;if(prog(tx,d)>lim)tx=d===1?lim:L-lim;}
