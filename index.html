@@ -719,7 +719,37 @@ const EXTRA_LEAGUE_TEAMS=[
  ['1. FC Köln','KOE','#d71920','#ffffff',73],['1. FSV Mainz 05','MAI','#d71920','#ffffff',74],['TSG Hoffenheim','HOF','#005ca9','#ffffff',73],['FC Augsburg','AUG','#d71920','#168447',72],
  ['AJ Auxerre','AUX','#005ca9','#ffffff',71],['Montpellier HSC','MTP','#f58220','#005ca9',70],['FC Lorient','LOR','#f58220','#111111',70],
  ['Royal Antwerp','ANT','#d71920','#ffffff',74],['Union Saint-Gilloise','USG','#fbe122','#005ca9',75],['PAOK FC','PAO','#111111','#ffffff',74],['Panathinaikos','PAN','#168447','#ffffff',74],
- ['Jeonbuk Hyundai Motors','JEO','#168447','#ffffff',72],['Al Sadd','SAD','#ffffff','#111111',73],['Orlando City','ORL','#6b2b8c','#ffffff',72],['Vancouver Whitecaps','VAN','#005ca9','#ffffff',72],['New York City FC','NYC','#75b8e7','#ffffff',73]
+ ['Jeonbuk Hyundai Motors','JEO','#168447','#ffffff',72],['Al Sadd','SAD','#ffffff','#111111',73],['Orlando City','ORL','#6b2b8c','#ffffff',72],['Vancouver Whitecaps','VAN','#005ca9','#ffffff',72],['New York City FC','NYC','#75b8e7','#ffffff',73],
+ ['Sporting Kansas City','SKC','#005ca9','#ffffff',69],
+ ['CF Montréal','MTL','#00529b','#ffffff',68],
+ ['Philadelphia Union','PHI','#b58a2b','#111111',72],
+ ['Botafogo','BOT','#111111','#ffffff',77],
+ ['Internacional','INT','#d71920','#ffffff',75],
+ ['Fluminense','FLU','#7b1e32','#168447',76],
+ ['Athletico Paranaense','CAP','#d71920','#111111',74],
+ ['Vélez Sarsfield','VEL','#ffffff','#005ca9',73],
+ ['Estudiantes de La Plata','EST','#d71920','#ffffff',74],
+ ['Independiente','IND','#d71920','#ffffff',73],
+ ['Brøndby IF','BRO2','#fbe122','#005ca9',72],
+ ['FC Copenhagen','FCK','#ffffff','#005ca9',75],
+ ['Rosenborg BK','RBK','#111111','#ffffff',70],
+ ['FC Basel','BAS','#d71920','#005ca9',72],
+ ['BSC Young Boys','YB','#fbe122','#111111',74],
+ ['Servette FC','SER','#d71920','#ffffff',70],
+ ['Viktoria Plzeň','PLZ','#d71920','#005ca9',74],
+ ['Sparta Prague','SPA','#d71920','#fbe122',74],
+ ['Slavia Prague','SLA','#d71920','#ffffff',75],
+ ['Shimizu S-Pulse','SHI','#f58220','#ffffff',68],
+ ['Gamba Osaka','GAM','#005ca9','#111111',72],
+ ['FC Seoul','SEO','#d71920','#111111',71],
+ ['Al-Ettifaq','ETT','#168447','#d71920',71],
+ ['Al-Shabab','SHB','#ffffff','#111111',72],
+ ['Pachuca','PAC','#ffffff','#005ca9',73],
+ ['Tigres UANL','TIG','#fbe122','#005ca9',76],
+ ['Cruz Azul','CAZ','#005ca9','#ffffff',75],
+ ['Zamalek SC','ZAM','#ffffff','#d71920',73],
+ ['Espérance de Tunis','ESTU','#d71920','#fbe122',72],
+ ['Mamelodi Sundowns','SUN2','#fbe122','#005ca9',73]
 ];
 for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
@@ -2062,7 +2092,8 @@ const CLUB_COUNTRY={
  '1. FC Köln':'Germany','1. FSV Mainz 05':'Germany','TSG Hoffenheim':'Germany','FC Augsburg':'Germany',
  'AJ Auxerre':'France','Montpellier HSC':'France','FC Lorient':'France',
  'Royal Antwerp':'Belgium','Union Saint-Gilloise':'Belgium','PAOK FC':'Greece','Panathinaikos':'Greece',
- 'Jeonbuk Hyundai Motors':'South Korea','Al Sadd':'Qatar','Orlando City':'United States','Vancouver Whitecaps':'Canada','New York City FC':'United States'
+ 'Jeonbuk Hyundai Motors':'South Korea','Al Sadd':'Qatar','Orlando City':'United States','Vancouver Whitecaps':'Canada','New York City FC':'United States',
+ 'Sporting Kansas City':'United States','CF Montréal':'Canada','Philadelphia Union':'United States','Botafogo':'Brazil','Internacional':'Brazil','Fluminense':'Brazil','Athletico Paranaense':'Brazil','Vélez Sarsfield':'Argentina','Estudiantes de La Plata':'Argentina','Independiente':'Argentina','Brøndby IF':'Denmark','FC Copenhagen':'Denmark','Rosenborg BK':'Norway','FC Basel':'Switzerland','BSC Young Boys':'Switzerland','Servette FC':'Switzerland','Viktoria Plzeň':'Czechia','Sparta Prague':'Czechia','Slavia Prague':'Czechia','Shimizu S-Pulse':'Japan','Gamba Osaka':'Japan','FC Seoul':'South Korea','Al-Ettifaq':'Saudi Arabia','Al-Shabab':'Saudi Arabia','Pachuca':'Mexico','Tigres UANL':'Mexico','Cruz Azul':'Mexico','Zamalek SC':'Egypt','Espérance de Tunis':'Tunisia','Mamelodi Sundowns':'South Africa'
 };
 function teamCountry(t){return t.g==='nat'?t.n:(CLUB_COUNTRY[t.n]||'Other');}
 function updateTeamCountryFilter(){
