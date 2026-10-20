@@ -357,7 +357,7 @@ button,select{touch-action:manipulation}
     </div>
     <div class="row">
       <span class="lbl">Difficulty</span>
-      <div class="seg" id="segDiff"><button data-v="0">Amateur</button><button data-v="1" class="on">Pro</button><button data-v="2">World class</button></div>
+      <div class="seg" id="segDiff"><button data-v="0">Amateur</button><button data-v="1" class="on">Pro</button><button data-v="2">World class</button><button data-v="3">Legendary</button><button data-v="4">Ultimate</button><button data-v="5">Insane</button></div>
       <span class="lbl">Half length</span>
       <div class="seg" id="segLen"><button data-v="120">2 min</button><button data-v="180" class="on">3 min</button><button data-v="300">5 min</button></div></div>
     <div class="row" style="margin-top:6px">
@@ -847,9 +847,12 @@ const FORM={
  '4141':[['GK',1,.03,.5],['DF',2,.2,.88],['DF',4,.17,.63],['DF',5,.17,.37],['DF',3,.2,.12],['MF',6,.3,.5],['MF',7,.48,.88],['MF',8,.46,.63],['MF',10,.46,.37],['MF',11,.48,.12],['FW',9,.65,.5]],
 };
 const DIFF=[
- {spd:.9,err:1.5,tk:.8,gk:.85,react:.16},
- {spd:1,err:1,tk:1.1,gk:1,react:.09},
- {spd:1.07,err:.7,tk:1.5,gk:1.12,react:.04},
+ {spd:.9,err:1.5,tk:.8,gk:.85,react:.16},       // Amateur
+ {spd:1,err:1,tk:1.1,gk:1,react:.09},          // Pro
+ {spd:1.07,err:.7,tk:1.5,gk:1.12,react:.04},   // World class
+ {spd:1.11,err:.52,tk:1.7,gk:1.18,react:.03},  // Legendary
+ {spd:1.15,err:.38,tk:1.9,gk:1.25,react:.02},  // Ultimate
+ {spd:1.2,err:.25,tk:2.15,gk:1.32,react:.012}, // Insane
 ];
 /* ---- 2025-26 form ratings, playing styles, goalkeeper quality ---- */
 const SP={
