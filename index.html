@@ -2161,6 +2161,7 @@ function openCareer(){
 }
 function renderCareer(){
   const c=career,b=$('cBody');
+  if(c&&(!Array.isArray(c.market)||!c.market.length)){makeTransferMarket();saveAll();}
   if(!c){
     $('cInfo').textContent='Lead your club to league and cup glory';
     b.innerHTML=`<p class="sub">Pick your club on the main menu first, then start here. Play a 7-match league season; the top 4 enter the Champions Cup. Earn coins to train your squad, and rivals get tougher every season.</p>
