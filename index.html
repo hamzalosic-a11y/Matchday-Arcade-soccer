@@ -712,7 +712,14 @@ const EXTRA_LEAGUE_TEAMS=[
  ['Chesterfield','CHF','#1b458f','#ffffff',65],
  ['Colchester United','COL','#1b458f','#ffffff',64],
  ['Crawley Town','CRA','#d71920','#ffffff',63],
- ['Crewe Alexandra','CRE','#d71920','#ffffff',64]
+ ['Crewe Alexandra','CRE','#d71920','#ffffff',64],
+ ['Ipswich Town','IPS','#0057b8','#ffffff',74],['Sheffield United','SHU2','#e21b2d','#111111',73],['Middlesbrough','MID2','#e21b2d','#ffffff',73],['Hull City','HUL','#f58220','#111111',71],['Oxford United','OXF','#fbe122','#1b458f',68],['Plymouth Argyle','PLY','#005b3c','#ffffff',68],['Stockport County','STO','#005b3c','#ffffff',69],['Wigan Athletic','WIG','#005ca9','#ffffff',68],['Reading','REA','#005ca9','#ffffff',67],
+ ['Getafe CF','GET','#005ca9','#ffffff',74],['Rayo Vallecano','RAY','#f2f2f2','#d71920',74],['Deportivo Alavés','ALA','#005ca9','#ffffff',72],['RCD Mallorca','MAL','#d71920','#111111',73],['UD Las Palmas','LPA','#fbe122','#005ca9',72],
+ ['Como 1907','COM','#005ca9','#ffffff',75],['Cagliari','CAG','#d71920','#005ca9',72],['Lecce','LEC','#fbe122','#d71920',71],['US Sassuolo','SAS','#111111','#168447',72],
+ ['1. FC Köln','KOE','#d71920','#ffffff',73],['1. FSV Mainz 05','MAI','#d71920','#ffffff',74],['TSG Hoffenheim','HOF','#005ca9','#ffffff',73],['FC Augsburg','AUG','#d71920','#168447',72],
+ ['AJ Auxerre','AUX','#005ca9','#ffffff',71],['Montpellier HSC','MTP','#f58220','#005ca9',70],['FC Lorient','LOR','#f58220','#111111',70],
+ ['Royal Antwerp','ANT','#d71920','#ffffff',74],['Union Saint-Gilloise','USG','#fbe122','#005ca9',75],['PAOK FC','PAO','#111111','#ffffff',74],['Panathinaikos','PAN','#168447','#ffffff',74],
+ ['Jeonbuk Hyundai Motors','JEO','#168447','#ffffff',72],['Al Sadd','SAD','#ffffff','#111111',73],['Orlando City','ORL','#6b2b8c','#ffffff',72],['Vancouver Whitecaps','VAN','#005ca9','#ffffff',72],['New York City FC','NYC','#75b8e7','#ffffff',73]
 ];
 for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
@@ -2048,7 +2055,14 @@ const CLUB_COUNTRY={
  'Shakhtar Donetsk':'Ukraine','Dinamo Zagreb':'Croatia','Red Bull Salzburg':'Austria','Olympiacos':'Greece',
  'Al-Hilal':'Saudi Arabia','Al-Nassr':'Saudi Arabia','Al-Ittihad':'Saudi Arabia','Al-Ahli':'Saudi Arabia',
  'Al Ahly':'Egypt','Wydad AC':'Morocco','Club América':'Mexico','Monterrey':'Mexico','Urawa Red Diamonds':'Japan','Kawasaki Frontale':'Japan',
- 'Hajduk Split':'Croatia','FK Sarajevo':'Bosnia and Herzegovina','Željezničar':'Bosnia and Herzegovina','HŠK Zrinjski':'Bosnia and Herzegovina','Borac Banja Luka':'Bosnia and Herzegovina'
+ 'Hajduk Split':'Croatia','FK Sarajevo':'Bosnia and Herzegovina','Željezničar':'Bosnia and Herzegovina','HŠK Zrinjski':'Bosnia and Herzegovina','Borac Banja Luka':'Bosnia and Herzegovina',
+ 'Ipswich Town':'England','Sheffield United':'England','Middlesbrough':'England','Hull City':'England','Oxford United':'England','Plymouth Argyle':'England','Stockport County':'England','Wigan Athletic':'England','Reading':'England',
+ 'Getafe CF':'Spain','Rayo Vallecano':'Spain','Deportivo Alavés':'Spain','RCD Mallorca':'Spain','UD Las Palmas':'Spain',
+ 'Como 1907':'Italy','Cagliari':'Italy','Lecce':'Italy','US Sassuolo':'Italy',
+ '1. FC Köln':'Germany','1. FSV Mainz 05':'Germany','TSG Hoffenheim':'Germany','FC Augsburg':'Germany',
+ 'AJ Auxerre':'France','Montpellier HSC':'France','FC Lorient':'France',
+ 'Royal Antwerp':'Belgium','Union Saint-Gilloise':'Belgium','PAOK FC':'Greece','Panathinaikos':'Greece',
+ 'Jeonbuk Hyundai Motors':'South Korea','Al Sadd':'Qatar','Orlando City':'United States','Vancouver Whitecaps':'Canada','New York City FC':'United States'
 };
 function teamCountry(t){return t.g==='nat'?t.n:(CLUB_COUNTRY[t.n]||'Other');}
 function updateTeamCountryFilter(){
