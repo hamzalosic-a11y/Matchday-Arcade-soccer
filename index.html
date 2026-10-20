@@ -658,10 +658,10 @@ TEAMS.push(T('Borussia Dortmund','BVB','#fbe122','#111111','#fbe122','solid',84,
 
 /* Career leagues: compact 8-club divisions keep each season playable while supporting promotion/relegation. */
 const ENGLISH_DIVISIONS=[
- {name:'Premier League',teams:['Manchester City','Liverpool','Arsenal','Manchester United','Chelsea','Tottenham Hotspur','Newcastle United','Aston Villa']},
- {name:'Championship',teams:['West Ham United','Everton','Leicester City','Brighton & Hove Albion','Fulham','Crystal Palace','Wolverhampton Wanderers','Nottingham Forest']},
- {name:'League One',teams:['Leeds United','Sunderland','Burnley','Sheffield United','Norwich City','Middlesbrough','Coventry City','Watford']},
- {name:'League Two',teams:['Portsmouth','Derby County','Birmingham City','Blackburn Rovers','Stoke City','Bristol City','Swansea City','Cardiff City']}
+ {name:'Premier League',teams:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton & Hove Albion','Chelsea','Coventry City','Crystal Palace']},
+ {name:'Championship',teams:['Birmingham City','Blackburn Rovers','Bolton Wanderers','Bristol City','Burnley','Cardiff City','Charlton Athletic','Derby County']},
+ {name:'League One',teams:['AFC Wimbledon','Barnsley','Blackpool','Bradford City','Bromley','Burton Albion','Cambridge United','Doncaster Rovers']},
+ {name:'League Two',teams:['Accrington Stanley','Barnet','Bristol Rovers','Cheltenham Town','Chesterfield','Colchester United','Crawley Town','Crewe Alexandra']}
 ];
 const EXTRA_LEAGUE_TEAMS=[
  ['Brighton & Hove Albion','BHA','#0057b8','#ffffff',79],['Crystal Palace','CRY','#1b458f','#c41230',77],
@@ -678,7 +678,33 @@ const EXTRA_LEAGUE_TEAMS=[
  ['SC Braga','BRA2','#d71920','#ffffff',76],['Vitória SC','VSC','#111111','#ffffff',73],['Boavista','BOA','#111111','#ffffff',71],['Rio Ave','RIO','#168b54','#ffffff',70],['Famalicão','FAM','#005ca9','#ffffff',70],
  ['AZ Alkmaar','AZA','#d71920','#ffffff',76],['FC Twente','TWE','#d71920','#ffffff',74],['FC Utrecht','UTR','#d71920','#ffffff',72],['Heerenveen','HEE','#0067b1','#ffffff',70],['NEC Nijmegen','NEC','#d71920','#111111',70],
  ['Heart of Midlothian','HEA','#d71920','#ffffff',73],['Hibernian','HIB','#168b54','#ffffff',70],['Motherwell','MOT','#fbe122','#d71920',68],['Dundee United','DUN','#f58220','#111111',68],['Dundee FC','DUF','#111111','#ffffff',67],
- ['Trabzonspor','TRA','#8b1d2c','#5ca6d9',76],['İstanbul Başakşehir','IBA','#f58220','#111111',74],['Beşiktaş','BES','#111111','#ffffff',77],['Adana Demirspor','ADS','#005ca9','#ffffff',70]
+ ['Trabzonspor','TRA','#8b1d2c','#5ca6d9',76],['İstanbul Başakşehir','IBA','#f58220','#111111',74],['Beşiktaş','BES','#111111','#ffffff',77],['Adana Demirspor','ADS','#005ca9','#ffffff',70],
+ ['Coventry City','COV','#75b8e7','#ffffff',76],
+ ['Charlton Athletic','CHA','#d71920','#ffffff',72],
+ ['Bolton Wanderers','BOL','#ffffff','#navy',74],
+ ['Lincoln City','LIN','#d71920','#ffffff',73],
+ ['Millwall','MILW','#1b458f','#ffffff',72],
+ ['Preston North End','PNE','#ffffff','#navy',72],
+ ['Queens Park Rangers','QPR','#1b458f','#ffffff',71],
+ ['Southampton','SOU','#d71920','#ffffff',75],
+ ['West Bromwich Albion','WBA','#ffffff','#111111',73],
+ ['Wrexham','WRE','#d71920','#ffffff',72],
+ ['AFC Wimbledon','WIM','#1b458f','#ffffff',68],
+ ['Barnsley','BAR','#d71920','#ffffff',69],
+ ['Blackpool','BLA2','#f58220','#ffffff',69],
+ ['Bradford City','BRA3','#d71920','#ffffff',70],
+ ['Bromley','BRO','#d71920','#ffffff',66],
+ ['Burton Albion','BUR2','#fbe122','#111111',66],
+ ['Cambridge United','CAMU','#111111','#ffffff',66],
+ ['Doncaster Rovers','DON','#d71920','#ffffff',68],
+ ['Accrington Stanley','ACC','#d71920','#ffffff',64],
+ ['Barnet','BNT','#f58220','#111111',64],
+ ['Bristol Rovers','BRV','#005ca9','#ffffff',65],
+ ['Cheltenham Town','CHEL','#d71920','#111111',64],
+ ['Chesterfield','CHF','#1b458f','#ffffff',65],
+ ['Colchester United','COL','#1b458f','#ffffff',64],
+ ['Crawley Town','CRA','#d71920','#ffffff',63],
+ ['Crewe Alexandra','CRE','#d71920','#ffffff',64]
 ];
 for(const [n,c1,c2,r] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,n.slice(0,3).toUpperCase(),c1,c2,c2,'solid',r,r,r-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
