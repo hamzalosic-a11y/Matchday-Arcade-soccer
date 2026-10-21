@@ -372,6 +372,7 @@ button,select{touch-action:manipulation}
     </div>
     <div class="row" style="margin-top:6px"><span class="lbl">Gameplay style</span><div class="seg" id="segGameplay"><button data-v="competitive" class="on">⚡ Competitive</button><button data-v="authentic">⚽ Authentic</button></div></div>
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
+    <div class="row" style="margin-top:6px"><span class="lbl">Fun mode</span><div class="seg" id="segFunMode"><button data-v="classic" class="on">⚽ Classic</button><button data-v="turbo">⚡ Turbo Rush</button><button data-v="super">🚀 Super Shots</button><button data-v="chaos">🌀 Chaos Ball</button></div></div><p id="funModeHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Classic football with balanced physics.</p>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button></div>
@@ -891,7 +892,7 @@ let state='menu',stTimer=0,half=1,clock=0,score=[0,0],stats={shots:[0,0],poss:[0
 let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near=[[],[]];
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
-const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1,gameplay:'competitive'};
+const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1,gameplay:'competitive',funMode:'classic'};
 // Local 3-round knockout cup; results are based on matches actually played.
 const cup={active:false,round:0,opponents:[],lastResult:'',pendingNext:false,best:0,wins:0};
 try{cup.wins=Math.max(0,parseInt(localStorage.getItem('md_cup_wins')||'0',10)||0);}catch(_){}
@@ -1009,7 +1010,7 @@ function startMatch(){
   teams=[mkTeam(0,d0,kits[0]),mkTeam(1,d1,kits[1])];
   teams.forEach((Tm,i)=>{const o=teams[1-i],ov=x=>(x.a+x.m+x.d)/3,gap=clamp((ov(Tm)-ov(o))/120,-.05,.05),P=SPR[Tm.data.sty]||SPR.balanced;
     Tm.sty=Object.assign({},P,{line:P.line+gap});if(settings.gameplay==='authentic'){Tm.sty.line+=.035;Tm.sty.wide*=.94;}
-    Tm.players.forEach(p=>{if(!p.isGK){p.pace*=THEME.spd;if(p.role!=='DF')p.pace*=P.tempo;}});});
+    Tm.players.forEach(p=>{if(!p.isGK){p.pace*=THEME.spd;if(p.role!=='DF')p.pace*=P.tempo;if(settings.funMode==='turbo')p.pace*=1.32;}});});
   players=teams[0].players.concat(teams[1].players);players.forEach((p,i)=>p.gi=i);
   ball={x:L/2,y:W/2,z:0,vx:0,vy:0,vz:0,owner:null,lastKicker:null,lastTeam:0,noPick:0,roll:0,net:false};
   ms=[[],[]];evt=0;addShown=false;addT=0;score=[0,0];half=1;clock=0;stats={shots:[0,0],poss:[0,0],yc:[0,0],rc:[0,0],off:[0,0],sot:[0,0],sv:[0,0]};paused=false;particles=[];pending=null;setPiece=null;
@@ -1054,6 +1055,7 @@ function attachBall(dt){
   ball.roll+=Math.hypot(o.vx,o.vy)*dt/6;
 }
 function kick(p,dx,dy,speed,vz,keepZ){
+  if(settings.funMode==='super'){speed*=1.42;vz*=1.22;}
   const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
   p.thr=false;ball.sv=null;ball.offs=null;ball.owner=null;ball.vx=dx*speed;ball.vy=dy*speed;ball.vz=vz;ball.z=keepZ?ball.z:(vz>0?1:0);ball.curl=0;
   ball.lastKicker=p;ball.lastTeam=p.team;ball.noPick=.3;p.kick=.22;p.charge=0;
@@ -1067,8 +1069,8 @@ function stepBall(dt){
   for(let s=0;s<n;s++){
     const px=ball.x;
     if(ball.z>0||ball.vz!==0){
-      ball.vz-=900*h;ball.z+=ball.vz*h;
-      if(ball.z<=0){ball.z=0;if(Math.abs(ball.vz)>130){ball.vz=-ball.vz*.55;ball.vx*=.88;ball.vy*=.88;sfx.bounce();}else ball.vz=0;}
+      ball.vz-=(settings.funMode==='chaos'?520:900)*h;ball.z+=ball.vz*h;
+      if(ball.z<=0){ball.z=0;if(Math.abs(ball.vz)>130){ball.vz=-ball.vz*(settings.funMode==='chaos'?.78:.55);ball.vx*=settings.funMode==='chaos'?.94:.88;ball.vy*=settings.funMode==='chaos'?.94:.88;sfx.bounce();}else ball.vz=0;}
     }
     const k=ball.net?4.5:(ball.z>2?.25:THEME.fric)*(settings.gameplay==='authentic'?1.12:1);
     const f=Math.exp(-k*h);ball.vx*=f;ball.vy*=f;
@@ -2270,6 +2272,8 @@ function seg(id,key,num){
 $('segPitch').innerHTML=THEMES.map((t,i)=>`<button data-v="${i}"${i===0?' class="on"':''}>${t.n}</button>`).join('')+'<button data-v="-1">Random</button>';
 $('teamCountryFilter').addEventListener('change',e=>{settings.country=e.target.value;renderTeams();});
 seg('tabSeg','tab',false);seg('segDiff','diff',true);seg('segLen','half',true);seg('segPitch','pitch',true);seg('segView','view',true);
+const funHints={classic:'Classic football with balanced physics.',turbo:'Everyone moves faster. Sprint, press, and counterattack at turbo speed!',super:'Shots and long passes fly faster and higher. Goalkeepers have less time to react!',chaos:'The ball bounces higher, stays airborne longer, and ricochets with extra energy.'};
+$('segFunMode').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;settings.funMode=b.dataset.v;[...$('segFunMode').children].forEach(x=>x.classList.toggle('on',x===b));$('funModeHint').textContent=funHints[settings.funMode]||funHints.classic;});
 function syncGameplayPreset(){const el=$('segGameplay');if(el)[...el.children].forEach(b=>b.classList.toggle('on',b.dataset.v===settings.gameplay));const hint=$('gameplayHint');if(hint)hint.textContent=settings.gameplay==='authentic'?'More realistic pace, tighter team shape, and ball movement that slows naturally.':'Faster movement and passing for responsive arcade matches.';}
 $('segGameplay').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;settings.gameplay=b.dataset.v;syncGameplayPreset();});syncGameplayPreset();
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
