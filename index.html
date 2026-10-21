@@ -3265,9 +3265,10 @@ function draw3dPlayer(p){
     const a=sw*s+(p.kick>0&&s===1?.9:0),hip=m4.mul(m4.T(s*5,18,0),m4.RZ(a));
     part(m4.mul(hip,TRS(0,-3.5,0,7.5,8,7.5)),GL.box,sh);
     part(m4.mul(hip,TRS(0,-12.5,0,6,10,6)),GL.box,sock);
-    // Small dark boots and a bright sole help the feet read clearly at match zoom.
-    part(m4.mul(hip,TRS(0,-18.2,2.8,6.2,3.1,9.5)),GL.box,[.055,.065,.085,1]);
-    part(m4.mul(hip,TRS(0,-19.7,3.0,6.3,1,9.2)),GL.box,[.82,.86,.9,1]);
+    // Compact, dark blocky football boots: tucked to the sock, with a subtle outsole.
+    // Keep both pieces in the leg's transform so they stay aligned while running and kicking.
+    part(m4.mul(hip,TRS(0,-18.4,3.2,5.1,2.6,7.6)),GL.box,[.045,.052,.068,1]);
+    part(m4.mul(hip,TRS(0,-20.15,3.2,5.05,.45,7.45)),GL.box,[.12,.13,.15,1]);
     const arm=m4.mul(m4.T(0,33,s*12.5),m4.RZ(-a*.9));
     part(m4.mul(arm,TRS(0,-6.5,0,4.6,13,4.6)),GL.box,p.isGK?col:skin);
   }
