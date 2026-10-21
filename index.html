@@ -3265,10 +3265,8 @@ function draw3dPlayer(p){
     const a=sw*s+(p.kick>0&&s===1?.9:0),hip=m4.mul(m4.T(s*5,18,0),m4.RZ(a));
     part(m4.mul(hip,TRS(0,-3.5,0,7.5,8,7.5)),GL.box,sh);
     part(m4.mul(hip,TRS(0,-12.5,0,6,10,6)),GL.box,sock);
-    // Compact, dark blocky football boots: tucked to the sock, with a subtle outsole.
-    // Keep both pieces in the leg's transform so they stay aligned while running and kicking.
-    part(m4.mul(hip,TRS(0,-18.4,3.2,5.1,2.6,7.6)),GL.box,[.045,.052,.068,1]);
-    part(m4.mul(hip,TRS(0,-20.15,3.2,5.05,.45,7.45)),GL.box,[.12,.13,.15,1]);
+    // Simple chunky square boots, matching the game's original blocky character style.
+    part(m4.mul(hip,TRS(0,-18.8,3.0,6.2,3.8,8.2)),GL.box,[.055,.065,.085,1]);
     const arm=m4.mul(m4.T(0,33,s*12.5),m4.RZ(-a*.9));
     part(m4.mul(arm,TRS(0,-6.5,0,4.6,13,4.6)),GL.box,p.isGK?col:skin);
   }
