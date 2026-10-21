@@ -1752,6 +1752,11 @@ function updatePlayer(p,dt){
   if(p.thr&&ball.owner!==p)p.thr=false;else if(p.thr)p.protect=Math.max(p.protect,.4);
   p.protect=Math.max(0,p.protect-dt);p.tackleCd=Math.max(0,p.tackleCd-dt);p.cant=Math.max(0,p.cant-dt);
   p.kick=Math.max(0,p.kick-dt);p.recv=Math.max(0,p.recv-dt);
+  // Goalkeepers must release the ball within four seconds after a catch.
+  if(p.isGK&&ball.owner===p){
+    p.gkHoldT=(p.gkHoldT||0)+dt;
+    if(p.gkHoldT>=4){p.gkHoldT=0;gkDistribute(p);}
+  }else p.gkHoldT=0;
   p.skCd=Math.max(0,(p.skCd||0)-dt);p.finCd=Math.max(0,(p.finCd||0)-dt);p.hdCd=Math.max(0,(p.hdCd||0)-dt);
   if(p.sk&&(p.sk.t-=dt)<=0)p.sk=null;if(p.air&&(p.air.t-=dt)<=0)p.air=null;if(p.fl&&(p.fl.t-=dt)<=0)p.fl=null;
   const live=state==='play';
