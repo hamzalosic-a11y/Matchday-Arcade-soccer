@@ -1451,13 +1451,15 @@ function setupRestart(type,team,x,y){
 }
 function goalScored(t){
   if(ball.sv&&1-ball.sv.t===t)stats.sot[t]++;ball.sv=null;
-  evt+=1;score[t]++;state='goal';stTimer=3.6;ball.net=true;lastScorer=t;
+  evt+=1;score[t]++;state='goal';stTimer=4.0;ball.net=true;lastScorer=t;
   const s=ball.lastKicker,own=s&&s.team!==t;
   if(s&&!own)ms[s.team].push(s.num);
-  showMsg(own?'OWN GOAL!':'GOOOOOAL!',s?`${s.nm||'#'+s.num}  ${teams[s.team].data.n}${s.ls&&!own?' · '+s.ls:''}`:teams[t].data.n,3300);
+  showMsg(own?'OWN GOAL!':'GOOOOOAL!',s?`${s.nm||'#'+s.num}  ${teams[s.team].data.n}${s.ls&&!own?' · '+s.ls:''}`:teams[t].data.n,3700);
   sfx.goal();
   const gx=t===0?L:0;
-  for(let i=0;i<240;i++){const colors=[teams[t].kit.p,teams[t].kit.c,'#ffd23f','#ffffff','#ff4d6d'];particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(60,520),vy:rand(-420,320),c:colors[i%colors.length],life:rand(1.5,3.4),r:rand(2,8)});}
+  // Bigger, longer goal burst in the scoring team's colours for a more rewarding finish.
+  const colors=[teams[t].kit.p,teams[t].kit.c,'#ffd23f','#ffffff','#ff4d6d','#7fd1ff'];
+  for(let i=0;i<320;i++){particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(80,560),vy:rand(-460,340),c:colors[i%colors.length],life:rand(1.7,3.8),r:rand(2,9)});}
 }
 function checkBounds(){
   if(ball.net)return;
@@ -1633,7 +1635,8 @@ function gkUpdate(p,dt){
   }
   if(!danger){p.ai.trk=false;p.diving=false;}
   if(tx===undefined){
-    tx=gl+d*clamp(20+bDepth*.045,20,62);ty=cy+clamp((ball.y-cy)*.3,-80,80);
+    // Track lateral ball movement more responsively without abandoning the goal.
+    tx=gl+d*clamp(20+bDepth*.045,20,62);ty=cy+clamp((ball.y-cy)*.38,-96,96);
     if(!ball.owner&&bDepth<PEN_D+10&&Math.abs(ball.y-cy)<PEN_W/2&&dist(p,ball)<190&&Math.hypot(ball.vx,ball.vy)<260){tx=ball.x;ty=ball.y;sp=BASE*1.1;}
   }
   steer(p,tx,ty,sp,dt,1800);
