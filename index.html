@@ -2093,7 +2093,9 @@ function drawWeather(dt){
   }
 }
 function render(dt){
-  if(view3d&&render3D(dt))return;
+  // If WebGL fails during a match, switch to the stable 2D renderer instead of leaving a black screen.
+  try{if(view3d&&GL&&render3D(dt))return;}catch(e){GL=null;view3d=false;try{syncView();}catch(_){} }
+
   ctx.setTransform(1,0,0,1,0,0);
   ctx.fillStyle='#0a1322';ctx.fillRect(0,0,cv.width,cv.height);
   if(state==='menu'||!ball){
@@ -3450,7 +3452,12 @@ function resize(){
   if(GL){GL.cv.width=cv.width;GL.cv.height=cv.height;}
   viewW=cw/ch<.9?800:1150;scale=cv.width/viewW;
 }
-addEventListener('resize',resize);resize();buildCrowd();initGL();resize();syncView();
+addEventListener('resize',resize);resize();
+// Recover gracefully if the browser/GPU drops the WebGL context during a match.
+const glCanvas=$('gl');
+glCanvas.addEventListener('webglcontextlost',e=>{e.preventDefault();GL=null;view3d=false;try{syncView();}catch(_){} });
+glCanvas.addEventListener('webglcontextrestored',()=>{GL=null;view3d=false;try{syncView();}catch(_){} });
+buildCrowd();initGL();resize();syncView();
 let last=0,acc=0,renderAcc=0;
 function frame(ts){
   requestAnimationFrame(frame);
