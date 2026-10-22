@@ -298,6 +298,15 @@ button,select{touch-action:manipulation}
 .career-player-name{font-weight:900;color:#f4fbff;margin:8px 0 3px}
 .career-pill{display:inline-block;border:1px solid #3d5d6e;border-radius:999px;padding:3px 8px;color:#b7ced9;font-size:10px;font-weight:800}
 @media(max-width:560px){.career-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.career-hero{padding:15px}.career-stat{padding:10px}}
+/* Matchday polish: clearer menus, richer pitch contrast, and responsive action buttons. */
+#menu{background:radial-gradient(ellipse at 50% 0%,rgba(44,91,151,.24),transparent 52%),rgba(7,13,25,.95)}
+#menu .tr button{transition:transform .14s ease,border-color .14s ease,background .14s ease;min-height:40px}
+#menu .tr button:hover{transform:translateY(-2px);border-color:var(--acc);background:#23385c}
+#btnRush{border-color:rgba(255,210,63,.65);color:var(--acc);box-shadow:0 0 18px rgba(255,210,63,.08)}
+canvas#game{filter:saturate(1.08) contrast(1.025)}
+#board{box-shadow:0 5px 22px rgba(0,0,0,.25)}
+.team:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+@media(max-width:620px){#menu .tr button{flex:1 1 42%;font-size:13px;padding:9px 8px}#menu #btnRush{flex-basis:100%}}
 </style>
 </head>
 <body>
@@ -374,7 +383,7 @@ button,select{touch-action:manipulation}
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
-    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button></div>
+    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
     <div id="mdCupPanel">
       <div class="mdCupTop"><div><small>ROAD TO GLORY</small><h2>🏆 Knockout Cup</h2></div><div class="mdCupRecord"><b id="mdCupWins">0</b><span>cup wins</span></div></div>
       <div id="mdCupBracket" class="mdCupBracket"><div class="mdCupStage"><small>ROUND 1</small><b>Quarter-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 2</small><b>Semi-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 3</small><b>Final</b><span>UP NEXT</span></div></div>
@@ -794,7 +803,11 @@ const EXTRA_LEAGUE_TEAMS=[
  ['FC Cincinnati','CIN','#f58220','#005ca9',72],
  ['San Lorenzo','SLO','#005ca9','#ffffff',73],
  ['Cruzeiro','CRU','#005ca9','#ffffff',75],
- ['Vasco da Gama','VAS','#111111','#ffffff',74]
+ ['Vasco da Gama','VAS','#111111','#ffffff',74],
+ ['Palmeiras','PALM','#168447','#ffffff',82],['Corinthians','COR','#111111','#ffffff',78],['Grêmio','GRE','#005ca9','#111111',77],['Santos FC','SAN','#ffffff','#111111',75],
+ ['Club América','AME2','#fbe122','#168447',79],['CF Monterrey','MON','#005ca9','#ffffff',78],['Pumas UNAM','PUM','#005ca9','#fbe122',75],
+ ['Urawa Red Diamonds','URA','#d71920','#ffffff',74],['Kawasaki Frontale','KAW','#005ca9','#111111',75],['Al-Hilal','HIL2','#005ca9','#ffffff',84],['Al-Nassr','NAS2','#fbe122','#005ca9',82],['Al-Ittihad','ITT','#111111','#fbe122',80],['Al-Ahli Saudi','AHL','#168447','#ffffff',79],
+ ['Club Brugge','BRU','#005ca9','#111111',78],['RSC Anderlecht','AND','#5b2c83','#ffffff',76],['Red Star Belgrade','RSB','#d71920','#ffffff',77],['Dinamo Zagreb','DIN','#005ca9','#ffffff',76],['Shakhtar Donetsk','SHA2','#f58220','#111111',76],['Dynamo Kyiv','DYK','#005ca9','#ffffff',75]
 ];
 for(const [n,code,c1,c2,rating] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,code,c1,c2,c2,'solid',Number(rating)||70,(Number(rating)||70),(Number(rating)||70)-1,'433','club'));}
 function englishDivisionIndex(teamIndex){
@@ -2275,6 +2288,22 @@ $('segGameplay').addEventListener('click',e=>{const b=e.target.closest('button[d
 $('segView').addEventListener('click',()=>{view3d=!!settings.view&&!!GL;syncView();});
 $('segPitch').addEventListener('click',()=>{THEME=settings.pitch>=0?THEMES[settings.pitch]:THEMES[0];});
 renderCupPanel();
+$('btnRush').onclick=()=>{
+  // A short, high-tempo solo mode preset. Keep the classic passing model intact.
+  const clubs=TEAMS.map((t,i)=>({t,i,r:(t.a+t.m+t.d)/3})).filter(x=>x.t.g==='club');
+  if(clubs.length<2)return;
+  const first=clubs[(Math.random()*clubs.length)|0];
+  const pool=clubs.filter(x=>x.i!==first.i&&Math.abs(x.r-first.r)<=9);
+  const second=(pool.length?pool:clubs.filter(x=>x.i!==first.i))[(Math.random()*(pool.length?pool.length:clubs.length-1))|0];
+  settings.tab='club';settings.country='all';settings.home=first.i;settings.away=second.i;
+  settings.diff=2;settings.half=120;settings.gameplay='competitive';settings.pitch=-1;
+  $('tSearch').value='';
+  [...$('tabSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.v==='club'));
+  [...$('segDiff').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===settings.diff));
+  [...$('segLen').children].forEach(b=>b.classList.toggle('on',+b.dataset.v===settings.half));
+  syncGameplayPreset();renderTeams();cup.active=false;cup.lastResult='';$('btnCupNext').hidden=true;renderCupPanel();
+  if(career)career.live=false;dtMatch=false;fixDream();startMatch();
+};
 $('btnQuickMatch').onclick=()=>{
   const clubs=TEAMS.map((t,i)=>({t,i,r:(t.a+t.m+t.d)/3})).filter(x=>x.t.g==='club');
   if(clubs.length<2)return;
