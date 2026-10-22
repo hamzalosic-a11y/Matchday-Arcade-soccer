@@ -298,6 +298,7 @@ button,select{touch-action:manipulation}
 .career-player-name{font-weight:900;color:#f4fbff;margin:8px 0 3px}
 .career-pill{display:inline-block;border:1px solid #3d5d6e;border-radius:999px;padding:3px 8px;color:#b7ced9;font-size:10px;font-weight:800}
 @media(max-width:560px){.career-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.career-hero{padding:15px}.career-stat{padding:10px}}
+.career-table-scroll{width:100%;overflow-x:auto;max-height:45vh;overflow-y:auto;overscroll-behavior:contain;border:1px solid #294150;border-radius:12px;margin:10px 0}.career-table-scroll .lg{margin:0;min-width:600px;width:100%}
 /* Career mode: colour-coded, scrollable league and club picker. */
 .career-start{width:min(900px,100%);margin:0 auto;padding-bottom:24px;text-align:left}
 .career-start-hero{border:1px solid #2b536d;border-radius:18px;padding:20px;margin:8px 0 18px;background:radial-gradient(ellipse at 85% 0%,#245c72 0%,transparent 50%),linear-gradient(125deg,#071523,#102d3b 60%,#183c55);box-shadow:0 12px 28px #0004}
@@ -701,10 +702,10 @@ TEAMS.push(T('Borussia Dortmund','BVB','#fbe122','#111111','#fbe122','solid',84,
 
 /* Career leagues: compact 8-club divisions keep each season playable while supporting promotion/relegation. */
 const ENGLISH_DIVISIONS=[
- {name:'Premier League',teams:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton & Hove Albion','Chelsea','Coventry City','Crystal Palace']},
- {name:'Championship',teams:['Birmingham City','Blackburn Rovers','Bolton Wanderers','Bristol City','Burnley','Cardiff City','Charlton Athletic','Derby County']},
- {name:'League One',teams:['AFC Wimbledon','Barnsley','Blackpool','Bradford City','Bromley','Burton Albion','Cambridge United','Doncaster Rovers']},
- {name:'League Two',teams:['Accrington Stanley','Barnet','Bristol Rovers','Cheltenham Town','Chesterfield','Colchester United','Crawley Town','Crewe Alexandra']}
+ {name:'Premier League',teams:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Coventry City','Crystal Palace','Everton','Fulham','Hull City','Ipswich Town','Leeds United','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Sunderland','Tottenham Hotspur']},
+ {name:'Championship',teams:['Birmingham City','Blackburn Rovers','Bolton Wanderers','Bristol City','Burnley','Cardiff City','Charlton Athletic','Derby County','Lincoln City','Middlesbrough','Millwall','Norwich City','Portsmouth','Preston North End','Queens Park Rangers','Sheffield United','Southampton','Stoke City','Swansea City','Watford','West Bromwich Albion','West Ham United','Wolverhampton','Wrexham']},
+ {name:'League One',teams:['AFC Wimbledon','Barnsley','Blackpool','Bradford City','Bromley','Burton Albion','Cambridge United','Doncaster Rovers','Huddersfield Town','Leicester City','Leyton Orient','Luton Town','Mansfield Town','Milton Keynes Dons','Notts County','Oxford United','Peterborough United','Plymouth Argyle','Reading','Sheffield Wednesday','Stevenage','Stockport County','Wigan Athletic','Wycombe Wanderers']},
+ {name:'League Two',teams:['Accrington Stanley','Barnet','Bristol Rovers','Cheltenham Town','Chesterfield','Colchester United','Crawley Town','Crewe Alexandra','Exeter City','Fleetwood Town','Gillingham','Grimsby Town','Newport County','Northampton Town','Oldham Athletic','Port Vale','Rochdale','Rotherham United','Salford City','Shrewsbury Town','Swindon Town','Tranmere Rovers','Walsall','York City']}
 ];
 const EXTRA_LEAGUE_TEAMS=[
  ['Brighton & Hove Albion','BHA','#0057b8','#ffffff',79],['Crystal Palace','CRY','#1b458f','#c41230',77],
@@ -830,6 +831,43 @@ const EXTRA_LEAGUE_TEAMS=[
  ['Club Brugge','BRU','#005ca9','#111111',78],['RSC Anderlecht','AND','#5b2c83','#ffffff',76],['Red Star Belgrade','RSB','#d71920','#ffffff',77],['Dinamo Zagreb','DIN','#005ca9','#ffffff',76],['Shakhtar Donetsk','SHA2','#f58220','#111111',76],['Dynamo Kyiv','DYK','#005ca9','#ffffff',75]
 ];
 for(const [n,code,c1,c2,rating] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n))TEAMS.push(T(n,code,c1,c2,c2,'solid',Number(rating)||70,(Number(rating)||70),(Number(rating)||70)-1,'433','club'));}
+
+/* Full playable real-club league lists. Missing clubs are added by name so every competition has its full membership. */
+const CAREER_LEAGUE_MEMBERS={
+ 'Premier League':ENGLISH_DIVISIONS[0].teams,
+ 'Championship':ENGLISH_DIVISIONS[1].teams,
+ 'League One':ENGLISH_DIVISIONS[2].teams,
+ 'League Two':ENGLISH_DIVISIONS[3].teams,
+ 'La Liga':['Athletic Club','Atlético Madrid','Osasuna','Celta Vigo','Deportivo Alavés','Elche CF','Real Madrid','Getafe CF','Levante UD','Málaga CF','Racing Santander','Rayo Vallecano','Deportivo La Coruña','Espanyol','Real Betis','FC Barcelona','Real Sociedad','Sevilla','Valencia','Villarreal','Girona','RCD Mallorca','UD Las Palmas','Granada CF','Real Valladolid','Real Zaragoza'],
+ 'Serie A':['Atalanta','Bologna','Cagliari','Como 1907','Cremonese','Fiorentina','Genoa','Inter','Juventus','Lazio','Lecce','AC Milan','Monza','Napoli','Parma','Roma','Torino','Udinese','Sassuolo','Venezia FC','Sampdoria','Palermo FC'],
+ 'Bundesliga':['FC Augsburg','Union Berlin','Werder Bremen','Borussia Dortmund','Eintracht Frankfurt','SC Freiburg','Hamburger SV','Heidenheim','TSG Hoffenheim','1. FC Köln','RB Leipzig','Bayer Leverkusen','1. FSV Mainz 05','Borussia Mönchengladbach','Bayern Munich','St. Pauli','VfB Stuttgart','VfL Wolfsburg','Schalke 04','Hertha BSC','Fortuna Düsseldorf','SC Paderborn'],
+ 'Ligue 1':['Angers','AJ Auxerre','Brest','Le Havre','Le Mans','Lens','Lille','Lorient','Olympique Lyonnais','Olympique de Marseille','AS Monaco','Nantes','OGC Nice','Paris Saint-Germain','Paris FC','Stade Rennais','Strasbourg','Toulouse','Troyes','Montpellier HSC','AS Saint-Étienne','FC Metz'],
+ 'Eredivisie':['Ajax','AZ Alkmaar','Excelsior','FC Groningen','FC Twente','FC Utrecht','Feyenoord','Fortuna Sittard','Go Ahead Eagles','Heerenveen','NEC Nijmegen','PEC Zwolle','PSV Eindhoven','Sparta Rotterdam','Telstar','Heracles Almelo','Willem II','Cambuur'],
+ 'Primeira Liga':['Benfica','Boavista','Casa Pia AC','Estoril Praia','FC Porto','Famalicão','Gil Vicente FC','Moreirense FC','Rio Ave','SC Braga','Sporting CP','Vitória SC','Arouca','Nacional','Santa Clara','Tondela','Alverca','AVS'],
+ 'Scottish Premiership':['Aberdeen','Celtic','Dundee FC','Dundee United','Falkirk','Heart of Midlothian','Hibernian','Kilmarnock','Livingston','Motherwell','Rangers','St Mirren'],
+ 'Süper Lig':['Alanyaspor','Antalyaspor','Beşiktaş','Fenerbahçe','Galatasaray','Gaziantep FK','Göztepe','İstanbul Başakşehir','Kasımpaşa','Kayserispor','Kocaelispor','Konyaspor','Rizespor','Samsunspor','Trabzonspor','Fatih Karagümrük','Eyüpspor','Gençlerbirliği'],
+ 'Saudi Pro League':['Al-Ahli','Al-Ettifaq','Al-Fateh','Al-Hilal','Al-Ittihad','Al-Kholood','Al-Nassr','Al-Qadsiah','Al-Riyadh','Al-Shabab','Al-Taawoun','Al-Okhdood','Damac','Al-Khaleej','Al-Wehda','Al-Raed','Neom SC','Al-Fayha'],
+ 'MLS':['Atlanta United','Austin FC','Charlotte FC','Chicago Fire','FC Cincinnati','Colorado Rapids','Columbus Crew','FC Dallas','D.C. United','Houston Dynamo','Inter Miami','LA Galaxy','Los Angeles FC','Minnesota United','CF Montréal','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City','Philadelphia Union','Portland Timbers','Real Salt Lake','San Diego FC','San Jose Earthquakes','Seattle Sounders','Sporting Kansas City','St. Louis City','Toronto FC','Vancouver Whitecaps']
+};
+const CLUB_KITS={
+ 'Birmingham City':['#008fd5','#ffffff'],'Bolton Wanderers':['#ffffff','#1b458f'],'Lincoln City':['#d71920','#ffffff'],'Millwall':['#1b458f','#ffffff'],'Preston North End':['#ffffff','#1b458f'],'Queens Park Rangers':['#1b458f','#ffffff'],'Southampton':['#d71920','#ffffff'],'West Bromwich Albion':['#ffffff','#1b458f'],'Wrexham':['#d71920','#ffffff'],
+ 'AFC Wimbledon':['#1b458f','#ffffff'],'Barnsley':['#d71920','#ffffff'],'Blackpool':['#f58220','#ffffff'],'Bradford City':['#d71920','#ffffff'],'Bromley':['#d71920','#ffffff'],'Burton Albion':['#fbe122','#111111'],'Cambridge United':['#111111','#ffffff'],'Doncaster Rovers':['#d71920','#ffffff'],'Huddersfield Town':['#005ca9','#ffffff'],'Leyton Orient':['#d71920','#ffffff'],'Mansfield Town':['#fbe122','#111111'],'Milton Keynes Dons':['#d71920','#ffffff'],'Notts County':['#111111','#ffffff'],'Oxford United':['#fbe122','#1b458f'],'Plymouth Argyle':['#005b3c','#ffffff'],'Sheffield Wednesday':['#005ca9','#ffffff'],'Stevenage':['#d71920','#ffffff'],'Stockport County':['#005b3c','#ffffff'],'Wigan Athletic':['#005ca9','#ffffff'],'Wycombe Wanderers':['#005ca9','#ffffff'],
+ 'Accrington Stanley':['#d71920','#ffffff'],'Barnet':['#f58220','#111111'],'Cheltenham Town':['#d71920','#111111'],'Chesterfield':['#1b458f','#ffffff'],'Colchester United':['#1b458f','#ffffff'],'Crawley Town':['#d71920','#ffffff'],'Crewe Alexandra':['#d71920','#ffffff'],'Exeter City':['#d71920','#ffffff'],'Fleetwood Town':['#d71920','#ffffff'],'Gillingham':['#1b458f','#ffffff'],'Grimsby Town':['#111111','#ffffff'],'Newport County':['#111111','#ffffff'],'Northampton Town':['#8b1d2c','#ffffff'],'Oldham Athletic':['#005ca9','#ffffff'],'Port Vale':['#111111','#ffffff'],'Rochdale':['#005ca9','#ffffff'],'Rotherham United':['#d71920','#ffffff'],'Salford City':['#d71920','#ffffff'],'Shrewsbury Town':['#005ca9','#fbe122'],'Swindon Town':['#d71920','#ffffff'],'Tranmere Rovers':['#ffffff','#005b3c'],'Walsall':['#d71920','#ffffff'],'York City':['#d71920','#ffffff']
+};
+const CLUB_PALETTE=[['#d71920','#ffffff'],['#005ca9','#ffffff'],['#168447','#ffffff'],['#111111','#ffffff'],['#fbe122','#111111'],['#5b2c83','#ffffff'],['#f58220','#111111'],['#ffffff','#1b458f']];
+function addCareerLeagueClubs(){
+ let seed=0;
+ for(const [league,names] of Object.entries(CAREER_LEAGUE_MEMBERS)){
+  for(const name of names){
+   if(TEAMS.some(t=>t.n===name))continue;
+   const kit=CLUB_KITS[name]||CLUB_PALETTE[seed++%CLUB_PALETTE.length];
+   const rating=league==='Premier League'?75:league==='Championship'?70:league==='League One'?67:league==='League Two'?64:league==='La Liga'||league==='Serie A'||league==='Bundesliga'||league==='Ligue 1'?73:league==='MLS'||league==='Saudi Pro League'?71:70;
+   const code=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]/g,'').slice(0,4).toUpperCase()||'CLUB';
+   TEAMS.push(T(name,code,kit[0],kit[1],kit[1],'solid',rating,rating,rating-1,'433','club'));
+  }
+ }
+}
+addCareerLeagueClubs();
 function englishDivisionIndex(teamIndex){
  const n=TEAMS[teamIndex]?.n||'';
  for(let d=0;d<ENGLISH_DIVISIONS.length;d++)if(ENGLISH_DIVISIONS[d].teams.includes(n))return d;
@@ -837,6 +875,8 @@ function englishDivisionIndex(teamIndex){
 }
 function leagueNameForCareer(c){
  if(!c)return 'League';
+ const clubName=TEAMS[c.team]?.n||'';
+ for(const [league,names] of Object.entries(CAREER_LEAGUE_MEMBERS))if(names.includes(clubName))return league;
  if(TEAMS[c.team]?.g==='club'&&((c.division>=0&&c.division<=3)||englishDivisionIndex(c.team)>=0)){
   const d=Number.isInteger(c.division)?c.division:englishDivisionIndex(c.team);
   return ENGLISH_DIVISIONS[clamp(d,0,3)].name;
@@ -862,10 +902,15 @@ function careerLeagueTeams(c){
  if(d>=0&&d<4){
   const names=ENGLISH_DIVISIONS[d].teams;
   let ids=names.map(n=>TEAMS.findIndex(t=>t.n===n)).filter(i=>i>=0);
-  if(!ids.includes(c.team))ids[ids.length-1]=c.team;
-  return [...new Set(ids)].slice(0,8);
+  if(!ids.includes(c.team))ids.push(c.team);
+  return [...new Set(ids)];
  }
  const league=leagueNameForCareer(c);
+ if(CAREER_LEAGUE_MEMBERS[league]){
+  const ids=CAREER_LEAGUE_MEMBERS[league].map(n=>TEAMS.findIndex(t=>t.n===n)).filter(i=>i>=0);
+  if(!ids.includes(c.team))ids.push(c.team);
+  return [...new Set(ids)];
+ }
  let ids=TEAMS.map((t,i)=>i).filter(i=>i!==c.team&&TEAMS[i].g==='club'&&leagueNameForCareer({team:i,division:-1})===league);
  ids.sort((a,b)=>Math.abs(ovr(a)-ovr(c.team))-Math.abs(ovr(b)-ovr(c.team)));
  ids=ids.slice(0,7);
@@ -2442,7 +2487,7 @@ function newSeason(){
   if(!Number.isInteger(c.division))c.division=englishDivisionIndex(c.team);
   if(c.division<0)c.division=-1;
   const leagueTeams=careerLeagueTeams(c);
-  c.opps=leagueTeams.filter(i=>i!==c.team).slice(0,7);
+  c.opps=leagueTeams.filter(i=>i!==c.team);
   c.leagueName=leagueNameForCareer(c);
   c.tab=[c.team,...c.opps].map(i=>({i,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
   c.stage='league';c.md=0;c.cup=null;c.sc={};
@@ -2565,8 +2610,8 @@ function renderCareer(){
   const t=sortTab();
   const morale=clamp(Number(c.morale??70),0,100), moraleLabel=morale>=80?'Board confidence high':morale>=55?'Board confidence steady':morale>=30?'Pressure is building':'Board confidence critical';
   let h='<div class="career-shell"><div class="career-hero"><div class="career-kicker">MATCHDAY · MANAGER CAREER</div><h2>'+esc(TEAMS[c.team].n)+'</h2><p>Build your club. Win the big games. Make every transfer count.</p><div class="career-morale"><span style="width:'+morale+'%"></span></div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#c6dbe4;font-size:12px"><b>'+moraleLabel+'</b><span>Manager morale · '+morale+'/100</span></div></div><div class="career-stats"><div class="career-stat"><small>Season</small><strong>'+c.season+'</strong><em>'+(c.stage==='over'?'Season complete':'Campaign active')+'</em></div><div class="career-stat"><small>Transfer funds</small><strong>£'+Number(c.budget||0).toLocaleString()+'</strong><em>Club budget</em></div><div class="career-stat"><small>Record</small><strong>'+c.w+'-'+c.d+'-'+c.l+'</strong><em>Wins · Draws · Losses</em></div><div class="career-stat"><small>Coins</small><strong>'+c.coins+'</strong><em>Training & scouting</em></div></div>'+(c.msg?'<p class="career-muted" style="margin:0 0 10px">📣 '+esc(c.msg)+'</p>':'');
-  h+=`<table class="lg"><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>`+
-    t.map((r,k)=>`<tr class="${r.i===c.team?'me':''}"><td>${k+1}</td><td>${esc(TEAMS[r.i].n)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td>${r.pts}</td></tr>`).join('')+`</table>`;
+  h+=`<div class="career-league-meta"><b>${esc(c.leagueName||leagueNameForCareer(c))}</b><span>${t.length} clubs · full league table</span></div><div class="career-table-scroll"><table class="lg"><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>`+
+    t.map((r,k)=>`<tr class="${r.i===c.team?'me':''}"><td>${k+1}</td><td>${esc(TEAMS[r.i].n)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td>${r.pts}</td></tr>`).join('')+`</table></div>`;
   h+=scorersHtml(10);
   h+=`<p class="sub" style="margin:0">Every match is played, no simulating. Rivals get tougher the more you play: rival boost +${careerBoost()}.</p>`;
   if(c.stage==='over')h+=`<button class="go" data-a="next">Start season ${c.season+1}</button>`;
