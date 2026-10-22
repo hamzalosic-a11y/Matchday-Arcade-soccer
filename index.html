@@ -298,6 +298,26 @@ button,select{touch-action:manipulation}
 .career-player-name{font-weight:900;color:#f4fbff;margin:8px 0 3px}
 .career-pill{display:inline-block;border:1px solid #3d5d6e;border-radius:999px;padding:3px 8px;color:#b7ced9;font-size:10px;font-weight:800}
 @media(max-width:560px){.career-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.career-hero{padding:15px}.career-stat{padding:10px}}
+/* Career mode: colour-coded, scrollable league and club picker. */
+.career-start{width:min(900px,100%);margin:0 auto;padding-bottom:24px;text-align:left}
+.career-start-hero{border:1px solid #2b536d;border-radius:18px;padding:20px;margin:8px 0 18px;background:radial-gradient(ellipse at 85% 0%,#245c72 0%,transparent 50%),linear-gradient(125deg,#071523,#102d3b 60%,#183c55);box-shadow:0 12px 28px #0004}
+.career-start-hero h2{font-size:clamp(28px,5vw,44px);margin:8px 0;color:#fff;font-style:italic;font-weight:1000;text-transform:uppercase}
+.career-start-hero p{color:#bfd4df;margin:0;line-height:1.45}
+.career-league-label{display:block;color:#79edc1;font-size:11px;font-weight:950;letter-spacing:1.8px;margin:12px 0 7px}
+.career-league-select{width:100%;min-height:48px;padding:10px 13px;background:#102439;color:#f2f8ff;border:1px solid #35617b;border-radius:11px;font:700 16px 'Barlow',sans-serif;touch-action:manipulation}
+.career-league-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 9px;color:#d9e9f2}
+.career-league-meta b{font-size:18px;color:#fff}.career-league-meta span{font-size:12px;color:#9eb8ca}
+.career-club-scroll{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:42vh;min-height:160px;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:3px 5px 8px 1px;scrollbar-width:thin;scrollbar-color:#3d718b #0b1723}
+.career-club-pick{display:flex;align-items:center;gap:10px;min-width:0;text-align:left;padding:11px 10px;border-radius:12px;border:1px solid #29445a;background:linear-gradient(130deg,#13283a,#0b1927);color:#edf6fb;cursor:pointer;transition:transform .13s,border-color .13s,background .13s}
+.career-club-pick:hover{transform:translateY(-1px);border-color:#73e9bf}.career-club-pick.selected{border:2px solid #78f0bd;background:linear-gradient(120deg,#164a42,#12283a);box-shadow:0 0 0 2px #78f0bd18}
+.career-kit{width:25px;height:32px;flex:0 0 25px;border:1px solid #ffffff70;border-radius:6px;box-shadow:inset 0 -7px #0002}
+.career-club-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}.career-club-copy b{font-size:13px;line-height:1.2;overflow-wrap:anywhere}.career-club-copy small{font-size:10px;color:#a9c0d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.career-ovr{font-size:17px;font-weight:1000;color:#ffdc69}.career-pick-mark{color:#7df2bf;font-size:17px;font-weight:1000}
+.career-start-footer{margin-top:15px;padding:16px;border:1px solid #29475c;border-radius:15px;background:linear-gradient(145deg,#102333,#0b1722)}
+.career-start-footer input{width:100%;min-height:44px;padding:10px 12px;border-radius:9px;border:1px solid #34566d;background:#091725;color:#fff;font:600 16px 'Barlow',sans-serif;touch-action:manipulation}
+.career-selected{color:#bdd1df;font-size:13px;margin:10px 0}.career-selected b{color:#7df2bf}
+.career-start-button{width:100%;min-height:50px;background:linear-gradient(100deg,#9cffc9,#54dca9)!important;color:#06251b!important;font-weight:1000!important}
+@media(max-width:560px){.career-club-scroll{grid-template-columns:1fr;max-height:38vh}.career-start-hero{padding:16px}.career-club-pick{padding:10px}}
 /* Matchday polish: clearer menus, richer pitch contrast, and responsive action buttons. */
 #menu{background:radial-gradient(ellipse at 50% 0%,rgba(44,91,151,.24),transparent 52%),rgba(7,13,25,.95)}
 #menu .tr button{transition:transform .14s ease,border-color .14s ease,background .14s ease;min-height:40px}
@@ -2372,6 +2392,7 @@ const load=(k,lenient)=>{
 };
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let career=load(SAVE),lbFrom='menu',endSure=false,ms=[[],[]];
+let careerLeagueFilter='all',careerDraftName='Manager';
 if(career){career.live=false;career.sc=career.sc||{};career.budget=Number.isFinite(career.budget)?career.budget:2500000;career.morale=Number.isFinite(career.morale)?career.morale:70;career.mail=Array.isArray(career.mail)?career.mail:[];career.signed=Array.isArray(career.signed)?career.signed:[];career.market=Array.isArray(career.market)?career.market:[];}
 const POSW={FW:6,MF:2.5,DF:.7};
 function credit(i,n,nums){
@@ -2526,9 +2547,19 @@ function renderCareer(){
   if(c&&(!Array.isArray(c.market)||!c.market.length)){makeTransferMarket();saveAll();}
   if(!c){
     $('cInfo').textContent='Lead your club to league and cup glory';
-    b.innerHTML=`<p class="sub">Pick your club on the main menu first, then start here. Play a 7-match league season; the top 4 enter the Champions Cup. Earn coins to train your squad, and rivals get tougher every season.</p>
-    <input id="cName" maxlength="16" placeholder="Manager name" value="Manager"><button class="go" data-a="new">Start with ${esc(TEAMS[settings.home].n)}</button>
-    <div class="tr"><button data-a="menu">Back</button></div>`;return;
+    const clubs=TEAMS.map((t,i)=>({t,i,league:leagueNameForCareer({team:i,division:englishDivisionIndex(i)})})).filter(x=>x.t.g==='club');
+    const leagues=[...new Set(clubs.map(x=>x.league))].sort((a,b)=>a.localeCompare(b));
+    if(careerLeagueFilter!=='all'&&!leagues.includes(careerLeagueFilter))careerLeagueFilter='all';
+    const visible=clubs.filter(x=>careerLeagueFilter==='all'||x.league===careerLeagueFilter).sort((a,b)=>a.t.n.localeCompare(b.t.n));
+    const leagueOpts=['all',...leagues].map(l=>'<option value="'+esc(l)+'"'+(careerLeagueFilter===l?' selected':'')+'>'+(l==='all'?'🌍 All leagues':esc(l))+'</option>').join('');
+    b.innerHTML=`<section class="career-start">
+      <div class="career-start-hero"><div class="career-kicker">MATCHDAY · MANAGER CAREER</div><h2>Choose your league</h2><p>Pick a competition, choose your club colours, and build a team that can win it all.</p></div>
+      <label class="career-league-label" for="careerLeaguePick">LEAGUE SELECTOR</label>
+      <select id="careerLeaguePick" class="career-league-select">${leagueOpts}</select>
+      <div class="career-league-meta"><b>${careerLeagueFilter==='all'?'All leagues':esc(careerLeagueFilter)}</b><span>${visible.length} clubs · scroll to explore</span></div>
+      <div class="career-club-scroll" id="careerClubScroll">${visible.map(({t,i,league})=>{const selected=settings.home===i;return '<button type="button" class="career-club-pick '+(selected?'selected':'')+'" data-a="pickCareerTeam" data-team="'+i+'" style="--club:'+t.k+';--club2:'+t.c+'"><span class="career-kit" style="background:'+kitCss(t)+'"></span><span class="career-club-copy"><b>'+esc(t.n)+'</b><small>'+esc(league)+'</small></span><span class="career-ovr">'+Math.round((t.a+t.m+t.d)/3)+'</span><span class="career-pick-mark">'+(selected?'✓':'＋')+'</span></button>';}).join('')||'<p class="sub">No clubs found in this league.</p>'}</div>
+      <div class="career-start-footer"><label class="career-league-label" for="cName">MANAGER NAME</label><input id="cName" maxlength="16" placeholder="Manager name" value="${esc(careerDraftName)}"><p class="career-selected">Selected club: <b>${esc(TEAMS[settings.home].n)}</b></p><button class="go career-start-button" data-a="new">Start career with ${esc(TEAMS[settings.home].n)} →</button><div class="tr"><button data-a="menu">Back</button></div></div>
+    </section>`;return;
   }
   $('cInfo').textContent=`${TEAMS[c.team].n} · Season ${c.season} · ${c.coins} coins · Transfer budget £${Number(c.budget||0).toLocaleString()} · Manager morale ${c.morale??70}/100 · W${c.w} D${c.d} L${c.l}`;
   const t=sortTab();
@@ -2551,12 +2582,16 @@ function renderCareer(){
     <div class="tr"><button data-a="lb">Ranked ladder</button><button data-a="menu">Main menu</button><button data-a="end">${endSure?'Click again to confirm':'End career'}</button></div>`;
   h+='<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left"><h2 style="color:#9cffc9;margin:0 0 6px">🧑‍💼 Manager market</h2><p class="sub">Hire staff to improve your club and morale.</p><div class="tr"><button data-a="hireStaff" data-id="scout" '+((c.staff&&c.staff.scout)||c.budget<500?'disabled':'')+'>'+(c.staff&&c.staff.scout?'✓ Scout hired':'Hire Chief Scout · £500')+'</button><button data-a="hireStaff" data-id="coach" '+((c.staff&&c.staff.coach)||c.budget<900?'disabled':'')+'>'+(c.staff&&c.staff.coach?'✓ Coach hired':'Hire Head Coach · £900')+'</button><button data-a="hireStaff" data-id="director" '+((c.staff&&c.staff.director)||c.budget<1200?'disabled':'')+'>'+(c.staff&&c.staff.director?'✓ Director hired':'Hire Sporting Director · £1,200')+'</button></div><h3 style="color:var(--acc)">Sell players</h3>'+((c.signed||[]).map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border-bottom:1px solid var(--line)"><span>'+esc(p.name)+' · '+esc(p.pos)+' · '+p.rating+' OVR</span><button data-a="sell" data-id="'+esc(p.id)+'">Sell · £'+Math.round((p.cost||0)*.7).toLocaleString()+'</button></div>').join('')||'<p class="sub">No signings yet.</p>')+'<button data-a="refreshMarket" '+(c.coins<(c.staff&&c.staff.scout?15:25)?'disabled':'')+'>🔄 Scout new transfer targets · '+(c.staff&&c.staff.scout?15:25)+' coins</button></section>';h+='</div>';b.innerHTML=h;
 }
+$('cBody').addEventListener('input',e=>{if(e.target.id==='cName')careerDraftName=e.target.value;});
+$('cBody').addEventListener('change',e=>{if(e.target.id==='careerLeaguePick'){careerLeagueFilter=e.target.value;renderCareer();}});
 $('cBody').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,c=career;
   if(a!=='end')endSure=false;
+  if(a==='pickCareerTeam'){const idx=Number(b.dataset.team);if(Number.isInteger(idx)&&TEAMS[idx]&&TEAMS[idx].g==='club'){settings.home=idx;careerLeagueFilter=leagueNameForCareer({team:idx,division:englishDivisionIndex(idx)});renderCareer();}return;}
   if(a==='new'){
-    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName($('cName').value,16)||'Manager',team:settings.home,division:englishDivisionIndex(settings.home),diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
+    careerDraftName=$('cName')?.value||careerDraftName||'Manager';
+    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName(careerDraftName,16)||'Manager',team:settings.home,division:englishDivisionIndex(settings.home),diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
     newSeason();saveAll();
   }else if(a==='play'){playCareer();return;}
   else if(a==='next'){c.season++;if(Number.isInteger(c.pendingDivision)){c.division=c.pendingDivision;delete c.pendingDivision;}c.msg=`Season ${c.season} begins in ${leagueNameForCareer(c)}. The rivals have strengthened.`;if(c.staff&&c.staff.director)c.budget+=75000;newSeason();saveAll();}
