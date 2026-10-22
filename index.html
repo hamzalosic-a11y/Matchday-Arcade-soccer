@@ -1161,18 +1161,27 @@ function pickTarget(p,dx,dy,lob){
   for(const q of teams[p.team].players){
     if(q===p||q.out)continue;
     const vx=q.x-p.x,vy=q.y-p.y,d=Math.hypot(vx,vy);
-    if(d<50)continue;
+    if(d<55||d>(lob?900:720))continue;
     const cs=(vx*dx+vy*dy)/d;
-    if(cs<(lob?.5:.6))continue;
-    let s=cs*140-(lob?-.04:.06)*d;
-    if(lob&&d<250)s-=60;
-    if(q.isGK)s-=40;
-    if(isOff(p,q,d0))s-=45;
+    if(cs<(lob?.48:.58))continue;
+    if(isOff(p,q,d0))continue;
+    // Judge the receiver's space and the lane, not just the angle to the teammate.
+    const space=openness(q);
+    const lead=clamp(d/(lob?620:850),.12,.65);
+    const tx=q.x+q.vx*lead,ty=q.y+q.vy*lead;
+    let laneRisk=0,receiverPressure=0;
     for(const o of teams[1-p.team].players){
-      if(dist(o,q)<55)s-=35;
-      if(!lob&&segDist(o.x,o.y,p.x,p.y,q.x,q.y)<26)s-=45;
+      const lane=segDist(o.x,o.y,p.x,p.y,tx,ty);
+      if(!lob&&lane<42)laneRisk+=(42-lane)*1.35;
+      else if(lob&&lane<26)laneRisk+=(26-lane)*.45;
+      const pressure=dist(o,q);
+      if(pressure<100)receiverPressure+=(100-pressure)*.28;
     }
-    if(s>bs){bs=s;best=q;}
+    const forward=prog(q.x,d0)-prog(p.x,d0);
+    let score=cs*82+space*.48-Math.min(d,620)*.045-laneRisk-receiverPressure+clamp(forward*.12,-24,30);
+    if(lob){score+=clamp(d-180,0,360)*.055;if(d<180)score-=35;}
+    if(q.isGK)score-=65;
+    if(score>bs){bs=score;best=q;}
   }
   return best;
 }
@@ -1199,19 +1208,27 @@ function pickTargetAI(p,mode){ // 0 normal, 1 safe, 2 far
 }
 function doPass(p,q,lob,errMul){
   const dd0=dist(p,q);
-  const lead=lob?.9:clamp(dd0/700,.1,.7);
-  let ax=q.x+q.vx*lead*.9,ay=q.y+q.vy*lead*.9;
+  // Lead a moving receiver into space, but shorten the lead for close passes.
+  const lead=lob?clamp(.48+dd0/1100,.55,1.05):clamp(dd0/950,.08,.52);
+  let ax=q.x+q.vx*lead,ay=q.y+q.vy*lead;
+  // A small extra lead when the receiver is running forward opens up natural one-touch passes.
+  const attackDir=teams[p.team].dir;
+  if(!lob&&q.vx*attackDir>35){ax+=attackDir*Math.min(24,dd0*.035);}
   let dx=ax-p.x,dy=ay-p.y;const d=Math.hypot(dx,dy)||1;
-  const e=rand(-1,1)*(.022+(openness(p)<70?.03:0))*errMul*(1+d/900)*(p.pas?1+(80-p.pas)/100:1);
+  const passSkill=clamp(((p.pas||teams[p.team].data.p||75)-55)/45,.35,1.12);
+  const pressure=clamp((75-openness(p))/75,0,1);
+  const e=rand(-1,1)*(.012+(1-passSkill)*.045+pressure*.018)*errMul*(1+d/1100);
   const c=Math.cos(e),s=Math.sin(e);const rx=dx*c-dy*s,ry=dx*s+dy*c;
   if(lob){
-    const Tt=clamp(.55+d/900,.65,1.25),k=.25;
+    const Tt=clamp(.58+d/1000,.65,1.35),k=.3;
     const v=d*k/(1-Math.exp(-k*Tt));
     kick(p,rx,ry,v,900*Tt/2);
   }else{
-    kick(p,rx,ry,clamp((210+THEME.fric*d)*(settings.gameplay==='competitive'?1.08:.94),300,1000),0);
+    // Distance-based ground-pass pace: firm enough to arrive, never a laser at short range.
+    const pace=clamp(285+d*.58,300,760)*(0.88+passSkill*.16);
+    kick(p,rx,ry,pace*(settings.gameplay==='competitive'?1.04:.96),0);
   }
-  q.recv=1.7;
+  q.recv=1.25;
   if(!p.noOff){const d=teams[p.team].dir,set=new Set();for(const t of teams[p.team].players)if(isOff(p,t,d))set.add(t);ball.offs=set;}
   p.noOff=false;
 }
