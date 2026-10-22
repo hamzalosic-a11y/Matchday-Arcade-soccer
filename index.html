@@ -876,11 +876,11 @@ function englishDivisionIndex(teamIndex){
 function leagueNameForCareer(c){
  if(!c)return 'League';
  const clubName=TEAMS[c.team]?.n||'';
- for(const [league,names] of Object.entries(CAREER_LEAGUE_MEMBERS))if(names.includes(clubName))return league;
  if(TEAMS[c.team]?.g==='club'&&((c.division>=0&&c.division<=3)||englishDivisionIndex(c.team)>=0)){
   const d=Number.isInteger(c.division)?c.division:englishDivisionIndex(c.team);
   return ENGLISH_DIVISIONS[clamp(d,0,3)].name;
  }
+ for(const [league,names] of Object.entries(CAREER_LEAGUE_MEMBERS))if(names.includes(clubName))return league;
  const n=TEAMS[c.team]?.n||'';
  if(/Real Madrid|Barcelona|Atlético Madrid|Real Sociedad|Sevilla|Valencia|Villarreal|Athletic Club|Girona|Betis|Osasuna/i.test(n))return 'La Liga';
  if(/Inter|Juventus|AC Milan|Napoli|Roma|Lazio|Atalanta|Fiorentina|Bologna|Torino/i.test(n))return 'Serie A';
