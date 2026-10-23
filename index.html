@@ -403,6 +403,24 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 }
 @media(prefers-reduced-motion:reduce){.screen button,.screen .team,#mdDailyCard,#mdObjectivesCard,#mdSeasonCard{transition:none!important}}
 
+
+/* Career tactics: formation selector and readable starting XI */
+.career-tactics{width:100%;margin:12px 0;padding:15px;background:linear-gradient(145deg,#102b35,#121f38);border:1px solid #39716c;border-radius:14px;text-align:left}
+.career-tactics h3{margin:0 0 6px;color:#9cffc9;font:800 25px 'Barlow Condensed',sans-serif}
+.career-tactics .tactics-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.career-tactics select{background:#0b1728;color:#fff;border:1px solid #47706d;border-radius:9px;padding:10px;font:700 14px 'Barlow',sans-serif}
+.career-tactics-grid{display:grid;grid-template-columns:minmax(180px,.9fr) minmax(240px,1.1fr);gap:12px;margin-top:12px}
+.career-mini-pitch{position:relative;min-height:300px;border:2px solid #b9e7c8;border-radius:10px;overflow:hidden;background:repeating-linear-gradient(0deg,#23764a 0,#23764a 40px,#2b8554 40px,#2b8554 80px)}
+.career-mini-pitch:before{content:'';position:absolute;left:0;right:0;top:50%;border-top:2px solid #d8f3df}
+.career-mini-pitch:after{content:'';position:absolute;width:76px;height:76px;border:2px solid #d8f3df;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}
+.career-dot{position:absolute;z-index:1;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;border:2px solid white;background:#ffd23f;color:#17202b;display:flex;align-items:center;justify-content:center;font:900 12px 'Barlow',sans-serif;box-shadow:0 2px 5px #0007}
+.career-dot small{position:absolute;top:31px;white-space:nowrap;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 3px #000}
+.career-xi{display:flex;flex-direction:column;gap:5px}
+.career-xi-row{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:#172744;border:1px solid #294562;font-size:13px}
+.career-xi-row b{color:#9cffc9}
+.career-xi-row small{color:#a9bfd0}
+@media(max-width:620px){.career-tactics-grid{grid-template-columns:1fr}.career-mini-pitch{min-height:320px}.career-xi{display:grid;grid-template-columns:1fr 1fr}.career-xi-row{grid-template-columns:24px 1fr;padding:6px}.career-xi-row small{grid-column:2}}
+
 </style>
 </head>
 <body>
@@ -1157,6 +1175,7 @@ function startMatch(){
   initAudio();
   THEME=(typeof net!=='undefined'&&net.on&&net.theme!==undefined)?THEMES[net.theme]:(settings.pitch>=0?THEMES[settings.pitch]:THEMES[(Math.random()*THEMES.length)|0]);WX.length=0;
   let d0=TEAMS[settings.home],d1=TEAMS[settings.away];
+  if(career&&career.live&&career.formation&&FORM[({'4-3-3':'433','4-4-2':'442','4-2-3-1':'4231','3-5-2':'352','5-3-2':'532','4-1-4-1':'4141'})[career.formation]])d0={...d0,f:({'4-3-3':'433','4-4-2':'442','4-2-3-1':'4231','3-5-2':'352','5-3-2':'532','4-1-4-1':'4141'})[career.formation]};
   if(career&&career.live){const u=career.up,ob=careerBoost(),mor=Math.round(((career.morale??70)-50)/25);d0={...d0,a:d0.a+u.a+mor,m:d0.m+u.m+mor,d:d0.d+u.d+mor};d1={...d1,a:d1.a+ob,m:d1.m+ob,d:d1.d+ob};}
   const kits=makeKits(d0,d1);
   teams=[mkTeam(0,d0,kits[0]),mkTeam(1,d1,kits[1])];
@@ -2587,6 +2606,7 @@ function newSeason(){
   if(!Number.isFinite(c.budget))c.budget=2500000;
   if(!c.staff||typeof c.staff!=='object')c.staff={};
   if(!Number.isFinite(c.morale))c.morale=70;
+  if(!FORM[({'4-3-3':'433','4-4-2':'442','4-2-3-1':'4231','3-5-2':'352','5-3-2':'532','4-1-4-1':'4141'})[c.formation]])c.formation='4-3-3';
   makeTransferMarket();
   careerMail('Board expectations: Season '+c.season,'The board expects a strong campaign in '+c.leagueName+'. Finish in the top four, compete for the cup, and build for promotion or avoid relegation.');
 }
@@ -2678,6 +2698,18 @@ function openCareer(){
   for(const id of['menu','endScr','hud','touch','lbScr','pauseScr'])$(id).hidden=true;
   $('careerScr').hidden=false;renderCareer();
 }
+
+function careerTacticsHtml(c){
+ const formations={'4-3-3':'433','4-4-2':'442','4-2-3-1':'4231','3-5-2':'352','5-3-2':'532','4-1-4-1':'4141'};
+ const selected=formations[c.formation]?c.formation:'4-3-3';
+ const form=FORM[formations[selected]]||FORM['433'];
+ const names=(c.signed||[]);
+ const playerName=(p,i)=>{const custom=names[i-1];return custom&&custom.pos===p[0]?custom.name:({GK:'Goalkeeper',DF:'Defender',MF:'Midfielder',FW:'Forward'}[p[0]]+' '+p[1]);};
+ const dots=form.map((p,i)=>'<span class="career-dot" style="left:'+Math.max(8,Math.min(92,(1-p[2])*100))+'%;top:'+Math.max(7,Math.min(93,p[3]*100))+'%">'+p[1]+'<small>'+p[0]+'</small></span>').join('');
+ const xi=form.map((p,i)=>'<div class="career-xi-row"><b>'+p[1]+'</b><span>'+playerName(p,i)+'</span><small>'+p[0]+'</small></div>').join('');
+ return '<section class="career-tactics"><div class="tactics-top"><div><h3>📋 Match lineup & tactics</h3><div class="career-muted">Choose your formation. It will be used in your next career match.</div></div><label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:900;letter-spacing:1px;color:#9cffc9">FORMATION<select id="careerFormation">'+Object.keys(formations).map(k=>'<option value="'+k+'"'+(k===selected?' selected':'')+'>'+k+'</option>').join('')+'</select></label></div><div class="career-tactics-grid"><div class="career-mini-pitch" aria-label="'+selected+' football formation">'+dots+'</div><div><div style="font-weight:900;color:#ffd23f;margin:0 0 7px">STARTING XI · 11 PLAYERS</div><div class="career-xi">'+xi+'</div></div></div></section>';
+}
+
 function renderCareer(){
   const c=career,b=$('cBody');
   if(c&&(!Array.isArray(c.market)||!c.market.length)){makeTransferMarket();saveAll();}
@@ -2700,7 +2732,7 @@ function renderCareer(){
   $('cInfo').textContent=`${TEAMS[c.team].n} · Season ${c.season} · ${c.coins} coins · Transfer budget £${Number(c.budget||0).toLocaleString()} · Manager morale ${c.morale??70}/100 · W${c.w} D${c.d} L${c.l}`;
   const t=sortTab();
   const morale=clamp(Number(c.morale??70),0,100), moraleLabel=morale>=80?'Board confidence high':morale>=55?'Board confidence steady':morale>=30?'Pressure is building':'Board confidence critical';
-  let h='<div class="career-shell"><div class="career-hero"><div class="career-kicker">MATCHDAY · MANAGER CAREER</div><h2>'+esc(TEAMS[c.team].n)+'</h2><p>Build your club. Win the big games. Make every transfer count.</p><div class="career-morale"><span style="width:'+morale+'%"></span></div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#c6dbe4;font-size:12px"><b>'+moraleLabel+'</b><span>Manager morale · '+morale+'/100</span></div></div><div class="career-stats"><div class="career-stat"><small>Season</small><strong>'+c.season+'</strong><em>'+(c.stage==='over'?'Season complete':'Campaign active')+'</em></div><div class="career-stat"><small>Transfer funds</small><strong>£'+Number(c.budget||0).toLocaleString()+'</strong><em>Club budget</em></div><div class="career-stat"><small>Record</small><strong>'+c.w+'-'+c.d+'-'+c.l+'</strong><em>Wins · Draws · Losses</em></div><div class="career-stat"><small>Coins</small><strong>'+c.coins+'</strong><em>Training & scouting</em></div></div>'+(c.msg?'<p class="career-muted" style="margin:0 0 10px">📣 '+esc(c.msg)+'</p>':'');
+  let h='<div class="career-shell"><div class="career-hero"><div class="career-kicker">MATCHDAY · MANAGER CAREER</div><h2>'+esc(TEAMS[c.team].n)+'</h2><p>Build your club. Win the big games. Make every transfer count.</p><div class="career-morale"><span style="width:'+morale+'%"></span></div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#c6dbe4;font-size:12px"><b>'+moraleLabel+'</b><span>Manager morale · '+morale+'/100</span></div></div><div class="career-stats"><div class="career-stat"><small>Season</small><strong>'+c.season+'</strong><em>'+(c.stage==='over'?'Season complete':'Campaign active')+'</em></div><div class="career-stat"><small>Transfer funds</small><strong>£'+Number(c.budget||0).toLocaleString()+'</strong><em>Club budget</em></div><div class="career-stat"><small>Record</small><strong>'+c.w+'-'+c.d+'-'+c.l+'</strong><em>Wins · Draws · Losses</em></div><div class="career-stat"><small>Coins</small><strong>'+c.coins+'</strong><em>Training & scouting</em></div></div>'+careerTacticsHtml(c)+(c.msg?'<p class="career-muted" style="margin:0 0 10px">📣 '+esc(c.msg)+'</p>':'');
   h+=`<div class="career-league-meta"><b>${esc(c.leagueName||leagueNameForCareer(c))}</b><span>${t.length} clubs · full league table</span></div><div class="career-table-scroll"><table class="lg"><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr>`+
     t.map((r,k)=>`<tr class="${r.i===c.team?'me':''}"><td>${k+1}</td><td>${esc(TEAMS[r.i].n)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td>${r.pts}</td></tr>`).join('')+`</table></div>`;
   h+=scorersHtml(10);
@@ -2719,7 +2751,7 @@ function renderCareer(){
   h+='<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left"><h2 style="color:#9cffc9;margin:0 0 6px">🧑‍💼 Manager market</h2><p class="sub">Hire staff to improve your club and morale.</p><div class="tr"><button data-a="hireStaff" data-id="scout" '+((c.staff&&c.staff.scout)||c.budget<500?'disabled':'')+'>'+(c.staff&&c.staff.scout?'✓ Scout hired':'Hire Chief Scout · £500')+'</button><button data-a="hireStaff" data-id="coach" '+((c.staff&&c.staff.coach)||c.budget<900?'disabled':'')+'>'+(c.staff&&c.staff.coach?'✓ Coach hired':'Hire Head Coach · £900')+'</button><button data-a="hireStaff" data-id="director" '+((c.staff&&c.staff.director)||c.budget<1200?'disabled':'')+'>'+(c.staff&&c.staff.director?'✓ Director hired':'Hire Sporting Director · £1,200')+'</button></div><h3 style="color:var(--acc)">Sell players</h3>'+((c.signed||[]).map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px;border-bottom:1px solid var(--line)"><span>'+esc(p.name)+' · '+esc(p.pos)+' · '+p.rating+' OVR</span><button data-a="sell" data-id="'+esc(p.id)+'">Sell · £'+Math.round((p.cost||0)*.7).toLocaleString()+'</button></div>').join('')||'<p class="sub">No signings yet.</p>')+'<button data-a="refreshMarket" '+(c.coins<(c.staff&&c.staff.scout?15:25)?'disabled':'')+'>🔄 Scout new transfer targets · '+(c.staff&&c.staff.scout?15:25)+' coins</button></section>';h+='</div>';b.innerHTML=h;
 }
 $('cBody').addEventListener('input',e=>{if(e.target.id==='cName')careerDraftName=e.target.value;});
-$('cBody').addEventListener('change',e=>{if(e.target.id==='careerLeaguePick'){careerLeagueFilter=e.target.value;renderCareer();}});
+$('cBody').addEventListener('change',e=>{if(e.target.id==='careerLeaguePick'){careerLeagueFilter=e.target.value;renderCareer();}else if(e.target.id==='careerFormation'&&career){career.formation=e.target.value;saveAll();renderCareer();}});
 $('cBody').addEventListener('click',e=>{
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,c=career;
