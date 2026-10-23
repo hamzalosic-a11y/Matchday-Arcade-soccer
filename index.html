@@ -2879,7 +2879,7 @@ function netLeave(){
   $('onFind').disabled=false;$('btnPause').textContent='Pause';
 }
 function hostTx(dt){
-  net.tx+=dt;if(net.tx<.05)return;net.tx=0;
+  net.tx+=dt;if(net.tx<.033)return;net.tx=0;
   if(performance.now()-net.lastRx>8000&&state!=='end'){net.fin=1;showMsg('Opponent disconnected — you win by forfeit','',3000);finishMatch();return;}
   netSend('snap',[state,half,R(clock),score[0],score[1],R(ball.x),R(ball.y),R(ball.z),R(ball.vx),R(ball.vy),R(ball.roll),ball.owner?ball.owner.gi:-1,human2?human2.gi:-1,human2?human2.stam:1,human2?human2.charge:0,
     players.map(p=>[R(p.x),R(p.y),Math.round(p.face*100)/100,R(p.ph),(p.lunge&&p.lunge.slide?1:0)|(p.stun>.2&&!p.lunge?2:0)|(p.kick>0?4:0)|(p.sprinting?8:0)|(p.air?16:0)|(p.sk?32:0)|(p.air&&p.air.type==='bike'?64:0)])]);
@@ -2926,7 +2926,7 @@ function applySnap(p){
   if(human){human.stam=p[13];human.charge=p[14];}
 }
 function guestFrame(dt){
-  const k=1-Math.exp(-18*dt);gameTime+=dt;
+  const k=1-Math.exp(-24*dt);gameTime+=dt;
   for(const p of players){if(p.fl&&(p.fl.t-=dt)<=0)p.fl=null;}
   for(const p of players)if(p.tx!==undefined){p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;}
   if(net.bx!==undefined){ball.x+=(net.bx-ball.x)*k;ball.y+=(net.by-ball.y)*k;}
@@ -2953,9 +2953,12 @@ function rankedApply(S,margin){
   /* Do not void a completed match over client/host acknowledgement disagreement. Use the final score to award rating. */
   if(S<0&&net.opp&&Number.isFinite(margin))S=margin>0?1:margin<0?0:.5;
   if(!net.opp){net.delta=0;return;}
-  const e=1/(1+Math.pow(10,(net.opp.r-R.rating)/400));
+  /* Guard against missing opponent rating data so a win can never produce NaN or zero points. */
+  S=S===1?1:S===0?0:.5;
+  const oppRating=Number.isFinite(Number(net.opp.r))?Number(net.opp.r):1000;
+  const e=1/(1+Math.pow(10,(oppRating-R.rating)/400));
   const ti=rankIdx(R.rating),K=[36,34,32,30,28,26,24,22][ti];
-  let d=Math.round(K*(S-e));if(S===1&&margin>1)d+=Math.min(4,margin-1);
+  let d=Math.round(K*(S-e));if(S===1)d=Math.max(1,d);if(S===1&&margin>1)d+=Math.min(4,margin-1);
   R.streak=R.streak||0;
   if(S===1){d=Math.max(1,Math.round(d*Math.max(.5,1-.07*Math.max(0,R.streak-1))));R.streak++;}   // win streaks pay less each time
   else if(S===0){d=Math.round(d*(1+.04*ti));R.streak=0;}                                       // higher ranks lose more
