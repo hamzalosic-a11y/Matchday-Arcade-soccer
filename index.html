@@ -461,7 +461,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
     <input id="tSearch" placeholder="Search teams…" autocomplete="off">
-    <select id="teamCountryFilter" aria-label="Filter clubs by country" style="background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:600 15px 'Barlow',sans-serif;width:min(280px,90%);text-align:center;margin:8px auto;display:block"><option value="all">All countries</option></select>
+    <select id="teamCountryFilter" aria-label="Filter clubs by league" style="background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font:600 15px 'Barlow',sans-serif;width:min(280px,90%);text-align:center;margin:8px auto;display:block"><option value="all">All countries</option></select>
     <div class="cols">
       <div class="col"><h2>Your team</h2><div class="lst" id="lstHome"></div></div>
       <div class="col"><h2>Opponent</h2><div class="lst" id="lstAway"></div></div>
@@ -1044,7 +1044,7 @@ let state='menu',stTimer=0,half=1,clock=0,score=[0,0],stats={shots:[0,0],poss:[0
 let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near=[[],[]];
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
-const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',pitch:0,view:1,gameplay:'competitive'};
+const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',league:'all',pitch:0,view:1,gameplay:'competitive'};
 // Local 3-round knockout cup; results are based on matches actually played.
 const cup={active:false,round:0,opponents:[],lastResult:'',pendingNext:false,best:0,wins:0};
 try{cup.wins=Math.max(0,parseInt(localStorage.getItem('md_cup_wins')||'0',10)||0);}catch(_){}
@@ -2379,25 +2379,41 @@ const CLUB_COUNTRY={
  'Vasco da Gama':'Brazil'
 };
 function teamCountry(t){return t.g==='nat'?t.n:(CLUB_COUNTRY[t.n]||'Other');}
+const ENGLISH_PREMIER=new Set(['Manchester City','Liverpool','Arsenal','Chelsea','Manchester United','Tottenham Hotspur','Aston Villa','Newcastle United','West Ham United','Everton','Brighton','Brentford','Fulham','Crystal Palace','Wolverhampton','Nottingham Forest','Bournemouth','Leicester City','Ipswich Town','Southampton']);
+const ENGLISH_LEAGUE_ONE=new Set(['Reading','Stockport County','Wigan Athletic','Oxford United','Plymouth Argyle']);
+const COUNTRY_LEAGUE={
+ 'Spain':'La Liga','Germany':'Bundesliga','Italy':'Serie A','France':'Ligue 1','Portugal':'Primeira Liga','Netherlands':'Eredivisie','Scotland':'Scottish Premiership','Türkiye':'Süper Lig','Brazil':'Brasileirão Série A','Argentina':'Argentine Primera División','United States':'Major League Soccer (MLS)','Sweden':'Allsvenskan','Belgium':'Belgian Pro League','Ukraine':'Ukrainian Premier League','Croatia':'HNL','Austria':'Austrian Bundesliga','Greece':'Super League Greece','Saudi Arabia':'Saudi Pro League','Egypt':'Egyptian Premier League','Morocco':'Botola Pro','Mexico':'Liga MX','Japan':'J1 League','South Korea':'K League 1','Qatar':'Qatar Stars League','Denmark':'Danish Superliga','Norway':'Eliteserien','Switzerland':'Swiss Super League','Bosnia and Herzegovina':'Bosnian Premier League','Canada':'Canadian Premier League','Other':'Other Clubs'
+};
+function teamLeague(t){
+ if(t.g==='nat')return 'National Teams';
+ const country=teamCountry(t);
+ if(country==='England'){
+  if(ENGLISH_PREMIER.has(t.n))return 'English Premier League';
+  if(ENGLISH_LEAGUE_ONE.has(t.n))return 'English League One';
+  return 'English Championship';
+ }
+ return COUNTRY_LEAGUE[country]||('Other Leagues · '+country);
+}
 function updateTeamCountryFilter(){
  const el=$('teamCountryFilter');if(!el)return;
  if(settings.tab==='nat'){el.style.display='none';return;}
  el.style.display='block';
- const countries=[...new Set(TEAMS.filter(t=>t.g==='club').map(teamCountry))].sort((a,b)=>a.localeCompare(b));
- el.innerHTML='<option value="all">All countries</option>'+countries.map(country=>'<option value="'+country.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+country+'</option>').join('');
- if(!countries.includes(settings.country))settings.country='all';
- el.value=settings.country;
+ const leagues=[...new Set(TEAMS.filter(t=>t.g==='club').map(teamLeague))].sort((a,b)=>a.localeCompare(b));
+ el.setAttribute('aria-label','Filter clubs by league');
+ el.innerHTML='<option value="all">All leagues</option>'+leagues.map(league=>'<option value="'+league.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">'+league+'</option>').join('');
+ if(!leagues.includes(settings.league))settings.league='all';
+ el.value=settings.league;
 }
 function renderTeams(){
  const q=($('tSearch').value||'').toLowerCase().trim();fixDream();updateTeamCountryFilter();
  for(const[id,key]of[['lstHome','home'],['lstAway','away']]){
   const box=$(id);box.innerHTML='';
-  let items=TEAMS.map((t,i)=>({t,i})).filter(({t})=>t.g===settings.tab&&(!q||t.n.toLowerCase().includes(q))&&(settings.tab==='nat'||settings.country==='all'||teamCountry(t)===settings.country));
-  if(settings.tab==='club')items.sort((a,b)=>teamCountry(a.t).localeCompare(teamCountry(b.t))||a.t.n.localeCompare(b.t));
+  let items=TEAMS.map((t,i)=>({t,i})).filter(({t})=>t.g===settings.tab&&(!q||t.n.toLowerCase().includes(q))&&(settings.tab==='nat'||settings.league==='all'||teamLeague(t)===settings.league));
+  if(settings.tab==='club')items.sort((a,b)=>teamLeague(a.t).localeCompare(teamLeague(b.t))||a.t.n.localeCompare(b.t.n));
   else items.sort((a,b)=>a.t.n.localeCompare(b.t.n));
-  let lastCountry='';
+  let lastLeague='';
   items.forEach(({t,i})=>{
-   if(settings.tab==='club'&&teamCountry(t)!==lastCountry){lastCountry=teamCountry(t);const h=document.createElement('div');h.className='team-country-heading';h.textContent=lastCountry;box.appendChild(h);}
+   if(settings.tab==='club'&&teamLeague(t)!==lastLeague){lastLeague=teamLeague(t);const h=document.createElement('div');h.className='team-country-heading';h.textContent=lastLeague;box.appendChild(h);}
    const b=document.createElement('button');b.className='team'+(settings[key]===i?' sel':'');
    b.innerHTML=`<span class="kit" style="background:${kitCss(t)}"></span><b>${t.n}</b><i>${Math.round((t.a+t.m+t.d)/3)}</i>`;
    b.onclick=()=>{settings[key]=i;const other=key==='home'?'away':'home';if(settings[other]===i)settings[other]=TEAMS.findIndex((x,j)=>j!==i&&x.g===t.g);renderTeams();};
@@ -2421,7 +2437,7 @@ function seg(id,key,num){
   });
 }
 $('segPitch').innerHTML=THEMES.map((t,i)=>`<button data-v="${i}"${i===0?' class="on"':''}>${t.n}</button>`).join('')+'<button data-v="-1">Random</button>';
-$('teamCountryFilter').addEventListener('change',e=>{settings.country=e.target.value;renderTeams();});
+$('teamCountryFilter').addEventListener('change',e=>{settings.league=e.target.value;renderTeams();});
 seg('tabSeg','tab',false);seg('segDiff','diff',true);seg('segLen','half',true);seg('segPitch','pitch',true);seg('segView','view',true);
 function syncGameplayPreset(){const el=$('segGameplay');if(el)[...el.children].forEach(b=>b.classList.toggle('on',b.dataset.v===settings.gameplay));const hint=$('gameplayHint');if(hint)hint.textContent=settings.gameplay==='authentic'?'More realistic pace, tighter team shape, and ball movement that slows naturally.':'Faster movement and passing for responsive arcade matches.';}
 $('segGameplay').addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b)return;settings.gameplay=b.dataset.v;syncGameplayPreset();});syncGameplayPreset();
