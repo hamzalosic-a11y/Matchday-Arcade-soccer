@@ -404,7 +404,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
-    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
+    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnPlayerCareer">⚽ Player career</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
     <div id="mdCupPanel">
       <div class="mdCupTop"><div><small>ROAD TO GLORY</small><h2>🏆 Knockout Cup</h2></div><div class="mdCupRecord"><b id="mdCupWins">0</b><span>cup wins</span></div></div>
       <div id="mdCupBracket" class="mdCupBracket"><div class="mdCupStage"><small>ROUND 1</small><b>Quarter-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 2</small><b>Semi-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 3</small><b>Final</b><span>UP NEXT</span></div></div>
@@ -872,6 +872,10 @@ function englishDivisionIndex(teamIndex){
  const n=TEAMS[teamIndex]?.n||'';
  for(let d=0;d<ENGLISH_DIVISIONS.length;d++)if(ENGLISH_DIVISIONS[d].teams.includes(n))return d;
  return -1;
+}
+function careerLeagueDisplayName(name){
+  const labels={'Premier League':'English League · Premier League','Championship':'English League · Championship','League One':'English League · League One','League Two':'English League · League Two','La Liga':'Spanish League · La Liga','Serie A':'Italian League · Serie A','Bundesliga':'German League · Bundesliga','Ligue 1':'French League · Ligue 1','Eredivisie':'Dutch League · Eredivisie','Primeira Liga':'Portuguese League · Primeira Liga','Scottish Premiership':'Scottish League · Premiership','Süper Lig':'Turkish League · Süper Lig','MLS':'American League · MLS','Saudi Pro League':'Saudi League · Pro League','Belgian Pro League':'Belgian League · Pro League','Brazilian Série A':'Brazilian League · Série A','Argentine Primera División':'Argentine League · Primera División'};
+  return labels[name]||name;
 }
 function leagueNameForCareer(c){
  if(!c)return 'League';
@@ -1874,6 +1878,7 @@ function finishMatch(){
     $('hud').hidden=true;$('touch').hidden=true;hideMsg();
     if(net.on&&net.host)netSend('end',[score[0],score[1],stats.shots,stats.poss,stats.yc,stats.rc,stats.off,stats.sot,stats.sv]);
     const cm=!!(career&&career.live);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}
+    if(playerCareerLive)settlePlayerCareer();
     if(cup.active&&!cm&&!(typeof net!=='undefined'&&net.on)){
       if(score[0]>score[1]){
         if(cup.round===2){
@@ -2411,9 +2416,9 @@ $('btnShareResult').onclick=async()=>{
     if(e&&e.name!=='AbortError')window.prompt('Copy your challenge:',shareData.text+' '+shareData.url);
   }
 };
-$('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}if(cup.active||cup.lastResult){cup.active=false;cup.lastResult='';cup.pendingNext=false;$('btnCupNext').hidden=true;}state='menu';$('endScr').hidden=true;renderCupPanel();if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
+$('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}if(cup.active||cup.lastResult){cup.active=false;cup.lastResult='';cup.pendingNext=false;$('btnCupNext').hidden=true;}state='menu';$('endScr').hidden=true;renderCupPanel();if(playerCareerLive){playerCareerLive=false;openPlayerCareer();}else if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
 $('btnResume').onclick=togglePause;
-$('btnQuit').onclick=()=>{if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
+$('btnQuit').onclick=()=>{if(playerCareerLive){playerCareerLive=false;paused=false;if(AC)AC.resume();$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;hideMsg();openPlayerCareer();return;}if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
 $('btnPause').onclick=()=>{if(net.on)leaveToMenu();else togglePause();};$('btnMute').onclick=toggleMute;
 $('tSearch').addEventListener('input',renderTeams);
 renderTeams();
@@ -2437,6 +2442,9 @@ const load=(k,lenient)=>{
 };
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let career=load(SAVE),lbFrom='menu',endSure=false,ms=[[],[]];
+const PLAYER_SAVE='matchday.playercareer.v1';
+let playerCareer=load(PLAYER_SAVE),playerCareerLive=false;
+if(playerCareer){playerCareer.appearances=Number(playerCareer.appearances)||0;playerCareer.wins=Number(playerCareer.wins)||0;playerCareer.draws=Number(playerCareer.draws)||0;playerCareer.losses=Number(playerCareer.losses)||0;playerCareer.clubGoals=Number(playerCareer.clubGoals)||0;playerCareer.overall=clamp(Number(playerCareer.overall)||60,40,99);playerCareer.attributes=playerCareer.attributes||{pace:60,shooting:60,passing:60,defending:60};}
 let careerLeagueFilter='all',careerDraftName='Manager';
 if(career){career.live=false;career.sc=career.sc||{};career.budget=Number.isFinite(career.budget)?career.budget:2500000;career.morale=Number.isFinite(career.morale)?career.morale:70;career.mail=Array.isArray(career.mail)?career.mail:[];career.signed=Array.isArray(career.signed)?career.signed:[];career.market=Array.isArray(career.market)?career.market:[];}
 const POSW={FW:6,MF:2.5,DF:.7};
@@ -2587,6 +2595,46 @@ function openCareer(){
   for(const id of['menu','endScr','hud','touch','lbScr','pauseScr'])$(id).hidden=true;
   $('careerScr').hidden=false;renderCareer();
 }
+function openPlayerCareer(){
+  state='menu';endSure=false;
+  for(const id of ['menu','endScr','hud','touch','lbScr','pauseScr'])$(id).hidden=true;
+  $('careerScr').hidden=false;renderPlayerCareer();
+}
+function renderPlayerCareer(){
+  const b=$('cBody'),p=playerCareer;
+  $('cInfo').textContent=p?(p.name+' · '+(TEAMS[p.team]?.n||'Free agent')+' · OVR '+p.overall):'Create your footballer and build a career from rookie to superstar';
+  if(!p){
+    const clubs=TEAMS.map((t,i)=>({t,i,league:leagueNameForCareer({team:i,division:englishDivisionIndex(i)})})).filter(x=>x.t.g==='club').sort((a,b)=>a.t.n.localeCompare(b.t.n));
+    b.innerHTML='<section class="career-start" style="width:100%"><div class="career-start-hero"><div class="career-kicker">MATCHDAY · PLAYER CAREER</div><h2>Become a superstar</h2><p>Create your own player, choose a position and club, play matches, train your attributes and improve your overall rating.</p></div><label class="career-league-label" for="pcName">PLAYER NAME</label><input id="pcName" maxlength="18" placeholder="Your player name" value=""><label class="career-league-label" for="pcPos">POSITION</label><select id="pcPos" class="career-league-select"><option value="ST">Striker · ST</option><option value="LW">Left winger · LW</option><option value="CAM">Attacking midfielder · CAM</option><option value="CM">Central midfielder · CM</option><option value="CDM">Defensive midfielder · CDM</option><option value="CB">Centre-back · CB</option><option value="LB">Left-back · LB</option><option value="GK">Goalkeeper · GK</option></select><label class="career-league-label" for="pcClub">CHOOSE YOUR CLUB</label><select id="pcClub" class="career-league-select">'+clubs.map(x=>'<option value="'+x.i+'"'+(x.i===settings.home?' selected':'')+'>'+esc(x.t.n)+' · '+esc(careerLeagueDisplayName(x.league))+'</option>').join('')+'</select><button class="go career-start-button" data-paction="create">Start player career →</button><div class="tr"><button data-paction="back">Back to menu</button></div></section>';
+    return;
+  }
+  const a=p.attributes,clubs=TEAMS.map((t,i)=>({t,i,league:leagueNameForCareer({team:i,division:englishDivisionIndex(i)})})).filter(x=>x.t.g==='club').sort((x,y)=>x.t.n.localeCompare(y.t.n));
+  const attr=(key,label)=>'<div class="career-stat"><small>'+label+'</small><strong>'+a[key]+'</strong><button data-paction="train" data-stat="'+key+'" '+(p.coins<100||a[key]>=99?'disabled':'')+'>Train · 100 coins</button></div>';
+  b.innerHTML='<div class="career-shell"><div class="career-hero"><div class="career-kicker">MATCHDAY · PLAYER CAREER</div><h2>'+esc(p.name)+'</h2><p>'+esc(p.position)+' · '+esc(TEAMS[p.team].n)+' · Season '+p.season+'</p><div class="career-stats"><div class="career-stat"><small>Overall</small><strong>'+p.overall+'</strong><em>'+ (p.overall>=90?'World class':p.overall>=80?'Star player':p.overall>=70?'First team':'Rising prospect')+'</em></div><div class="career-stat"><small>Appearances</small><strong>'+p.appearances+'</strong><em>Matches played</em></div><div class="career-stat"><small>Record</small><strong>'+p.wins+'-'+p.draws+'-'+p.losses+'</strong><em>W-D-L</em></div><div class="career-stat"><small>Club goals</small><strong>'+p.clubGoals+'</strong><em>Team goals in your matches</em></div></div></div><section class="career-panel" style="width:100%;padding:14px;text-align:left"><h3 style="color:#9cffc9">⚡ Player development · '+p.coins+' training coins</h3><p class="career-muted">Train attributes to raise your overall rating. Earn coins and experience by playing matches.</p><div class="career-stats">'+attr('pace','Pace')+attr('shooting','Shooting')+attr('passing','Passing')+attr('defending','Defending')+'</div><div class="tr"><button class="go" data-paction="play">Play next match →</button><button data-paction="season">Start next season</button></div><label class="career-league-label" for="pcTransfer">TRANSFER TO ANOTHER CLUB</label><select id="pcTransfer" class="career-league-select">'+clubs.map(x=>'<option value="'+x.i+'"'+(x.i===p.team?' selected':'')+'>'+esc(x.t.n)+' · '+esc(careerLeagueDisplayName(x.league))+'</option>').join('')+'</select><button data-paction="transfer">Sign for selected club</button><div class="tr"><button data-paction="back">Main menu</button><button data-paction="reset">Create new player</button></div></section></div>';
+}
+function playPlayerCareer(){
+  if(!playerCareer)return;
+  playerCareerLive=true;if(career)career.live=false;dtMatch=false;
+  settings.home=playerCareer.team;
+  const candidates=TEAMS.map((t,i)=>i).filter(i=>i!==playerCareer.team&&TEAMS[i].g==='club');
+  settings.away=candidates[Math.floor(Math.random()*candidates.length)]??(playerCareer.team===0?1:0);
+  settings.diff=clamp(Number(settings.diff)||1,0,3);
+  $('careerScr').hidden=true;startMatch();
+}
+function settlePlayerCareer(){
+  if(!playerCareer||!playerCareerLive)return;
+  const p=playerCareer,won=score[0]>score[1],draw=score[0]===score[1];
+  p.appearances++;p.clubGoals+=score[0];if(won)p.wins++;else if(draw)p.draws++;else p.losses++;
+  p.coins=(Number(p.coins)||0)+(won?60:draw?35:20)+Math.min(30,score[0]*5);
+  p.xp=(Number(p.xp)||0)+25+(won?25:draw?10:0)+score[0]*5;
+  while(p.xp>=100&&p.overall<99){p.xp-=100;p.overall++;for(const k of Object.keys(p.attributes))p.attributes[k]=Math.min(99,p.attributes[k]+(k===(p.position==='ST'?'shooting':p.position==='GK'?'defending':'pace')?1:0);}
+  if(p.overall>=99)p.xp=Math.min(p.xp,99);
+  if(p.appearances%20===0)p.season++;
+  p.lastResult=(won?'Win':draw?'Draw':'Loss')+' · '+score[0]+'–'+score[1]+' · +'+((won?60:draw?35:20)+Math.min(30,score[0]*5))+' coins';
+  store(PLAYER_SAVE,p);
+  $('endTeams').textContent=p.lastResult;
+}
+
 function renderCareer(){
   const c=career,b=$('cBody');
   if(c&&(!Array.isArray(c.market)||!c.market.length)){makeTransferMarket();saveAll();}
@@ -2596,13 +2644,13 @@ function renderCareer(){
     const leagues=[...new Set(clubs.map(x=>x.league))].sort((a,b)=>a.localeCompare(b));
     if(careerLeagueFilter!=='all'&&!leagues.includes(careerLeagueFilter))careerLeagueFilter='all';
     const visible=clubs.filter(x=>careerLeagueFilter==='all'||x.league===careerLeagueFilter).sort((a,b)=>a.t.n.localeCompare(b.t.n));
-    const leagueOpts=['all',...leagues].map(l=>'<option value="'+esc(l)+'"'+(careerLeagueFilter===l?' selected':'')+'>'+(l==='all'?'🌍 All leagues':esc(l))+'</option>').join('');
+    const leagueOpts=['all',...leagues].map(l=>'<option value="'+esc(l)+'"'+(careerLeagueFilter===l?' selected':'')+'>'+(l==='all'?'🌍 All leagues':esc(careerLeagueDisplayName(l)))+'</option>').join('');
     b.innerHTML=`<section class="career-start">
       <div class="career-start-hero"><div class="career-kicker">MATCHDAY · MANAGER CAREER</div><h2>Choose your league</h2><p>Pick a competition, choose your club colours, and build a team that can win it all.</p></div>
       <label class="career-league-label" for="careerLeaguePick">LEAGUE SELECTOR</label>
       <select id="careerLeaguePick" class="career-league-select">${leagueOpts}</select>
       <div class="career-league-meta"><b>${careerLeagueFilter==='all'?'All leagues':esc(careerLeagueFilter)}</b><span>${visible.length} clubs · scroll to explore</span></div>
-      <div class="career-club-scroll" id="careerClubScroll">${visible.map(({t,i,league})=>{const selected=settings.home===i;return '<button type="button" class="career-club-pick '+(selected?'selected':'')+'" data-a="pickCareerTeam" data-team="'+i+'" style="--club:'+t.k+';--club2:'+t.c+'"><span class="career-kit" style="background:'+kitCss(t)+'"></span><span class="career-club-copy"><b>'+esc(t.n)+'</b><small>'+esc(league)+'</small></span><span class="career-ovr">'+Math.round((t.a+t.m+t.d)/3)+'</span><span class="career-pick-mark">'+(selected?'✓':'＋')+'</span></button>';}).join('')||'<p class="sub">No clubs found in this league.</p>'}</div>
+      <div class="career-club-scroll" id="careerClubScroll">${visible.map(({t,i,league})=>{const selected=settings.home===i;return '<button type="button" class="career-club-pick '+(selected?'selected':'')+'" data-a="pickCareerTeam" data-team="'+i+'" style="--club:'+t.k+';--club2:'+t.c+'"><span class="career-kit" style="background:'+kitCss(t)+'"></span><span class="career-club-copy"><b>'+esc(t.n)+'</b><small>'+esc(careerLeagueDisplayName(league))+'</small></span><span class="career-ovr">'+Math.round((t.a+t.m+t.d)/3)+'</span><span class="career-pick-mark">'+(selected?'✓':'＋')+'</span></button>';}).join('')||'<p class="sub">No clubs found in this league.</p>'}</div>
       <div class="career-start-footer"><label class="career-league-label" for="cName">MANAGER NAME</label><input id="cName" maxlength="16" placeholder="Manager name" value="${esc(careerDraftName)}"><p class="career-selected">Selected club: <b>${esc(TEAMS[settings.home].n)}</b></p><button class="go career-start-button" data-a="new">Start career with ${esc(TEAMS[settings.home].n)} →</button><div class="tr"><button data-a="menu">Back</button></div></div>
     </section>`;return;
   }
@@ -2630,6 +2678,27 @@ function renderCareer(){
 $('cBody').addEventListener('input',e=>{if(e.target.id==='cName')careerDraftName=e.target.value;});
 $('cBody').addEventListener('change',e=>{if(e.target.id==='careerLeaguePick'){careerLeagueFilter=e.target.value;renderCareer();}});
 $('cBody').addEventListener('click',e=>{
+  const pb=e.target.closest('[data-paction]');
+  if(pb){
+    const act=pb.dataset.paction;
+    if(act==='create'){
+      const name=cleanName($('pcName')?.value,18)||'Rookie';
+      const team=Number($('pcClub')?.value),pos=$('pcPos')?.value||'ST';
+      if(!TEAMS[team]||TEAMS[team].g!=='club')return;
+      playerCareer={id:Date.now().toString(36),name,team,position:pos,overall:60,appearances:0,wins:0,draws:0,losses:0,clubGoals:0,coins:100,xp:0,season:1,attributes:{pace:60,shooting:60,passing:60,defending:60}};
+      settings.home=team;store(PLAYER_SAVE,playerCareer);renderPlayerCareer();
+    }else if(act==='play'){playPlayerCareer();return;}
+    else if(act==='train'){
+      const k=pb.dataset.stat;
+      if(playerCareer&&playerCareer.coins>=100&&playerCareer.attributes[k]<99){playerCareer.coins-=100;playerCareer.attributes[k]=Math.min(99,playerCareer.attributes[k]+2);playerCareer.overall=Math.min(99,Math.round(Object.values(playerCareer.attributes).reduce((s,v)=>s+v,0)/4));store(PLAYER_SAVE,playerCareer);}
+    }else if(act==='transfer'){
+      const team=Number($('pcTransfer')?.value);
+      if(playerCareer&&TEAMS[team]&&TEAMS[team].g==='club'){playerCareer.team=team;settings.home=team;store(PLAYER_SAVE,playerCareer);}
+    }else if(act==='season'){if(playerCareer){playerCareer.season++;playerCareer.coins+=25;store(PLAYER_SAVE,playerCareer);}}
+    else if(act==='reset'){playerCareer=null;playerCareerLive=false;try{localStorage.removeItem(PLAYER_SAVE);}catch(_){}}
+    else if(act==='back'){playerCareerLive=false;$('careerScr').hidden=true;$('menu').hidden=false;return;}
+    renderPlayerCareer();return;
+  }
   const b=e.target.closest('[data-a]');if(!b)return;
   const a=b.dataset.a,c=career;
   if(a!=='end')endSure=false;
@@ -2669,7 +2738,8 @@ function openLb(from){
     if(b)$('lbRk2').innerHTML=ladder(b,'Dream Team ladder');
   });
 }
-$('btnCareer').onclick=openCareer;$('btnLb').onclick=()=>openLb('menu');
+$('btnCareer').onclick=openCareer;
+$('btnPlayerCareer').onclick=openPlayerCareer;$('btnLb').onclick=()=>openLb('menu');
 $('lbBack').onclick=()=>{$('lbScr').hidden=true;if(lbFrom==='career')openCareer();else if(lbFrom==='on'){$('onScr').hidden=false;renderRk();}else $('menu').hidden=false;};
 
 /* ---------- online 1v1 (Supabase Realtime) ---------- */
