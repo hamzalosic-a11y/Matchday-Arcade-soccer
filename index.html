@@ -1695,14 +1695,19 @@ function aiStep(p,dt){
   }
   const ownGoalX=d===1?0:L;
   if(!ball.owner){
-    if(rank===0||(rank===1&&dist(p,ball)<170)){
+    if(rank===0||(rank===1&&dist(p,ball)<118)){
       const tt=Math.min(.6,dist(p,ball)/(base*1.1));
       tx=ball.x+ball.vx*tt;ty=ball.y+ball.vy*tt;sp=base*1.12;p.sprinting=true;
     }else{[tx,ty]=homePos(p);}
   }else if(ball.owner.team!==p.team){
     const o=ball.owner;
     const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0)+(Tm.sty.press&&prog(o.x,d)>L*.5?1:0)+(Tm.sty.press>=2&&prog(o.x,d)>L*.35?1:0);
-    if(rank<n&&(!o.isGK||!gkSafeZone(o))&&(p.role!=='DF'||dist(p,o)<430)){
+    const markDist=dist(p,o);
+    // Tactical pressing: one designated presser; a second joins only when pressing high or protecting the box.
+    const emergency=Math.abs(o.x-ownGoalX)<420;
+    const secondPresser=rank===1&&markDist<250&&(pressCall>0||emergency||Tm.sty.press>=2);
+    const canPress=(rank===0||secondPresser)&&(!o.isGK||!gkSafeZone(o))&&(p.role!=='DF'||markDist<(emergency?330:205));
+    if(rank<n&&canPress){
       tx=o.x+o.vx*.25;ty=o.y+o.vy*.25;sp=base*(rank===0?1.1:1.0);p.sprinting=true;
       if(rank===0&&!p.lunge&&p.tackleCd<=0&&dist(p,o)<30&&o.protect<=0&&p.stun<=0){
         if(Math.random()<dp.tk*1.6*dt){p.face=Math.atan2(o.y-p.y,o.x-p.x);tryTackle(p,Math.random()<.12);}
@@ -1727,12 +1732,16 @@ function aiStep(p,dt){
       const gap=dist(p,carrier),towardGoal=prog(carrier.x,d);
       const lane=(p.fy<.34?-1:p.fy>.66?1:0);
       if(p.role==='FW'){
-        const run=clamp(105+(carrier.role==='MF'?55:0)+Math.max(0,500-gap)*.12,90,190);
+        const run=clamp(145+(carrier.role==='MF'?65:0)+Math.max(0,500-gap)*.10,125,225);
+        // Keep forwards high and spread across separate channels instead of collapsing onto the ball.
         tx=carrier.x+d*run;
-        ty=clamp(carrier.y+lane*clamp(75+gap*.12,75,145),75,W-75);
+        const wideLane=lane===0?(p.idx%2===0?-1:1):lane;
+        ty=clamp(carrier.y+wideLane*clamp(105+gap*.10,95,165),60,W-60);
       }else if(p.role==='MF'){
-        tx=carrier.x-d*clamp(65+gap*.18,65,150);
-        ty=clamp(carrier.y+(p.y<carrier.y?-1:1)*clamp(80+gap*.08,80,135),65,W-65);
+        tx=carrier.x-d*clamp(100+gap*.20,95,185);
+        // Midfielders stagger to create short passing options and cover central/wide lanes.
+        const side=(p.fy<.34?-1:p.fy>.66?1:(p.idx%2===0?-1:1));
+        ty=clamp(carrier.y+side*clamp(100+gap*.07,90,155),55,W-55);
       }else if(p.role==='DF'&&towardGoal<L*.68){
         // Keep defenders behind the ball as a safe recycle option.
         tx=carrier.x-d*clamp(125+gap*.12,125,210);
