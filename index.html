@@ -2959,7 +2959,7 @@ function rankedApply(S,margin){
   else if(S===0){d=Math.round(d*(1+.04*ti));R.streak=0;}                                       // higher ranks lose more
   net.delta=d;R.rating=Math.max(0,R.rating+d);R.games++;if(S===1)R.w++;else if(S===0)R.l++;else R.d++;
   if(net.dream){rk2Save();net.coins=S===1?120:S===.5?50:25;dtInit();DT.coins+=net.coins;dtSave();}else rkSave();
-  if(ONLINE.url)fetch(ONLINE.url+'/rest/v1/'+(net.dream?'dream_ranked':'ranked')+'?on_conflict=id',{method:'POST',headers:{...oh(),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:R.id,name:RK.name,rating:R.rating,wins:R.w,draws:R.d,losses:R.l,games:R.games})}).catch(()=>{});
+  if(ONLINE.url)fetch(ONLINE.url+'/rest/v1/'+(net.dream?'dream_ranked':'ranked')+'?on_conflict=id',{method:'POST',headers:{...oh(),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:ACC.uid||R.id,name:ACC.name||R.name||RK.name,rating:R.rating,wins:R.w,draws:R.d,losses:R.l,games:R.games})}).catch(()=>{});
 }
 function applyRanked(){
   if(net.done)return;net.done=true;net.wait=0;
@@ -3201,6 +3201,7 @@ function refreshAcc(){
 function applyAcc(sess,username){
   ACC.uid=sess?sess.user.id:null;ACC.token=sess?sess.access_token:null;
   ACC.name=sess?(username||(sess.user.user_metadata&&sess.user.user_metadata.username)||null):null;
+  if(ACC.uid){RK.id=ACC.uid;RK.name=ACC.name||RK.name;RK2.id=ACC.uid;RK2.name=RK.name;}
   switchProfile();refreshAcc();
 }
 async function restoreRanks(){   // your rank lives on the server, so no update or cleared browser can reset it
