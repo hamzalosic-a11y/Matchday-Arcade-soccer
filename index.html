@@ -777,10 +777,10 @@ TEAMS.push(T('Borussia Dortmund','BVB','#fbe122','#111111','#fbe122','solid',84,
 
 /* Career leagues: compact 8-club divisions keep each season playable while supporting promotion/relegation. */
 const ENGLISH_DIVISIONS=[
- {name:'Premier League',teams:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Coventry City','Crystal Palace','Everton','Fulham','Hull City','Ipswich Town','Leeds United','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Sunderland','Tottenham Hotspur']},
- {name:'Championship',teams:['Birmingham City','Blackburn Rovers','Bolton Wanderers','Bristol City','Burnley','Cardiff City','Charlton Athletic','Derby County','Lincoln City','Middlesbrough','Millwall','Norwich City','Portsmouth','Preston North End','Queens Park Rangers','Sheffield United','Southampton','Stoke City','Swansea City','Watford','West Bromwich Albion','West Ham United','Wolverhampton','Wrexham']},
- {name:'League One',teams:['AFC Wimbledon','Barnsley','Blackpool','Bradford City','Bromley','Burton Albion','Cambridge United','Doncaster Rovers','Huddersfield Town','Leicester City','Leyton Orient','Luton Town','Mansfield Town','Milton Keynes Dons','Notts County','Oxford United','Peterborough United','Plymouth Argyle','Reading','Sheffield Wednesday','Stevenage','Stockport County','Wigan Athletic','Wycombe Wanderers']},
- {name:'League Two',teams:['Accrington Stanley','Barnet','Bristol Rovers','Cheltenham Town','Chesterfield','Colchester United','Crawley Town','Crewe Alexandra','Exeter City','Fleetwood Town','Gillingham','Grimsby Town','Newport County','Northampton Town','Oldham Athletic','Port Vale','Rochdale','Rotherham United','Salford City','Shrewsbury Town','Swindon Town','Tranmere Rovers','Walsall','York City']}
+ {name:'England Tier 1',teams:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Coventry City','Crystal Palace','Everton','Fulham','Hull City','Ipswich Town','Leeds United','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Sunderland','Tottenham Hotspur']},
+ {name:'England Tier 2',teams:['Birmingham City','Blackburn Rovers','Bolton Wanderers','Bristol City','Burnley','Cardiff City','Charlton Athletic','Derby County','Lincoln City','Middlesbrough','Millwall','Norwich City','Portsmouth','Preston North End','Queens Park Rangers','Sheffield United','Southampton','Stoke City','Swansea City','Watford','West Bromwich Albion','West Ham United','Wolverhampton','Wrexham']},
+ {name:'England Tier 3',teams:['AFC Wimbledon','Barnsley','Blackpool','Bradford City','Bromley','Burton Albion','Cambridge United','Doncaster Rovers','Huddersfield Town','Leicester City','Leyton Orient','Luton Town','Mansfield Town','Milton Keynes Dons','Notts County','Oxford United','Peterborough United','Plymouth Argyle','Reading','Sheffield Wednesday','Stevenage','Stockport County','Wigan Athletic','Wycombe Wanderers']},
+ {name:'England Tier 4',teams:['Accrington Stanley','Barnet','Bristol Rovers','Cheltenham Town','Chesterfield','Colchester United','Crawley Town','Crewe Alexandra','Exeter City','Fleetwood Town','Gillingham','Grimsby Town','Newport County','Northampton Town','Oldham Athletic','Port Vale','Rochdale','Rotherham United','Salford City','Shrewsbury Town','Swindon Town','Tranmere Rovers','Walsall','York City']}
 ];
 const EXTRA_LEAGUE_TEAMS=[
  ['Brighton & Hove Albion','BHA','#0057b8','#ffffff',79],['Crystal Palace','CRY','#1b458f','#c41230',77],
@@ -909,19 +909,19 @@ for(const [n,code,c1,c2,rating] of EXTRA_LEAGUE_TEAMS){if(!TEAMS.some(t=>t.n===n
 
 /* Full playable real-club league lists. Missing clubs are added by name so every competition has its full membership. */
 const CAREER_LEAGUE_MEMBERS={
- 'Premier League':ENGLISH_DIVISIONS[0].teams,
- 'Championship':ENGLISH_DIVISIONS[1].teams,
- 'League One':ENGLISH_DIVISIONS[2].teams,
- 'League Two':ENGLISH_DIVISIONS[3].teams,
- 'La Liga':['Athletic Club','Atlético Madrid','Osasuna','Celta Vigo','Deportivo Alavés','Elche CF','Real Madrid','Getafe CF','Levante UD','Málaga CF','Racing Santander','Rayo Vallecano','Deportivo La Coruña','Espanyol','Real Betis','FC Barcelona','Real Sociedad','Sevilla','Valencia','Villarreal','Girona','RCD Mallorca','UD Las Palmas','Granada CF','Real Valladolid','Real Zaragoza'],
- 'Serie A':['Atalanta','Bologna','Cagliari','Como 1907','Cremonese','Fiorentina','Genoa','Inter','Juventus','Lazio','Lecce','AC Milan','Monza','Napoli','Parma','Roma','Torino','Udinese','Sassuolo','Venezia FC','Sampdoria','Palermo FC'],
- 'Bundesliga':['FC Augsburg','Union Berlin','Werder Bremen','Borussia Dortmund','Eintracht Frankfurt','SC Freiburg','Hamburger SV','Heidenheim','TSG Hoffenheim','1. FC Köln','RB Leipzig','Bayer Leverkusen','1. FSV Mainz 05','Borussia Mönchengladbach','Bayern Munich','St. Pauli','VfB Stuttgart','VfL Wolfsburg','Schalke 04','Hertha BSC','Fortuna Düsseldorf','SC Paderborn'],
- 'Ligue 1':['Angers','AJ Auxerre','Brest','Le Havre','Le Mans','Lens','Lille','Lorient','Olympique Lyonnais','Olympique de Marseille','AS Monaco','Nantes','OGC Nice','Paris Saint-Germain','Paris FC','Stade Rennais','Strasbourg','Toulouse','Troyes','Montpellier HSC','AS Saint-Étienne','FC Metz'],
- 'Eredivisie':['Ajax','AZ Alkmaar','Excelsior','FC Groningen','FC Twente','FC Utrecht','Feyenoord','Fortuna Sittard','Go Ahead Eagles','Heerenveen','NEC Nijmegen','PEC Zwolle','PSV Eindhoven','Sparta Rotterdam','Telstar','Heracles Almelo','Willem II','Cambuur'],
- 'Primeira Liga':['Benfica','Boavista','Casa Pia AC','Estoril Praia','FC Porto','Famalicão','Gil Vicente FC','Moreirense FC','Rio Ave','SC Braga','Sporting CP','Vitória SC','Arouca','Nacional','Santa Clara','Tondela','Alverca','AVS'],
- 'Scottish Premiership':['Aberdeen','Celtic','Dundee FC','Dundee United','Falkirk','Heart of Midlothian','Hibernian','Kilmarnock','Livingston','Motherwell','Rangers','St Mirren'],
- 'Süper Lig':['Alanyaspor','Antalyaspor','Beşiktaş','Fenerbahçe','Galatasaray','Gaziantep FK','Göztepe','İstanbul Başakşehir','Kasımpaşa','Kayserispor','Kocaelispor','Konyaspor','Rizespor','Samsunspor','Trabzonspor','Fatih Karagümrük','Eyüpspor','Gençlerbirliği'],
- 'Saudi Pro League':['Al-Ahli','Al-Ettifaq','Al-Fateh','Al-Hilal','Al-Ittihad','Al-Kholood','Al-Nassr','Al-Qadsiah','Al-Riyadh','Al-Shabab','Al-Taawoun','Al-Okhdood','Damac','Al-Khaleej','Al-Wehda','Al-Raed','Neom SC','Al-Fayha'],
+ 'England Tier 1':ENGLISH_DIVISIONS[0].teams,
+ 'England Tier 2':ENGLISH_DIVISIONS[1].teams,
+ 'England Tier 3':ENGLISH_DIVISIONS[2].teams,
+ 'England Tier 4':ENGLISH_DIVISIONS[3].teams,
+ 'Spain Tier 1':['Athletic Club','Atlético Madrid','Osasuna','Celta Vigo','Deportivo Alavés','Elche CF','Real Madrid','Getafe CF','Levante UD','Málaga CF','Racing Santander','Rayo Vallecano','Deportivo La Coruña','Espanyol','Real Betis','FC Barcelona','Real Sociedad','Sevilla','Valencia','Villarreal','Girona','RCD Mallorca','UD Las Palmas','Granada CF','Real Valladolid','Real Zaragoza'],
+ 'Italy Tier 1':['Atalanta','Bologna','Cagliari','Como 1907','Cremonese','Fiorentina','Genoa','Inter','Juventus','Lazio','Lecce','AC Milan','Monza','Napoli','Parma','Roma','Torino','Udinese','Sassuolo','Venezia FC','Sampdoria','Palermo FC'],
+ 'Germany Tier 1':['FC Augsburg','Union Berlin','Werder Bremen','Borussia Dortmund','Eintracht Frankfurt','SC Freiburg','Hamburger SV','Heidenheim','TSG Hoffenheim','1. FC Köln','RB Leipzig','Bayer Leverkusen','1. FSV Mainz 05','Borussia Mönchengladbach','Bayern Munich','St. Pauli','VfB Stuttgart','VfL Wolfsburg','Schalke 04','Hertha BSC','Fortuna Düsseldorf','SC Paderborn'],
+ 'France Tier 1':['Angers','AJ Auxerre','Brest','Le Havre','Le Mans','Lens','Lille','Lorient','Olympique Lyonnais','Olympique de Marseille','AS Monaco','Nantes','OGC Nice','Paris Saint-Germain','Paris FC','Stade Rennais','Strasbourg','Toulouse','Troyes','Montpellier HSC','AS Saint-Étienne','FC Metz'],
+ 'Netherlands Tier 1':['Ajax','AZ Alkmaar','Excelsior','FC Groningen','FC Twente','FC Utrecht','Feyenoord','Fortuna Sittard','Go Ahead Eagles','Heerenveen','NEC Nijmegen','PEC Zwolle','PSV Eindhoven','Sparta Rotterdam','Telstar','Heracles Almelo','Willem II','Cambuur'],
+ 'Portugal Tier 1':['Benfica','Boavista','Casa Pia AC','Estoril Praia','FC Porto','Famalicão','Gil Vicente FC','Moreirense FC','Rio Ave','SC Braga','Sporting CP','Vitória SC','Arouca','Nacional','Santa Clara','Tondela','Alverca','AVS'],
+ 'Scotland Tier 1':['Aberdeen','Celtic','Dundee FC','Dundee United','Falkirk','Heart of Midlothian','Hibernian','Kilmarnock','Livingston','Motherwell','Rangers','St Mirren'],
+ 'Türkiye Tier 1':['Alanyaspor','Antalyaspor','Beşiktaş','Fenerbahçe','Galatasaray','Gaziantep FK','Göztepe','İstanbul Başakşehir','Kasımpaşa','Kayserispor','Kocaelispor','Konyaspor','Rizespor','Samsunspor','Trabzonspor','Fatih Karagümrük','Eyüpspor','Gençlerbirliği'],
+ 'Saudi Arabia Tier 1':['Al-Ahli','Al-Ettifaq','Al-Fateh','Al-Hilal','Al-Ittihad','Al-Kholood','Al-Nassr','Al-Qadsiah','Al-Riyadh','Al-Shabab','Al-Taawoun','Al-Okhdood','Damac','Al-Khaleej','Al-Wehda','Al-Raed','Neom SC','Al-Fayha'],
  'MLS':['Atlanta United','Austin FC','Charlotte FC','Chicago Fire','FC Cincinnati','Colorado Rapids','Columbus Crew','FC Dallas','D.C. United','Houston Dynamo','Inter Miami','LA Galaxy','Los Angeles FC','Minnesota United','CF Montréal','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City','Philadelphia Union','Portland Timbers','Real Salt Lake','San Diego FC','San Jose Earthquakes','Seattle Sounders','Sporting Kansas City','St. Louis City','Toronto FC','Vancouver Whitecaps']
 };
 const CLUB_KITS={
@@ -936,7 +936,7 @@ function addCareerLeagueClubs(){
   for(const name of names){
    if(TEAMS.some(t=>t.n===name))continue;
    const kit=CLUB_KITS[name]||CLUB_PALETTE[seed++%CLUB_PALETTE.length];
-   const rating=league==='Premier League'?75:league==='Championship'?70:league==='League One'?67:league==='League Two'?64:league==='La Liga'||league==='Serie A'||league==='Bundesliga'||league==='Ligue 1'?73:league==='MLS'||league==='Saudi Pro League'?71:70;
+   const rating=league==='England Tier 1'?75:league==='England Tier 2'?70:league==='England Tier 3'?67:league==='England Tier 4'?64:league==='Spain Tier 1'||league==='Italy Tier 1'||league==='Germany Tier 1'||league==='France Tier 1'?73:league==='MLS'||league==='Saudi Arabia Tier 1'?71:70;
    const code=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]/g,'').slice(0,4).toUpperCase()||'CLUB';
    TEAMS.push(T(name,code,kit[0],kit[1],kit[1],'solid',rating,rating,rating-1,'433','club'));
   }
@@ -957,19 +957,19 @@ function leagueNameForCareer(c){
  }
  for(const [league,names] of Object.entries(CAREER_LEAGUE_MEMBERS))if(names.includes(clubName))return league;
  const n=TEAMS[c.team]?.n||'';
- if(/Real Madrid|Barcelona|Atlético Madrid|Real Sociedad|Sevilla|Valencia|Villarreal|Athletic Club|Girona|Betis|Osasuna/i.test(n))return 'La Liga';
- if(/Inter|Juventus|AC Milan|Napoli|Roma|Lazio|Atalanta|Fiorentina|Bologna|Torino/i.test(n))return 'Serie A';
- if(/Bayern Munich|Borussia Dortmund|Bayer Leverkusen|RB Leipzig|Eintracht Frankfurt|Hamburger SV|Schalke|SC Freiburg/i.test(n))return 'Bundesliga';
- if(/Paris Saint-Germain|Olympique|Monaco|Lille|Stade Rennais|OGC Nice|RC Lens/i.test(n))return 'Ligue 1';
- if(/Benfica|Porto|Sporting CP|SC Braga|Vitória SC|Boavista|Rio Ave|Famalicão/i.test(n))return 'Primeira Liga';
- if(/Ajax|PSV|Feyenoord|AZ Alkmaar|FC Twente|FC Utrecht|Heerenveen|NEC Nijmegen/i.test(n))return 'Eredivisie';
- if(/Celtic|Rangers|Aberdeen|Heart of Midlothian|Hibernian|Motherwell|Dundee United|Dundee FC/i.test(n))return 'Scottish Premiership';
- if(/Galatasaray|Fenerbahçe|Trabzonspor|İstanbul Başakşehir|Beşiktaş|Adana Demirspor/i.test(n))return 'Süper Lig';
- if(/Malmö|AIK|Djurgården|Hammarby|Elfsborg|Norrköping/i.test(n))return 'Allsvenskan';
+ if(/Real Madrid|Barcelona|Atlético Madrid|Real Sociedad|Sevilla|Valencia|Villarreal|Athletic Club|Girona|Betis|Osasuna/i.test(n))return 'Spain Tier 1';
+ if(/Inter|Juventus|AC Milan|Napoli|Roma|Lazio|Atalanta|Fiorentina|Bologna|Torino/i.test(n))return 'Italy Tier 1';
+ if(/Bayern Munich|Borussia Dortmund|Bayer Leverkusen|RB Leipzig|Eintracht Frankfurt|Hamburger SV|Schalke|SC Freiburg/i.test(n))return 'Germany Tier 1';
+ if(/Paris Saint-Germain|Olympique|Monaco|Lille|Stade Rennais|OGC Nice|RC Lens/i.test(n))return 'France Tier 1';
+ if(/Benfica|Porto|Sporting CP|SC Braga|Vitória SC|Boavista|Rio Ave|Famalicão/i.test(n))return 'Portugal Tier 1';
+ if(/Ajax|PSV|Feyenoord|AZ Alkmaar|FC Twente|FC Utrecht|Heerenveen|NEC Nijmegen/i.test(n))return 'Netherlands Tier 1';
+ if(/Celtic|Rangers|Aberdeen|Heart of Midlothian|Hibernian|Motherwell|Dundee United|Dundee FC/i.test(n))return 'Scotland Tier 1';
+ if(/Galatasaray|Fenerbahçe|Trabzonspor|İstanbul Başakşehir|Beşiktaş|Adana Demirspor/i.test(n))return 'Türkiye Tier 1';
+ if(/Malmö|AIK|Djurgården|Hammarby|Elfsborg|Norrköping/i.test(n))return 'Sweden Tier 1';
  if(/Flamengo|Boca Juniors|River Plate/i.test(n))return 'South American League';
  if(/Atlanta United|Portland Timbers|Inter Miami|LA Galaxy/i.test(n))return 'MLS';
- if(/Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli/i.test(n))return 'Saudi Pro League';
- if(/Kawasaki/i.test(n))return 'J1 League';
+ if(/Al-Hilal|Al-Nassr|Al-Ittihad|Al-Ahli/i.test(n))return 'Saudi Arabia Tier 1';
+ if(/Kawasaki/i.test(n))return 'Japan Tier 1';
  return 'International League';
 }
 function careerLeagueTeams(c){
@@ -2382,15 +2382,15 @@ function teamCountry(t){return t.g==='nat'?t.n:(CLUB_COUNTRY[t.n]||'Other');}
 const ENGLISH_PREMIER=new Set(['Manchester City','Liverpool','Arsenal','Chelsea','Manchester United','Tottenham Hotspur','Aston Villa','Newcastle United','West Ham United','Everton','Brighton','Brentford','Fulham','Crystal Palace','Wolverhampton','Nottingham Forest','Bournemouth','Leicester City','Ipswich Town','Southampton']);
 const ENGLISH_LEAGUE_ONE=new Set(['Reading','Stockport County','Wigan Athletic','Oxford United','Plymouth Argyle']);
 const COUNTRY_LEAGUE={
- 'Spain':'La Liga','Germany':'Bundesliga','Italy':'Serie A','France':'Ligue 1','Portugal':'Primeira Liga','Netherlands':'Eredivisie','Scotland':'Scottish Premiership','Türkiye':'Süper Lig','Brazil':'Brasileirão Série A','Argentina':'Argentine Primera División','United States':'Major League Soccer (MLS)','Sweden':'Allsvenskan','Belgium':'Belgian Pro League','Ukraine':'Ukrainian Premier League','Croatia':'HNL','Austria':'Austrian Bundesliga','Greece':'Super League Greece','Saudi Arabia':'Saudi Pro League','Egypt':'Egyptian Premier League','Morocco':'Botola Pro','Mexico':'Liga MX','Japan':'J1 League','South Korea':'K League 1','Qatar':'Qatar Stars League','Denmark':'Danish Superliga','Norway':'Eliteserien','Switzerland':'Swiss Super League','Bosnia and Herzegovina':'Bosnian Premier League','Canada':'Canadian Premier League','Other':'Other Clubs'
+ 'Spain':'Spain Tier 1','Germany':'Germany Tier 1','Italy':'Italy Tier 1','France':'France Tier 1','Portugal':'Portugal Tier 1','Netherlands':'Netherlands Tier 1','Scotland':'Scotland Tier 1','Türkiye':'Türkiye Tier 1','Brazil':'Brazil Tier 1','Argentina':'Argentina Tier 1','United States':'USA Tier 1','Sweden':'Sweden Tier 1','Belgium':'Belgium Tier 1','Ukraine':'Ukraine Tier 1','Croatia':'Croatia Tier 1','Austria':'Austria Tier 1','Greece':'Greece Tier 1','Saudi Arabia':'Saudi Arabia Tier 1','Egypt':'Egypt Tier 1','Morocco':'Morocco Tier 1','Mexico':'Mexico Tier 1','Japan':'Japan Tier 1','South Korea':'South Korea Tier 1','Qatar':'Qatar Tier 1','Denmark':'Denmark Tier 1','Norway':'Norway Tier 1','Switzerland':'Switzerland Tier 1','Bosnia and Herzegovina':'Bosnia and Herzegovina Tier 1','Canada':'Canada Tier 1','Other':'Other Clubs'
 };
 function teamLeague(t){
  if(t.g==='nat')return 'National Teams';
  const country=teamCountry(t);
  if(country==='England'){
-  if(ENGLISH_PREMIER.has(t.n))return 'English Premier League';
-  if(ENGLISH_LEAGUE_ONE.has(t.n))return 'English League One';
-  return 'English Championship';
+  if(ENGLISH_PREMIER.has(t.n))return 'England Tier 1';
+  if(ENGLISH_LEAGUE_ONE.has(t.n))return 'England Tier 3';
+  return 'England Tier 2';
  }
  return COUNTRY_LEAGUE[country]||('Other Leagues · '+country);
 }
