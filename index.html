@@ -2950,7 +2950,9 @@ function renderRk(){
 function rankedApply(S,margin){
   const R=net.dream?RK2:RK;
   net.oldR=R.rating;net.coins=0;
-  if(S<0||!net.opp){net.delta=0;return;}
+  /* Do not void a completed match over client/host acknowledgement disagreement. Use the final score to award rating. */
+  if(S<0&&net.opp&&Number.isFinite(margin))S=margin>0?1:margin<0?0:.5;
+  if(!net.opp){net.delta=0;return;}
   const e=1/(1+Math.pow(10,(net.opp.r-R.rating)/400));
   const ti=rankIdx(R.rating),K=[36,34,32,30,28,26,24,22][ti];
   let d=Math.round(K*(S-e));if(S===1&&margin>1)d+=Math.min(4,margin-1);
@@ -2966,7 +2968,7 @@ function applyRanked(){
   const mine=net.host?score[0]:score[1],th=net.host?score[1]:score[0];
   rankedApply(net.fin!==undefined?net.fin:(mine>th?1:mine===th?.5:0),mine-th);
   const RR=net.dream?RK2:RK,a=rankIdx(net.oldR),b=rankIdx(RR.rating),k=RANKS[b];
-  $('endTeams').innerHTML=`<span style="color:${k.c}">${rankLabel(RR.rating)} ${RR.rating}</span> (${net.delta>=0?'+':''}${net.delta})${b>a?' · PROMOTED!':b<a?' · Demoted':''}${net.coins?' · +'+net.coins+' coins':''}${net.disp?' · Result disputed, no rating change':''}`;
+  $('endTeams').innerHTML=`<span style="color:${k.c}">${rankLabel(RR.rating)} ${RR.rating}</span> (${net.delta>=0?'+':''}${net.delta})${b>a?' · PROMOTED!':b<a?' · Demoted':''}${net.coins?' · +'+net.coins+' coins':''}`;
 }
 function setOnMode(){[...$('onMode').children].forEach(c=>c.classList.toggle('on',(c.dataset.v==='1')===onDream));renderRk();}
 $('onMode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;onDream=b.dataset.v==='1';setOnMode();});
