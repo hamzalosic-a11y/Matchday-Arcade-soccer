@@ -1695,9 +1695,10 @@ function aiStep(p,dt){
   }
   const ownGoalX=d===1?0:L;
   if(!ball.owner){
-    if(rank===0||(rank===1&&dist(p,ball)<118)){
-      const tt=Math.min(.6,dist(p,ball)/(base*1.1));
-      tx=ball.x+ball.vx*tt;ty=ball.y+ball.vy*tt;sp=base*1.12;p.sprinting=true;
+    /* Keep shape: one nearest outfield player presses a loose ball; other players hold their roles. */
+    if(rank===0||(rank===1&&dist(p,ball)<82&&p.role!=='DF')){
+      const tt=Math.min(.45,dist(p,ball)/(base*1.15));
+      tx=ball.x+ball.vx*tt;ty=ball.y+ball.vy*tt;sp=base*1.05;p.sprinting=rank===0;
     }else{[tx,ty]=homePos(p);}
   }else if(ball.owner.team!==p.team){
     const o=ball.owner;
@@ -1742,10 +1743,11 @@ function aiStep(p,dt){
         // Midfielders stagger to create short passing options and cover central/wide lanes.
         const side=(p.fy<.34?-1:p.fy>.66?1:(p.idx%2===0?-1:1));
         ty=clamp(carrier.y+side*clamp(100+gap*.07,90,155),55,W-55);
-      }else if(p.role==='DF'&&towardGoal<L*.68){
-        // Keep defenders behind the ball as a safe recycle option.
-        tx=carrier.x-d*clamp(125+gap*.12,125,210);
-        ty=clamp(carrier.y+(p.y<carrier.y?-1:1)*95,70,W-70);
+      }else if(p.role==='DF'){
+        // Keep defenders behind the attack instead of joining forward runs.
+        const home=homePos(p),backX=carrier.x-d*clamp(210+gap*.12,210,300),limit=carrier.x-d*95;
+        tx=d===1?Math.min(home[0],backX,limit):Math.max(home[0],backX,limit);
+        ty=clamp(home[1]*.72+(carrier.y+(p.y<carrier.y?-1:1)*125)*.28,65,W-65);
       }
       // Never deliberately send a runner beyond the current offside line.
       if(p.role!=='DF'){
@@ -2969,7 +2971,9 @@ function rankedApply(S,margin){
 function applyRanked(){
   if(net.done)return;net.done=true;net.wait=0;
   const mine=net.host?score[0]:score[1],th=net.host?score[1]:score[0];
-  rankedApply(net.fin!==undefined?net.fin:(mine>th?1:mine===th?.5:0),mine-th);
+  /* A completed match is rated from its final score, not stale dispute/ack flags. Only an opponent-leaves forfeit overrides the score. */
+  const result=net.fin===1?1:(mine>th?1:mine===th?.5:0);
+  rankedApply(result,mine-th);
   const RR=net.dream?RK2:RK,a=rankIdx(net.oldR),b=rankIdx(RR.rating),k=RANKS[b];
   $('endTeams').innerHTML=`<span style="color:${k.c}">${rankLabel(RR.rating)} ${RR.rating}</span> (${net.delta>=0?'+':''}${net.delta})${b>a?' · PROMOTED!':b<a?' · Demoted':''}${net.coins?' · +'+net.coins+' coins':''}`;
 }
