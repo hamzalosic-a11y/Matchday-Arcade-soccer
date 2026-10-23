@@ -3225,6 +3225,26 @@ async function claimHamzasShawarmaAdminTeamGift(sess,username){
     if(!$('dtScr').hidden)renderDt();
   }catch(e){console.warn('Admin team gift could not be checked.');}
 }
+async function claimBeshirCoinGift(sess,username){
+  if(!sess||!sess.access_token||String(username||'').trim().toLowerCase()!=='beshir')return;
+  try{
+    const r=await fetch(ONLINE.url+'/rest/v1/rpc/claim_beshir_50000_coin_gift',{
+      method:'POST',
+      headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json'},
+      body:'{}',
+      cache:'no-store'
+    });
+    if(!r.ok)return;
+    const amount=await r.json();
+    if(amount===50000){
+      dtInit();
+      DT.coins=(Number(DT.coins)||0)+50000;
+      dtSave();
+      authSay('Beshir gift unlocked: 50,000 Dream Team coins added!');
+      if(!$('dtScr').hidden)renderDt();
+    }
+  }catch(e){console.warn('Beshir coin gift could not be checked.');}
+}
 async function fetchProfile(sess){
   let u=null;
   try{const r=await fetch(ONLINE.url+'/rest/v1/profiles?id=eq.'+sess.user.id+'&select=username',{headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token}});const q=await r.json();u=q[0]&&q[0].username;}catch(e){}
@@ -3237,6 +3257,7 @@ async function fetchProfile(sess){
   await claimDavidGoalkeeperGift(sess,u);
   await claimHamzasShawarmaGift(sess,u);
   await claimHamzasShawarmaAdminTeamGift(sess,u);
+  await claimBeshirCoinGift(sess,u);
   if(authBack==='ranked'){authBack='menu';$('authScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Logged in as '+ACC.name+'. Press Find opponent.');}
 }
 const synth=u=>u.toLowerCase()+'@example.com';   // no real email needed: the username is turned into an internal address
