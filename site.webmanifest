@@ -1,0 +1,12 @@
+{
+  "name": "Matchday – Arcade Soccer",
+  "short_name": "Matchday",
+  "description": "Play free arcade football, build a Dream Team and compete in ranked matches.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1322",
+  "theme_color": "#0a1322",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
