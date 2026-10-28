@@ -3947,7 +3947,7 @@ requestAnimationFrame(frame);
 (function(){
 const $=id=>document.getElementById(id),modal=$('mdFeatureModal'),body=$('mdfBody');const KEY='matchday_features_v1';
 const base={coins:150,matches:0,shots:0,claimed:[],roster:[],stadiums:[0],stadium:0,pass:[],player:{name:'',position:'ST',kit:'#ffd23f'}};let d;try{d=Object.assign({},base,JSON.parse(localStorage.getItem(KEY)||'{}'));d.player=Object.assign({},base.player,d.player||{});}catch(e){d=JSON.parse(JSON.stringify(base));}
-function save(){localStorage.setItem(KEY,JSON.stringify(d));}function esc(v){return String(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));}
+function save(){localStorage.setItem(KEY,JSON.stringify(d));}function esc(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');}
 function coins(){return '<div class="mdf-card"><b>🪙 '+d.coins+' coins</b></div>';}
 function open(k){modal.classList.add('open');render(k)}
 function render(k){const titles={stadium:'STADIUM UPGRADES',player:'CREATE YOUR PLAYER',missions:'DAILY MISSIONS',market:'TRANSFER MARKET',challenge:'PENALTY CHALLENGE',pass:'MATCHDAY CLUB PASS'};$('mdfTitle').textContent=titles[k];let h=coins();
