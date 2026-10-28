@@ -458,6 +458,16 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 .md-mode-buttons button{flex:1 1 145px;max-width:220px;min-height:42px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);font-weight:750;cursor:pointer}
 .md-mode-buttons button:hover{border-color:#75f2c2;transform:translateY(-1px)}
 @media(max-width:520px){#mdModesDrawer>summary{align-items:flex-start;flex-wrap:wrap}.md-modes-hint{width:100%;text-align:left}.md-mode-buttons button{flex-basis:42%;font-size:12px}}
+
+/* Mode hub: visible above team selection so players can find it without scrolling. */
+#mdModesHub{width:min(760px,94%);margin:14px auto 16px;padding:13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);text-align:left}
+.md-modes-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 10px}
+.md-modes-head div{display:flex;flex-direction:column;gap:2px}.md-modes-head small{font-size:10px;letter-spacing:1.5px;color:#75f2c2;font-weight:900}.md-modes-head b{font-size:20px;color:var(--text)}.md-modes-head>span{font-size:12px;color:var(--mut)}
+.md-mode-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.md-mode-buttons button{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:42px;padding:9px 7px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);font:750 12px 'Barlow',sans-serif;cursor:pointer}
+.md-mode-buttons button span{font-size:16px}.md-mode-buttons button:hover{border-color:#75f2c2}
+.md-extra-modes{margin-top:10px;border-top:1px solid var(--line);padding-top:9px}.md-extra-modes summary{cursor:pointer;color:var(--mut);font-size:12px;font-weight:750;padding:5px 2px}.md-extra-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}.md-extra-grid>div{display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);font-size:15px}.md-extra-grid b{font-size:11px;color:var(--text)}.md-extra-grid small{font-size:10px;line-height:1.3;color:var(--mut)}
+@media(max-width:560px){.md-mode-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.md-mode-buttons button{font-size:12px}.md-extra-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -512,7 +522,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
   <div class="screen" id="menu">
     <h1>MATCH<span>DAY</span></h1>
     <p class="sub">Free 3D arcade football · 200+ teams · Build your Dream Team · Challenge your rivals</p><div style="margin:0 0 10px"><button id="mdStatsOpen" type="button" style="border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:8px 12px;font-weight:700;cursor:pointer">📊 Game stats</button></div>
-    <div class="row" style="margin-top:0">
+    <section id="mdModesHub" aria-label="Game modes"><div class="md-modes-head"><div><small>PLAY YOUR WAY</small><b>Game modes</b></div><span>Choose one</span></div><div class="md-mode-buttons"><button id="btnCareer"><span>📈</span>Career mode</button><button id="btnDt"><span>⭐</span>Dream Team</button><button id="btnOnline"><span>⚔️</span>Ranked online</button><button id="btnCup"><span>🏆</span>Road to Glory Cup</button><button id="btnRush"><span>⚡</span>Arcade Rush</button><button id="btnLb"><span>📊</span>Leaderboard</button><button id="btnAcc"><span>👤</span>Account</button></div><details class="md-extra-modes"><summary>More coming to Matchday</summary><div class="md-extra-grid"><div>🏟️ <b>Stadium upgrades</b><small>Unlock grounds and match-day looks</small></div><div>👟 <b>Create your player</b><small>Build a custom player career</small></div><div>🎯 <b>Daily missions</b><small>Earn coins and season XP</small></div><div>🔁 <b>Transfer market</b><small>Manage your squad and transfers</small></div><div>🎮 <b>Quick challenges</b><small>Penalties and short-format matches</small></div><div>👑 <b>Club Pass</b><small>Optional cosmetic rewards</small></div></div></details></section><div class="row" style="margin-top:0">
       <div class="seg" id="tabSeg"><button data-v="club" class="on">Clubs</button><button data-v="nat">National teams</button></div>
     </div>
     <input id="tSearch" placeholder="Search teams…" autocomplete="off">
@@ -534,7 +544,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
-    <details id="mdModesDrawer" class="md-modes-drawer"><summary><span>🎮 More modes & features</span><span class="md-modes-hint">Career · Ranked · Dream Team · More</span></summary><div class="tr md-mode-buttons"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div></details>
+    
     <div id="mdCupPanel">
       <div class="mdCupTop"><div><small>ROAD TO GLORY</small><h2>🏆 Knockout Cup</h2></div><div class="mdCupRecord"><b id="mdCupWins">0</b><span>cup wins</span></div></div>
       <div id="mdCupBracket" class="mdCupBracket"><div class="mdCupStage"><small>ROUND 1</small><b>Quarter-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 2</small><b>Semi-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 3</small><b>Final</b><span>UP NEXT</span></div></div>
