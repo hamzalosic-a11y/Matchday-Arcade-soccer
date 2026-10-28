@@ -1,0 +1,62 @@
+name: Matchday browser smoke tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/game-smoke-tests.yml'
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/game-smoke-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Playwright
+        run: npm install --no-save @playwright/test
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start local static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/matchday-http.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/matchday-http.log
+          exit 1
+
+      - name: Run gameplay smoke tests
+        run: npx playwright test tests/game-smoke.spec.js --reporter=list
+
+      - name: Upload test report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matchday-playwright-report
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
