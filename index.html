@@ -2668,11 +2668,13 @@ function settle(gf,ga,real){
   let m=`${TEAMS[c.team].s} ${gf}–${ga} ${TEAMS[opp].s}. `;
   c.gf+=gf;c.ga+=ga;c.w+=+(gf>ga);c.d+=+(gf===ga);c.l+=+(gf<ga);
   c.coins+=(gf>ga?30:gf===ga?12:5)+gf*2;
+  mdEnsureCareerProgress(c);c.managerXP+=(gf>ga?35:gf===ga?20:12)+gf*3;
   c.morale=clamp((c.morale??70)+(gf>ga?8:gf===ga?1:-9),0,100);
   if(gf>ga)careerMail('Great result — the board is pleased!',`${TEAMS[c.team].n} won ${gf}–${ga}. Manager morale rises to ${c.morale}/100. Keep the momentum going.`);
   else if(gf<ga)careerMail(c.morale<35?'Board warning: pressure is rising':'Disappointing result',`${TEAMS[c.team].n} lost ${gf}–${ga}. The board expects a response. Manager morale is now ${c.morale}/100.`);
   else careerMail('A point earned',`The match ended ${gf}–${ga}. The board wants consistency. Manager morale is ${c.morale}/100.`);
   m+=c.stage==='league'?leagueRound(gf,ga):cupRound(gf,ga,opp);
+  if(c.stage==='league'&&mdClaimBoardReward(c))m+=' Board objective completed! ';
   c.msg=m;if(c.stage==='over')goldenBoot();saveAll();
 }
 /* ---- Worldwide leaderboard (Supabase). Fill these in, see leaderboard-setup.sql ---- */
@@ -2726,8 +2728,22 @@ function careerTacticsHtml(c){
  return '<section class="career-tactics"><div class="tactics-top"><div><h3>📋 Match lineup & tactics</h3><div class="career-muted">Choose your formation. It will be used in your next career match.</div></div><label style="display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:900;letter-spacing:1px;color:#9cffc9">FORMATION<select id="careerFormation">'+Object.keys(formations).map(k=>'<option value="'+k+'"'+(k===selected?' selected':'')+'>'+k+'</option>').join('')+'</select></label></div><div class="career-tactics-grid"><div class="career-mini-pitch" aria-label="'+selected+' football formation">'+dots+'</div><div><div style="font-weight:900;color:#ffd23f;margin:0 0 7px">STARTING XI · 11 PLAYERS</div><div class="career-xi">'+xi+'</div></div></div></section>';
 }
 
+
+// Career progression expansion: manager XP, board targets and academy prospects.
+function mdEnsureCareerProgress(c){c.managerXP=Math.max(0,Number(c.managerXP)||0);c.boardClaimed=!!c.boardClaimed;c.youth=Array.isArray(c.youth)?c.youth:[];if(!c.youth.length)mdScoutYouth(c,false);}
+function mdManagerLevel(c){return 1+Math.floor((Number(c.managerXP)||0)/100);}
+function mdScoutYouth(c,paid=true){
+ if(paid&&c.coins<20)return false;if(paid)c.coins-=20;
+ const first=['Jayden','Mikael','Ethan','Amir','Liam','Zayn','Noah','Alex','Isak','Rayan','Theo','Adam'],last=['Berg','Silva','Costa','Lind','Haddad','Novak','Ali','Jensen','Rossi','Demir','Santos','Kovac'],roles=['FW','MF','DF','GK'];
+ c.youth=Array.from({length:3},(_,i)=>{const pos=roles[Math.floor(Math.random()*roles.length)],age=15+Math.floor(Math.random()*3),rating=52+Math.floor(Math.random()*13);return{id:'ya'+Date.now().toString(36)+i+Math.random().toString(36).slice(2,5),name:first[Math.floor(Math.random()*first.length)]+' '+last[Math.floor(Math.random()*last.length)],pos,age,rating,potential:Math.min(91,rating+15+Math.floor(Math.random()*15)),trained:0};});
+ if(paid)careerMail('Academy scouting report','Your scouts found three prospects. Develop them and promote your favourites.');return true;
+}
+function mdCareerBoardTarget(c){return Math.min(10,Math.max(4,Math.ceil((c.schedule?.length||16)*.4)));}
+function mdClaimBoardReward(c){mdEnsureCareerProgress(c);const target=mdCareerBoardTarget(c);if(c.boardClaimed||c.w<target)return false;c.boardClaimed=true;c.coins+=100;c.budget+=50000;c.managerXP+=50;careerMail('Board objective completed','You reached '+target+' league wins. Reward: 100 coins, £50,000 and 50 manager XP.');return true;}
+
 function renderCareer(){
   const c=career,b=$('cBody');
+  if(c)mdEnsureCareerProgress(c);
   if(c&&c.stage==='league'&&!Array.isArray(c.schedule)){newSeason();saveAll();}
   if(c&&(!Array.isArray(c.market)||!c.market.length)){makeTransferMarket();saveAll();}
   if(!c){
@@ -2754,6 +2770,9 @@ function renderCareer(){
     t.map((r,k)=>`<tr class="${r.i===c.team?'me':''}"><td>${k+1}</td><td>${esc(TEAMS[r.i].n)}</td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf-r.ga}</td><td>${r.pts}</td></tr>`).join('')+`</table></div>`;
   h+=scorersHtml(10);
   if(c.stage==='league'&&Array.isArray(c.schedule)){const done=c.schedule.slice(0,c.md),up=c.schedule.slice(c.md,Math.min(c.schedule.length,c.md+6));h+='<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left"><h2 style="color:#9cffc9;margin:0 0 6px">📅 Home & away schedule</h2><p class="sub">Everyone plays each opponent twice: one home match and one away match. '+c.schedule.length+' league matches this season.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px">'+done.map((f,i)=>'<div style="padding:7px;border-radius:7px;background:var(--panel2);font-size:12px">MD '+(i+1)+' · '+(f.home?'🏠 HOME':'✈️ AWAY')+' vs '+esc(TEAMS[f.opp].n)+' · Played</div>').join('')+up.map((f,j)=>'<div style="padding:7px;border-radius:7px;background:var(--panel2);font-size:12px">MD '+(c.md+j+1)+' · '+(f.home?'🏠 HOME':'✈️ AWAY')+' vs '+esc(TEAMS[f.opp].n)+(j===0?' · NEXT':'')+'</div>').join('')+'</div></section>';}
+  const managerLevel=mdManagerLevel(c),boardTarget=mdCareerBoardTarget(c),boardDone=c.w>=boardTarget;
+  h+=`<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left;border-color:#b18cff"><h2 style="color:#c7a6ff;margin:0 0 6px">🎖️ Manager progression · Level ${managerLevel}</h2><p class="sub" style="margin:0 0 8px">Manager XP: ${c.managerXP} · ${managerLevel*100-c.managerXP} XP to next level. Earn XP after every match and extra XP for wins.</p><div style="height:9px;border-radius:9px;background:var(--panel2);overflow:hidden"><span style="display:block;height:100%;width:${c.managerXP%100}%;background:linear-gradient(90deg,#8b5cf6,#c4b5fd)"></span></div><p class="sub" style="margin:10px 0 4px">🏛️ BOARD OBJECTIVE · Win ${boardTarget} league matches this season</p><p style="font-size:13px;margin:0 0 8px">${Math.min(c.w,boardTarget)}/${boardTarget} wins · Reward: 100 coins + £50,000 + 50 XP</p><button data-a="claimBoard" ${!boardDone||c.boardClaimed?'disabled':''}>${c.boardClaimed?'✓ Objective claimed':boardDone?'Claim board reward':'Keep winning to unlock'}</button></section>`;
+  h+=`<section class="career-panel" style="width:100%;padding:14px;margin:10px 0;text-align:left;border-color:#56b8a0"><h2 style="color:#9cffc9;margin:0 0 5px">🌱 Youth Academy</h2><p class="sub" style="margin:0 0 8px">Develop young prospects, raise their potential and promote them into your senior squad.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">${(c.youth||[]).map(p=>`<div style="padding:10px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)"><b>${esc(p.name)}</b><div class="sub">${p.age} years · ${p.pos} · ${p.rating} OVR</div><div style="font-size:12px;color:var(--acc);margin:4px 0">Potential ${p.potential} · Training +${p.trained||0}</div><div class="tr"><button data-a="developYouth" data-id="${esc(p.id)}" ${c.coins<15||p.rating>=p.potential?'disabled':''}>Train · 15 coins</button><button data-a="promoteYouth" data-id="${esc(p.id)}">Promote</button></div></div>`).join('')||'<p class="sub">No academy prospects. Scout for new talent.</p>'}</div><div class="tr" style="margin-top:8px"><button data-a="scoutYouth" ${c.coins<20?'disabled':''}>🔎 Scout 3 prospects · 20 coins</button></div></section>`;
   h+=`<p class="sub" style="margin:0">Every match is played, no simulating. Rivals get tougher the more you play: rival boost +${careerBoost()}.</p>`;
   if(c.stage==='over')h+=`<button class="go" data-a="next">Start season ${c.season+1}</button>`;
   else{
@@ -2777,9 +2796,13 @@ $('cBody').addEventListener('click',e=>{
   if(a==='pickCareerTeam'){const idx=Number(b.dataset.team);if(Number.isInteger(idx)&&TEAMS[idx]&&TEAMS[idx].g==='club'){settings.home=idx;careerLeagueFilter=leagueNameForCareer({team:idx,division:englishDivisionIndex(idx)});renderCareer();}return;}
   if(a==='new'){
     careerDraftName=$('cName')?.value||careerDraftName||'Manager';
-    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName(careerDraftName,16)||'Manager',team:settings.home,division:englishDivisionIndex(settings.home),diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
+    career={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:cleanName(careerDraftName,16)||'Manager',team:settings.home,division:englishDivisionIndex(settings.home),diff:settings.diff,season:1,coins:0,budget:2500000,morale:70,mail:[],signed:[],market:[],staff:{},youth:[],managerXP:0,boardClaimed:false,up:{a:0,m:0,d:0},trophies:[],w:0,d:0,l:0,gf:0,ga:0,msg:'Welcome, manager. Win the league, then the cup!',live:false};
     newSeason();saveAll();
-  }else if(a==='play'){playCareer();return;}
+  }else if(a==='claimBoard'){if(mdClaimBoardReward(c))saveAll();}
+  else if(a==='scoutYouth'){if(mdScoutYouth(c,true))saveAll();}
+  else if(a==='developYouth'){const p=(c.youth||[]).find(x=>x.id===b.dataset.id);if(p&&c.coins>=15&&p.rating<p.potential){c.coins-=15;p.rating=Math.min(p.potential,p.rating+1);p.trained=(p.trained||0)+1;careerMail('Academy training report',p.name+' improved to '+p.rating+' OVR.');saveAll();}}
+  else if(a==='promoteYouth'){const ix=(c.youth||[]).findIndex(x=>x.id===b.dataset.id);if(ix>=0){const p=c.youth[ix];c.signed=c.signed||[];c.signed.push({id:p.id,name:p.name,pos:p.pos,rating:p.rating,cost:Math.max(10000,p.rating*p.rating*15),boost:p.pos==='FW'?'a':p.pos==='DF'||p.pos==='GK'?'d':'m'});c.youth.splice(ix,1);const k=p.pos==='FW'?'a':p.pos==='DF'||p.pos==='GK'?'d':'m';c.up=c.up||{a:0,m:0,d:0};c.up[k]=Math.min(8,(c.up[k]||0)+1);c.morale=clamp((c.morale??70)+2,0,100);careerMail('Academy graduate promoted',p.name+' has joined the first team at '+p.rating+' OVR.');saveAll();}}
+  else if(a==='play'){playCareer();return;}
   else if(a==='next'){c.season++;if(Number.isInteger(c.pendingDivision)){c.division=c.pendingDivision;delete c.pendingDivision;}c.msg=`Season ${c.season} begins in ${leagueNameForCareer(c)}. The rivals have strengthened.`;if(c.staff&&c.staff.director)c.budget+=75000;newSeason();saveAll();}
   else if(a==='offerAccept'){const ix=(c.offers||[]).findIndex(o=>o.id===b.dataset.id);if(ix>=0){const o=c.offers[ix],pi=(c.signed||[]).findIndex(p=>p.id===o.playerId);if(pi>=0){c.signed.splice(pi,1);c.budget+=o.fee;c.morale=clamp((c.morale??70)-2,0,100);c.msg=o.player+' sold to '+TEAMS[o.club].n+' for £'+o.fee.toLocaleString()+'.';careerMail('Transfer completed: '+o.player,c.msg);}c.offers.splice(ix,1);saveAll();}}else if(a==='offerReject'){const ix=(c.offers||[]).findIndex(o=>o.id===b.dataset.id);if(ix>=0){const o=c.offers[ix];c.msg='Rejected '+TEAMS[o.club].n+' offer for '+o.player+'.';careerMail('Offer rejected: '+o.player,c.msg);c.offers.splice(ix,1);saveAll();}}
   else if(a==='negotiate'){const p=(c.market||[]).find(x=>x.id===b.dataset.id);if(p&&!p.signed&&p.clubBid==null){const raw=prompt('Transfer negotiation for '+p.name+'. Asking fee £'+Number(p.cost).toLocaleString()+'. Enter your offer (£):',String(Math.round(p.cost*.85)));if(raw!==null){const fee=Math.round(Number(raw));if(!Number.isFinite(fee)||fee<=0)c.msg='Enter a valid offer.';else if(fee>c.budget)c.msg='Your club cannot afford that offer.';else if(fee>=p.cost*.82){c.budget-=fee;p.signed=true;p.cost=fee;c.signed=c.signed||[];c.signed.push({...p});const k=p.boost||'m';c.up=c.up||{a:0,m:0,d:0};c.up[k]=Math.min(8,(c.up[k]||0)+1);c.morale=clamp((c.morale??70)+3,0,100);c.msg='Deal agreed: '+p.name+' signed for £'+fee.toLocaleString()+'.';careerMail('Deal agreed: '+p.name,c.msg);}else{p.cost=Math.round(p.cost*1.08);c.msg='Offer rejected. Counter-offer is £'+p.cost.toLocaleString()+'.';careerMail('Negotiation rejected: '+p.name,c.msg);}saveAll();}}}
