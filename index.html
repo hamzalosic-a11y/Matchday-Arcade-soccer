@@ -3133,6 +3133,41 @@ function playDreamCPU(){
   dtMatch=true;if(career)career.live=false;$('dtScr').hidden=true;startMatch();
 }
 const cardHtml=(x,sel)=>{const st=styleById(x.style);return `<div class="pc${sel?' sel':''}" style="--rc:${RAR[x.rar].c}"><b>${x.ovr}</b><i>${x.pos} · ${RAR[x.rar].n}</i><span>${esc(x.nm)}</span><small>${x.pos==='GK'?'GK '+x.gk:'PAC '+x.pac+' SHT '+x.sht+'<br>PAS '+x.pas+' DEF '+x.def}</small><small style="display:block;margin-top:5px;color:#ffd23f;font-weight:900">${st.icon} ${st.name}</small></div>`;};
+
+// MATCHDAY COMMUNITY UPDATE: duplicate upgrades + daily login streak rewards.
+function mdDuplicateGroups(){
+  dtInit();const groups=new Map();
+  for(const p of DT.pl){const k=String(p.nm||'').trim().toLowerCase()+'|'+String(p.pos||'');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(p);}
+  return [...groups.values()].filter(g=>g.length>1);
+}
+function mdUpgradeDuplicates(){
+  const groups=mdDuplicateGroups();let upgraded=0;
+  for(const group of groups){
+    group.sort((a,b)=>(Number(b.ovr)||0)-(Number(a.ovr)||0));
+    const keep=group[0];
+    for(const extra of group.slice(1)){
+      if(keep.ovr<99){const before=keep.ovr;keep.ovr=Math.min(99,keep.ovr+1);const d=keep.ovr-before;
+        for(const k of ['pac','sht','pas','def'])keep[k]=Math.min(99,(Number(keep[k])||0)+d);
+        if(keep.pos==='GK')keep.gk=Math.min(99,(Number(keep.gk)||0)+d);
+      }else DT.coins=(Number(DT.coins)||0)+100;
+      DT.pl=DT.pl.filter(p=>p.id!==extra.id);DT.sq=DT.sq.map(id=>id===extra.id?keep.id:id);upgraded++;
+    }
+  }
+  if(upgraded){dtSave();renderDt();const note=$('dtInfo');if(note)note.textContent+=' · '+upgraded+' duplicate(s) merged!';}
+}
+const mdOriginalDailyComplete=completeDailyChallenge;
+completeDailyChallenge=function(){
+  let previous=null;try{previous=JSON.parse(localStorage.getItem('md_daily_streak_v1')||'null');}catch(e){}
+  const today=localDayKey(),yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yKey=yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  const streak=previous&&previous.day===yKey?(Number(previous.streak)||0)+1:previous&&previous.day===today?(Number(previous.streak)||1):1;
+  mdOriginalDailyComplete();
+  try{localStorage.setItem('md_daily_streak_v1',JSON.stringify({day:today,streak}));}catch(e){}
+  const bonus=streak%7===0?200:streak%3===0?75:25;
+  dtInit();DT.coins=(Number(DT.coins)||0)+bonus;dtSave();
+  const end=$('endTeams');if(end)end.textContent+=' · 🔥 '+streak+'-DAY STREAK · +'+bonus+' BONUS COINS';
+};
+
 function renderDt(){
   const b=$('dtBody');dtInit();
   const on=typeof ONLINE!=='undefined',sq=DT.sq.map(id=>DT.pl.find(p=>p.id===id));
@@ -3149,11 +3184,12 @@ function renderDt(){
   }
   const free=DT.free!==new Date().toDateString(),F=FORM[DT.f];
   const spare=DT.pl.filter(p=>p.rar===0&&p.pos!=='GK'&&!DT.sq.includes(p.id)).length;
+  const duplicateCount=mdDuplicateGroups().reduce((n,g)=>n+g.length-1,0);
   b.innerHTML=`<p class="sub" style="margin:4px 0 0">PLAYER PACK STORE · Spend earned coins only — no real-money purchases. Every pack contains 5 fictional players. Each player has a PlayStyle that gives a small in-match bonus.</p>
   <div class="tr">${free?`<button data-a="free">🎁 Free daily pack</button>`:''}${PACKS.map((p,i)=>`<button data-a="pack" data-p="${i}" ${DT.coins<p.cost?'disabled':''} title="${p.desc}" style="border-color:${i===PACKS.length-1?'#ff4d8d':i>=3?'#b46bff':'var(--line)'}">${p.n} · ${p.cost} coins<br><small>${p.tag}</small></button>`).join('')}</div>
   <div class="tr">${Object.keys(FORM).map(f=>`<button data-a="form" data-f="${f}" style="${f===DT.f?'border-color:var(--acc);color:var(--acc)':''}">${f.split('').join('-')}</button>`).join('')}</div>
   ${['FW','MF','DF','GK'].map(r=>`<div class="sq">${sq.map((p,i)=>F[i][0]===r?`<div data-a="slot" data-i="${i}">${cardHtml(p)}</div>`:'').join('')}</div>`).join('')}
-  <div class="tr"><button data-a="auto">Auto-build best XI</button><button data-a="sell">Sell spare Bronze (+${spare*25})</button></div>
+  <div class="tr"><button data-a="auto">Auto-build best XI</button><button data-a="upgradeDuplicates" ${duplicateCount?'':'disabled'}>✨ Merge duplicates (${duplicateCount})</button><button data-a="sell">Sell spare Bronze (+${spare*25})</button></div>
   <p class="sub" style="margin:6px 0 0">Merch: your own shirts (${DT.shirts.length}/${SHIRTS.length}). Tap to buy or wear.</p>
   <div class="tr">${SHIRTS.map(x=>{const own=DT.shirts.includes(x.id);return `<button data-a="shirt" data-id="${x.id}" ${!own&&DT.coins<x.cost?'disabled':''} style="${x.id===DT.shirt?'border-color:var(--acc)':''}"><span style="display:inline-block;width:18px;height:18px;border-radius:4px;vertical-align:middle;margin-right:6px;border:2px solid #fff;background:${kitCss(x)}"></span>${x.n} · ${own?(x.id===DT.shirt?'worn':'owned'):x.cost}</button>`;}).join('')}</div>
   <div class="tr"><button class="go" data-a="cpu" style="font-size:24px;padding:10px 26px;margin:0">Play vs CPU</button>${on?`<button class="go" data-a="ranked" style="font-size:24px;padding:10px 26px;margin:0">Play ranked</button>`:''}<button data-a="menu">Back</button></div>
@@ -3175,6 +3211,7 @@ $('dtBody').addEventListener('click',e=>{
   else if(a==='auto'){autoBuild();dtSave();}
   else if(a==='form'){DT.f=t.dataset.f;autoBuild();dtSave();}
   else if(a==='shirt'){const x=SHIRTS.find(q=>q.id===t.dataset.id);if(x){if(!DT.shirts.includes(x.id)){if(DT.coins<x.cost)return;DT.coins-=x.cost;DT.shirts.push(x.id);}DT.shirt=x.id;dtSave();}}
+  else if(a==='upgradeDuplicates'){mdUpgradeDuplicates();return;}
   else if(a==='sell'){const keep=new Set(DT.sq),sold=DT.pl.filter(p=>p.rar===0&&p.pos!=='GK'&&!keep.has(p.id));DT.pl=DT.pl.filter(p=>!sold.includes(p));DT.coins+=sold.length*25;dtSave();}
   else if(a==='cpu'){playDreamCPU();return;}
   else if(a==='ranked'){onDream=true;$('dtScr').hidden=true;$('onScr').hidden=false;setOnMode();onSt('Dream Team ranked: your squad plays real opponents.');return;}
