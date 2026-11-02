@@ -56,7 +56,8 @@ test.describe('Matchday Arcade Soccer browser smoke tests', () => {
     await expect(page.locator('#mdStripeShop')).toHaveClass(/open/);
     await page.locator('#mdspClose').click();
     await expect(page.locator('#mdStripeShop')).not.toHaveClass(/open/);
-    await expect(page.locator('#mdFeatureModal')).toHaveCount(1);
+    await expect(page.locator('#menu')).toBeVisible();
+    await expect(page.locator('#mdStripeShopBtn')).toBeVisible();
     expect(pageErrors, 'uncaught browser errors when opening the shop').toEqual([]);
   });
 });
