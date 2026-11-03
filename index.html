@@ -497,7 +497,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
-    <div class="tr" style="margin-top:12px"><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
+    <div class="tr" style="margin-top:12px"><button id="btnPlayerCareer" style="border-color:rgba(69,211,151,.5)">⭐ Player Career</button><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
     <div id="mdCupPanel">
       <div class="mdCupTop"><div><small>ROAD TO GLORY</small><h2>🏆 Knockout Cup</h2></div><div class="mdCupRecord"><b id="mdCupWins">0</b><span>cup wins</span></div></div>
       <div id="mdCupBracket" class="mdCupBracket"><div class="mdCupStage"><small>ROUND 1</small><b>Quarter-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 2</small><b>Semi-final</b><span>UP NEXT</span></div><div class="mdCupArrow">➜</div><div class="mdCupStage"><small>ROUND 3</small><b>Final</b><span>UP NEXT</span></div></div>
@@ -547,6 +547,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
   <div class="screen" id="careerScr" hidden>
     <h1>CAREER</h1><p class="sub" id="cInfo"></p><div id="cBody"></div>
   </div>
+  <div class="screen" id="playerCareerScr" hidden><h1>PLAYER <span>CAREER</span></h1><p class="sub" id="pcInfo">Create your pro and work your way to the top.</p><div id="pcBody" style="width:min(900px,100%)"></div></div>
   <div class="screen" id="lbScr" hidden>
     <h1>LEADER<span>BOARD</span></h1><p class="sub" id="lbSub">Best managers on this device. Score = 3 per win + 1 per draw + 100 per trophy.</p>
     <div id="lbRk" style="width:100%;display:flex;justify-content:center"></div><div id="lbRk2" style="width:100%;display:flex;justify-content:center"></div><table class="lg" id="lbTbl"></table><div id="lbSc" style="width:100%;display:flex;justify-content:center"></div><div id="lbWs" style="width:100%;display:flex;justify-content:center"></div><div class="tr"><button id="lbBack">Back</button></div>
@@ -564,6 +565,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <table class="st" id="endStats"></table>
     <button class="go" id="btnAgain">Rematch</button>
     <button class="go alt" id="btnShareResult">↗ Challenge a friend</button>
+    <button class="go" id="mdPlayerCareerReturn" hidden>⭐ Return to Player Career</button>
     <button class="go" id="btnCupNext" hidden>Play next cup round →</button>
     <button class="go alt" id="btnMenu">Change teams</button>
   </div>
@@ -1191,6 +1193,8 @@ function startMatch(){
   $('menu').hidden=true;$('careerScr').hidden=true;$('endScr').hidden=true;$('pauseScr').hidden=true;$('hud').hidden=false;$('cupScr')&&($('cupScr').hidden=true);
   $('touch').hidden=!isTouch;
   setupKickoff(0);
+  if(mdPlayerCareer.live)mdApplyPlayerCareerPro();
+  $('playerCareerScr').hidden=true;
   cam.x=L/2;cam.y=W/2;
   sfx.whistle(1);
 }
@@ -1627,6 +1631,7 @@ function goalScored(t){
   evt+=1;score[t]++;state='goal';stTimer=4.0;ball.net=true;lastScorer=t;
   const s=ball.lastKicker,own=s&&s.team!==t;
   if(s&&!own)ms[s.team].push(s.num);
+  mdPlayerCareerGoal(s);
   showMsg(own?'OWN GOAL!':'GOOOOOAL!',s?`${s.nm||'#'+s.num}  ${teams[s.team].data.n}${s.ls&&!own?' · '+s.ls:''}`:teams[t].data.n,3700);
   sfx.goal();
   const gx=t===0?L:0;
@@ -1849,7 +1854,7 @@ function inputDir(p){
   if(p.thr){const sd=p.y<W/2?1:-1;if(r.y*sd<.7){r.y=.7*sd;r.x=(r.x<0?-1:1)*.714;}}
   return r;
 }
-function setHuman(q){const o=q.team?human2:human;if(o)o.charge=0;if(q.team)human2=q;else human=q;q.charge=0;}
+function setHuman(q){if(mdPlayerCareer&&mdPlayerCareer.live&&q.team===0&&mdPlayerCareerPro&&q!==mdPlayerCareerPro)return;const o=q.team?human2:human;if(o)o.charge=0;if(q.team)human2=q;else human=q;q.charge=0;}
 function humanStep(p,dt){
   const inp=IN(p);
   const mag=Math.min(1,Math.hypot(inp.mx,inp.my));
@@ -1979,7 +1984,7 @@ function finishMatch(){
     $('endStats').innerHTML=`<tr><td>${stats.shots[0]}</td><td>Shots</td><td>${stats.shots[1]}</td></tr><tr><td>${Math.round(stats.poss[0]/tot*100)}%</td><td>Possession</td><td>${Math.round(stats.poss[1]/tot*100)}%</td></tr><tr><td>${stats.yc[0]}</td><td>Yellow cards</td><td>${stats.yc[1]}</td></tr><tr><td>${stats.rc[0]}</td><td>Red cards</td><td>${stats.rc[1]}</td></tr><tr><td>${stats.off[0]}</td><td>Offsides</td><td>${stats.off[1]}</td></tr><tr><td>${stats.sot[0]}</td><td>Shots on target</td><td>${stats.sot[1]}</td></tr><tr><td>${stats.sv[0]}/${stats.sot[1]} (${pcs(stats.sv[0],stats.sot[1])})</td><td>Saves</td><td>${stats.sv[1]}/${stats.sot[0]} (${pcs(stats.sv[1],stats.sot[0])})</td></tr>`;
     $('hud').hidden=true;$('touch').hidden=true;hideMsg();
     if(net.on&&net.host)netSend('end',[score[0],score[1],stats.shots,stats.poss,stats.yc,stats.rc,stats.off,stats.sot,stats.sv]);
-    const cm=!!(career&&career.live);if(!cm&&!(typeof net!=='undefined'&&net.on)&&typeof window.mdRecordResult==='function')window.mdRecordResult(score[0],score[1]);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}
+    const cm=!!(career&&career.live);if(!cm&&!(typeof net!=='undefined'&&net.on)&&typeof window.mdRecordResult==='function')window.mdRecordResult(score[0],score[1]);if(cm){settle(score[0],score[1],ms);$('endTeams').textContent=career.msg;}mdPlayerCareerFinish(score[0],score[1]);
     if(cup.active&&!cm&&!(typeof net!=='undefined'&&net.on)){
       if(score[0]>score[1]){
         if(cup.round===2){
@@ -2535,7 +2540,7 @@ $('btnShareResult').onclick=async()=>{
 };
 $('btnMenu').onclick=()=>{if(net.on){leaveToMenu();return;}if(dtMatch){dtMatch=false;openDt();return;}if(cup.active||cup.lastResult){cup.active=false;cup.lastResult='';cup.pendingNext=false;$('btnCupNext').hidden=true;}state='menu';$('endScr').hidden=true;renderCupPanel();if(career&&career.live){career.live=false;openCareer();}else $('menu').hidden=false;};
 $('btnResume').onclick=togglePause;
-$('btnQuit').onclick=()=>{if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
+$('btnQuit').onclick=()=>{mdAbortPlayerCareer();if(career)career.live=false;paused=false;if(AC)AC.resume();state='menu';$('pauseScr').hidden=true;$('hud').hidden=true;$('touch').hidden=true;$('menu').hidden=false;hideMsg();if(crowdGain)crowdGain.gain.value=0;};
 $('btnPause').onclick=()=>{if(net.on)leaveToMenu();else togglePause();};$('btnMute').onclick=toggleMute;
 $('tSearch').addEventListener('input',renderTeams);
 renderTeams();
@@ -3820,6 +3825,92 @@ function frame(ts){
   }
 }
 function drawRadarSafe(){if(ball&&players.length)drawRadar();}
+
+/* MATCHDAY PLAYER CAREER V1 */
+const MD_PC_KEY='matchday.playercareer.v1';
+let mdPlayerCareer=null,mdPlayerCareerPro=null;
+try{mdPlayerCareer=JSON.parse(localStorage.getItem(MD_PC_KEY)||'null');}catch(_){mdPlayerCareer=null;}
+if(mdPlayerCareer&&(!Number.isInteger(mdPlayerCareer.club)||!TEAMS[mdPlayerCareer.club]||!['FW','MF','DF'].includes(mdPlayerCareer.pos)))mdPlayerCareer=null;
+if(mdPlayerCareer){mdPlayerCareer.live=false;mdPlayerCareer.matchGoals=0;}
+function mdPcSave(){try{localStorage.setItem(MD_PC_KEY,JSON.stringify(mdPlayerCareer));}catch(_){}}
+function mdPcOverall(p){return Math.round((p.pace+p.shooting+p.passing+p.defending)/4);}
+function mdPcStatLabel(k){return({pace:'PACE',shooting:'SHOOTING',passing:'PASSING',defending:'DEFENDING'})[k]||k.toUpperCase();}
+function mdPcOpen(){
+  state='menu';
+  ['menu','careerScr','endScr','hud','touch','lbScr','pauseScr','dtScr','onScr'].forEach(id=>{const e=$(id);if(e)e.hidden=true;});
+  $('playerCareerScr').hidden=false;$('mdPlayerCareerReturn').hidden=true;
+  mdPcRender();
+}
+function mdPcRender(){
+  const b=$('pcBody');if(!b)return;
+  if(!mdPlayerCareer){
+    const clubs=TEAMS.map((t,i)=>({t,i})).filter(x=>x.t.g==='club');
+    const chosen=clubs.some(x=>x.i===settings.home)?settings.home:(clubs[0]?.i??0);
+    b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">YOUR JOURNEY STARTS HERE</div><h2>Create your footballer</h2><p>Start as a young prospect, earn match ratings, train your attributes and climb towards a world-class career.</p><label>PLAYER NAME<input id="pcName" maxlength="18" placeholder="Enter player name" autocomplete="off"></label><div class="md-pc-form"><label>POSITION<select id="pcPosition"><option value="FW">ST · Striker</option><option value="MF">CM · Midfielder</option><option value="DF">CB · Defender</option></select></label><label>STARTING CLUB<select id="pcClub">'+clubs.map(x=>'<option value="'+x.i+'"'+(x.i===chosen?' selected':'')+'>'+esc(x.t.n)+'</option>').join('')+'</select></label></div><button class="go md-pc-primary" data-pc="create">Create Player →</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
+    return;
+  }
+  const p=mdPlayerCareer,ov=mdPcOverall(p),xpNeed=p.level*100,progress=Math.min(100,Math.round(p.xp/xpNeed*100));
+  const stats=['pace','shooting','passing','defending'];
+  const posName={FW:'Striker',MF:'Midfielder',DF:'Defender'};
+  b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">PLAYER PROFILE · SEASON '+p.season+'</div><div class="md-pc-profile"><div class="md-pc-rating"><b>'+ov+'</b><span>OVR</span></div><div><h2>'+esc(p.name)+'</h2><p>'+posName[p.pos]+' · '+esc(TEAMS[p.club].n)+' · Level '+p.level+'</p><div class="md-pc-xp"><span style="width:'+progress+'%"></span></div><small>'+p.xp+' XP · '+Math.max(0,xpNeed-p.xp)+' XP to next level</small></div></div><div class="md-pc-stats"><div><b>'+p.appearances+'</b><span>APPS</span></div><div><b>'+p.goals+'</b><span>GOALS</span></div><div><b>'+p.wins+'-'+p.draws+'-'+p.losses+'</b><span>W-D-L</span></div><div><b>'+(p.avgRating?p.avgRating.toFixed(1):'—')+'</b><span>AVG RATING</span></div></div><div class="md-pc-section"><h3>⚽ Player attributes</h3>'+stats.map(k=>'<div class="md-pc-attribute"><span>'+mdPcStatLabel(k)+'</span><b>'+p[k]+'</b><button data-pc="train" data-stat="'+k+'" '+(p.coins<35||p[k]>=95?'disabled':'')+'>Train · 35 coins</button></div>').join('')+'<div class="md-pc-coins">🪙 '+p.coins+' training coins</div></div><div class="md-pc-section"><h3>📈 Career targets</h3><p>Score '+Math.max(1,5-p.goals%5)+' more goals to reach your next personal milestone. Every appearance earns XP and coins.</p></div><button class="go md-pc-primary" data-pc="play">▶ Play next match</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
+}
+function mdApplyPlayerCareerPro(){
+  if(!mdPlayerCareer||!mdPlayerCareer.live||!teams[0])return;
+  const p=teams[0].players.filter(x=>x.role===mdPlayerCareer.pos&&!x.isGK).sort((a,b)=>Math.abs(a.fy-.5)-Math.abs(b.fy-.5))[0];
+  if(!p)return;
+  p.nm=mdPlayerCareer.name;p.num=mdPlayerCareer.pos==='FW'?9:mdPlayerCareer.pos==='MF'?8:4;
+  p.sht=mdPlayerCareer.shooting;p.pas=mdPlayerCareer.passing;p.def=mdPlayerCareer.defending;
+  p.pace=clamp(.86+(mdPlayerCareer.pace-55)/260,.84,1.18);p.isPro=true;
+  mdPlayerCareerPro=p;human=p;
+}
+function mdPlayerCareerGoal(s){
+  if(mdPlayerCareer&&mdPlayerCareer.live&&s&&s===mdPlayerCareerPro&&s.team===0)mdPlayerCareer.matchGoals=(mdPlayerCareer.matchGoals||0)+1;
+}
+function mdPlayerCareerFinish(home,away){
+  if(!mdPlayerCareer||!mdPlayerCareer.live)return;
+  const p=mdPlayerCareer,g=Number(p.matchGoals)||0,win=home>away,draw=home===away;
+  const rating=clamp(6+g*.8+(win?.6:draw?.2:-.5),4,10);
+  p.appearances++;p.goals+=g;p.wins+=+win;p.draws+=+draw;p.losses+=+(home<away);
+  p.ratingTotal=(Number(p.ratingTotal)||0)+rating;p.avgRating=p.ratingTotal/p.appearances;
+  const coins=18+(win?15:draw?7:0)+g*10,xp=30+(win?20:draw?10:0)+g*12;
+  p.coins+=coins;p.xp+=xp;
+  while(p.xp>=p.level*100){p.level++;const stat=['pace','shooting','passing','defending'][(p.level-2)%4];p[stat]=Math.min(95,p[stat]+1);}
+  p.matchGoals=g;p.live=false;mdPlayerCareerPro=null;mdPcSave();
+  $('endTeams').textContent+=' · ⭐ '+p.name+': '+g+' goal'+(g===1?'':'s')+' · '+rating.toFixed(1)+'/10 · +'+coins+' coins';
+  $('mdPlayerCareerReturn').hidden=false;
+}
+function mdAbortPlayerCareer(){if(mdPlayerCareer&&mdPlayerCareer.live){mdPlayerCareer.live=false;mdPlayerCareerPro=null;mdPcSave();}}
+function mdPcPlay(){
+  if(!mdPlayerCareer)return;
+  if(career)career.live=false;
+  cup.active=false;cup.lastResult='';dtMatch=false;
+  settings.home=mdPlayerCareer.club;
+  const pool=TEAMS.map((t,i)=>i).filter(i=>i!==settings.home&&TEAMS[i].g==='club');
+  if(!pool.length)return;
+  settings.away=pool[(Math.random()*pool.length)|0];settings.diff=1;
+  mdPlayerCareer.live=true;mdPlayerCareer.matchGoals=0;mdPlayerCareerPro=null;mdPcSave();
+  $('playerCareerScr').hidden=true;startMatch();
+}
+$('btnPlayerCareer').onclick=mdPcOpen;
+$('mdPlayerCareerReturn').onclick=mdPcOpen;
+$('pcBody').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pc]');if(!b)return;
+  const a=b.dataset.pc;
+  if(a==='back'){mdAbortPlayerCareer();$('playerCareerScr').hidden=true;$('menu').hidden=false;return;}
+  if(a==='create'){
+    const name=cleanName($('pcName')?.value,18)||'Rookie';
+    const club=Number($('pcClub')?.value),pos=$('pcPosition')?.value;
+    if(!TEAMS[club]||TEAMS[club].g!=='club'||!['FW','MF','DF'].includes(pos))return;
+    mdPlayerCareer={name,club,pos,season:1,level:1,xp:0,coins:0,pace:62,shooting:62,passing:62,defending:62,appearances:0,goals:0,wins:0,draws:0,losses:0,avgRating:0,ratingTotal:0,matchGoals:0,live:false};
+    mdPcSave();mdPcRender();return;
+  }
+  if(a==='play'){mdPcPlay();return;}
+  if(a==='train'){
+    const stat=b.dataset.stat;if(!mdPlayerCareer||!['pace','shooting','passing','defending'].includes(stat))return;
+    if(mdPlayerCareer.coins>=35&&mdPlayerCareer[stat]<95){mdPlayerCareer.coins-=35;mdPlayerCareer[stat]=Math.min(95,mdPlayerCareer[stat]+2);mdPcSave();mdPcRender();}
+  }
+});
+
 initAuth();
 requestAnimationFrame(frame);
 })();
@@ -3958,6 +4049,34 @@ requestAnimationFrame(frame);
 #mdRecordCard>b{font-family:'Barlow Condensed',sans-serif;font-size:22px;display:block;letter-spacing:.02em}
 #mdRecordCard p{font-size:13px;color:var(--mut);margin:4px 0 7px}
 #mdRecordForm{letter-spacing:.08em}
+
+#playerCareerScr{gap:12px}
+.md-pc-panel{width:100%;text-align:left;padding:clamp(14px,3vw,24px);border-radius:18px;background:linear-gradient(145deg,#102b35,#121f38);border:1px solid #39716c;box-shadow:0 14px 34px rgba(0,0,0,.22)}
+.md-pc-kicker{font-size:11px;font-weight:900;letter-spacing:2px;color:#9cffc9}
+.md-pc-panel h2{margin:7px 0;color:#fff;font:800 clamp(27px,5vw,38px) 'Barlow Condensed',sans-serif}
+.md-pc-panel p{color:#c4d6df;line-height:1.5;margin:4px 0 15px}
+.md-pc-panel label{display:flex;flex-direction:column;gap:7px;color:#9cffc9;font-size:11px;font-weight:900;letter-spacing:1px;margin:12px 0}
+.md-pc-panel input,.md-pc-panel select{width:100%;min-height:44px;border-radius:9px;padding:10px;background:#0b1728;color:white;border:1px solid #47706d;font:600 15px 'Barlow',sans-serif}
+.md-pc-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.md-pc-primary{width:100%;margin-top:14px!important;background:linear-gradient(100deg,#1d9b70,#37c98e)!important;color:#061b16!important;border:0!important}
+.md-pc-back{width:100%;margin-top:8px;background:transparent;border:1px solid #47706d;color:#d9e8ee;border-radius:10px;padding:11px;font-weight:800}
+.md-pc-profile{display:flex;align-items:center;gap:15px;padding:12px 0 18px}
+.md-pc-rating{width:76px;height:76px;flex:0 0 76px;border-radius:15px;background:linear-gradient(145deg,#ffd66b,#d88b27);color:#17202a;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.md-pc-rating b{font:900 32px 'Barlow Condensed',sans-serif}.md-pc-rating span{font-size:10px;font-weight:900;letter-spacing:1px}
+.md-pc-profile h2{margin:0}.md-pc-profile p{margin:3px 0 7px}
+.md-pc-xp{height:7px;max-width:320px;background:#263b4c;border-radius:10px;overflow:hidden}.md-pc-xp span{display:block;height:100%;background:#8be8b9}
+.md-pc-profile small{display:block;color:#a9c4ce;margin-top:4px}
+.md-pc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 16px}
+.md-pc-stats div{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 5px;text-align:center;min-width:0}
+.md-pc-stats b{display:block;font:800 23px 'Barlow Condensed',sans-serif;color:#fff;overflow-wrap:anywhere}.md-pc-stats span{display:block;font-size:9px;font-weight:900;letter-spacing:.7px;color:#9cb5c2}
+.md-pc-section{margin:12px 0;padding:13px;border-radius:12px;background:rgba(0,0,0,.17);border:1px solid rgba(255,255,255,.08)}
+.md-pc-section h3{margin:0 0 9px;color:#9cffc9;font:800 21px 'Barlow Condensed',sans-serif}
+.md-pc-attribute{display:grid;grid-template-columns:1fr 38px auto;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;font-weight:900}
+.md-pc-attribute b{font-size:17px;color:#fff}.md-pc-attribute button{background:#1b3d38;color:#9cffc9;border:1px solid #39716c;border-radius:8px;padding:8px;font-weight:800;font-size:11px}
+.md-pc-attribute button:disabled{opacity:.4}
+.md-pc-coins{padding-top:10px;color:#ffd66b;font-weight:900;font-size:13px}
+@media(max-width:560px){.md-pc-form{grid-template-columns:1fr;gap:0}.md-pc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.md-pc-attribute{grid-template-columns:1fr 30px auto;gap:5px}.md-pc-attribute button{font-size:10px;padding:7px 5px}}
+
 </style>
 <script>
 /* MATCHDAY_LOCAL_CLUB_RECORD_V1: browser-local W/D/L, recent form and best win streak */
