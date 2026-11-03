@@ -106,7 +106,7 @@ test.describe('Matchday Arcade Soccer browser smoke tests', () => {
     await expect(page.locator('#menu')).toBeVisible();
     await page.locator('#btnPlayerCareer').click();
     await expect(page.locator('#pcBody')).toContainText('Test Striker');
-    await expect(page.locator('#pcBody')).toContainText('0 APPS');
+    await expect(page.locator('#pcBody .md-pc-stats div:first-child b')).toHaveText('0');
     expect(pageErrors, 'uncaught browser errors in Player Career').toEqual([]);
   });
 
