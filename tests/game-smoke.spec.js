@@ -60,4 +60,22 @@ test.describe('Matchday Arcade Soccer browser smoke tests', () => {
     await expect(page.locator('#mdStripeShopBtn')).toBeVisible();
     expect(pageErrors, 'uncaught browser errors when opening the shop').toEqual([]);
   });
+  test('club record saves wins, draws, losses and recent form locally', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => localStorage.removeItem('md_local_record_v1'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#mdRecordCard')).toBeVisible();
+    await expect(page.locator('#mdRecordLine')).toHaveText('0W · 0D · 0L');
+    await page.evaluate(() => {
+      window.mdRecordResult(2, 1);
+      window.mdRecordResult(1, 1);
+      window.mdRecordResult(0, 1);
+    });
+    await expect(page.locator('#mdRecordLine')).toHaveText('1W · 1D · 1L');
+    await expect(page.locator('#mdRecordForm')).toHaveText('FORM: L · D · W');
+    await expect(page.locator('#mdRecordDetail')).toContainText('best win streak 1');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#mdRecordLine')).toHaveText('1W · 1D · 1L');
+  });
+
 });
