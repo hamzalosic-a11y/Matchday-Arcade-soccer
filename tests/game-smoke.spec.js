@@ -78,4 +78,36 @@ test.describe('Matchday Arcade Soccer browser smoke tests', () => {
     await expect(page.locator('#mdRecordLine')).toHaveText('1W · 1D · 1L');
   });
 
+  test('Player Career can create a pro, train, start a match and keep the profile', async ({ page }) => {
+    const pageErrors = [];
+    page.on('pageerror', error => pageErrors.push(error.message));
+    await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#btnPlayerCareer')).toBeVisible();
+    await page.locator('#btnPlayerCareer').click();
+    await expect(page.locator('#playerCareerScr')).toBeVisible();
+    await page.locator('#pcName').fill('Test Striker');
+    await page.locator('#pcPosition').selectOption('FW');
+    await page.locator('[data-pc="create"]').click();
+    await expect(page.locator('#pcBody')).toContainText('Test Striker');
+    await expect(page.locator('#pcBody')).toContainText('62');
+    await page.evaluate(() => {
+      const p = JSON.parse(localStorage.getItem('matchday.playercareer.v1'));
+      p.coins = 35;
+      localStorage.setItem('matchday.playercareer.v1', JSON.stringify(p));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('#btnPlayerCareer').click();
+    await page.locator('[data-pc="train"][data-stat="pace"]').click();
+    await expect(page.locator('#pcBody')).toContainText('64');
+    await page.locator('[data-pc="play"]').click();
+    await expect(page.locator('#hud')).toBeVisible({ timeout: 10000 });
+    await page.locator('#btnPause').click();
+    await page.locator('#btnQuit').click();
+    await expect(page.locator('#menu')).toBeVisible();
+    await page.locator('#btnPlayerCareer').click();
+    await expect(page.locator('#pcBody')).toContainText('Test Striker');
+    await expect(page.locator('#pcBody')).toContainText('0 APPS');
+    expect(pageErrors, 'uncaught browser errors in Player Career').toEqual([]);
+  });
+
 });
