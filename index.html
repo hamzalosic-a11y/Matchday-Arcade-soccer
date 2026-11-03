@@ -1193,7 +1193,7 @@ function startMatch(){
   $('menu').hidden=true;$('careerScr').hidden=true;$('endScr').hidden=true;$('pauseScr').hidden=true;$('hud').hidden=false;$('cupScr')&&($('cupScr').hidden=true);
   $('touch').hidden=!isTouch;
   setupKickoff(0);
-  if(mdPlayerCareer.live)mdApplyPlayerCareerPro();
+  if(mdPlayerCareer&&mdPlayerCareer.live)mdApplyPlayerCareerPro();
   $('playerCareerScr').hidden=true;
   cam.x=L/2;cam.y=W/2;
   sfx.whistle(1);
