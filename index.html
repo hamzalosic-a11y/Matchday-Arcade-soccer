@@ -437,8 +437,8 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
    <div class="mdsp-card"><div class="mdsp-icon">👑</div><b>Icon Pack</b><p>One fictional player card with the best icon-card odds.</p><div class="mdsp-price">SEK 49.90</div><button class="mdsp-btn" data-buy="icon">Buy securely</button></div>
   </div>
   <div class="mdsp-status" id="mdspStatus" role="status">Connecting to the secure shop…</div>
-  <div class="mdsp-owned"><div class="mdsp-head"><h3>My packs & cards</h3><button class="mdsp-btn mdsp-close" id="mdspRefresh" type="button">Refresh</button></div><div id="mdspInventory" class="mdsp-note">Your verified purchases will appear here.</div></div>
-  <p class="mdsp-note">Real payments are not active until the site is deployed with Stripe and database secrets configured. Test with Stripe test mode first. Purchases are tied to this browser's guest ID; clearing browser data can lose access.</p>
+  <div class="mdsp-owned"><div class="mdsp-head"><h3>My packs & cards</h3><button class="mdsp-btn mdsp-close" id="mdspRefresh" type="button">Refresh</button></div><div id="mdspInventory" class="mdsp-note">Sign in to view your account inventory.</div><div id="mdspCards" class="mdsp-note"></div></div>
+  <p class="mdsp-note">Sign in to your Matchday account before purchasing. New purchases and opened cards are saved to your account, not this browser.</p>
  </div>
 </div>
 
@@ -1691,6 +1691,7 @@ function aiStep(p,dt){
   if(p.isGK){gkUpdate(p,dt);return;}
   if(!ball.owner&&near[p.team].indexOf(p)<2&&airReach(p))aiAir(p);
   const dp=dparams(p.team),Tm=teams[p.team],d=Tm.dir;
+  const tacticalTier=p.team===1?settings.diff:1;
   const base=BASE*p.pace*(p.team===1?dp.spd:1)*(settings.gameplay==='competitive'?1.02:.94);
   if(ball.owner===p){aiOwner(p,dt,base);return;}
   let tx,ty,sp=base*.88;
@@ -1708,11 +1709,13 @@ function aiStep(p,dt){
     }else{[tx,ty]=homePos(p);}
   }else if(ball.owner.team!==p.team){
     const o=ball.owner;
-    const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0)+(Tm.sty.press&&prog(o.x,d)>L*.5?1:0)+(Tm.sty.press>=2&&prog(o.x,d)>L*.35?1:0);
+    const n=1+((p.team===0&&pressCall>0)?1:0)+((Math.abs(o.x-ownGoalX)<520&&p.team===1)?1:0)+(Tm.sty.press&&prog(o.x,d)>L*.5?1:0)+(Tm.sty.press>=2&&prog(o.x,d)>L*.35?1:0)+(tacticalTier>=3&&prog(o.x,d)>L*.42?1:0)+(tacticalTier>=5&&prog(o.x,d)>L*.3?1:0);
     const markDist=dist(p,o);
     // Tactical pressing: one designated presser; a second joins only when pressing high or protecting the box.
     const emergency=Math.abs(o.x-ownGoalX)<420;
-    const secondPresser=rank===1&&markDist<250&&(pressCall>0||emergency||Tm.sty.press>=2);
+    const secondPresser=rank===1&&markDist<250&&(pressCall>0||emergency||Tm.sty.press>=2||tacticalTier>=3);
+    const lowBlock=tacticalTier<=1&&(prog(o.x,d)<L*.62);
+    const counterRunner=tacticalTier>=2&&Tm.sty.counter&&p.role!=='DF';
     const canPress=(rank===0||secondPresser)&&(!o.isGK||!gkSafeZone(o))&&(p.role!=='DF'||markDist<(emergency?330:205));
     if(rank<n&&canPress){
       tx=o.x+o.vx*.25;ty=o.y+o.vy*.25;sp=base*(rank===0?1.1:1.0);p.sprinting=true;
@@ -1721,6 +1724,8 @@ function aiStep(p,dt){
       }
     }else{
       [tx,ty]=homePos(p);
+      if(lowBlock&&p.role==='DF'){tx-=d*35;ty=W/2+(ty-W/2)*.72;}
+      if(counterRunner&&rank>=2){tx+=d*(tacticalTier>=4?115:65);}
       if(o.isGK&&gkSafeZone(o)){
         // Respect the keeper's protected six-yard/penalty area; press outside it.
         let rx=p.x-o.x,ry=p.y-o.y,rd=Math.hypot(rx,ry)||1;
@@ -1805,7 +1810,12 @@ function aiOwner(p,dt,base){
 }
 function gkUpdate(p,dt){
   const Tm=teams[p.team],d=Tm.dir,gl=d===1?0:L,dp=dparams(p.team);
-  if(ball.owner===p){friction(p,dt,8);p.ai.t-=dt;if(p.ai.t<=0)gkDistribute(p);return;}
+  p.ai=p.ai||{};p.ai.gkState=p.ai.gkState||'SET';
+  if(ball.owner===p){p.ai.gkState='DISTRIBUTE';friction(p,dt,8);p.ai.t-=dt;if(p.ai.t<=0)gkDistribute(p);return;}
+  const shotThreat=!ball.owner&&(d===1?ball.vx<-140:ball.vx>140)&&((gl-ball.x)/(ball.vx||1)>0)&&((gl-ball.x)/(ball.vx||1)<1.5);
+  if(shotThreat)p.ai.gkState='SET_SAVE';
+  else if(!ball.owner&&Math.abs((d===1?ball.x:L-ball.x))<PEN_D+25&&dist(p,ball)<190&&Math.hypot(ball.vx,ball.vy)<300)p.ai.gkState='SWEEP';
+  else if(p.ai.gkState!=='SET')p.ai.gkState='RECOVER';
   const cy=W/2,bDepth=d===1?ball.x:L-ball.x;
   let tx,ty,sp=BASE*.85,danger=false;
   const toward=d===1?ball.vx<-140:ball.vx>140;
@@ -1826,7 +1836,9 @@ function gkUpdate(p,dt){
   if(tx===undefined){
     // Track lateral ball movement more responsively without abandoning the goal.
     tx=gl+d*clamp(20+bDepth*.045,20,62);ty=cy+clamp((ball.y-cy)*.38,-96,96);
-    if(!ball.owner&&bDepth<PEN_D+10&&Math.abs(ball.y-cy)<PEN_W/2&&dist(p,ball)<190&&Math.hypot(ball.vx,ball.vy)<260){tx=ball.x;ty=ball.y;sp=BASE*1.1;}
+    if(!ball.owner&&bDepth<PEN_D+25&&dist(p,ball)<190&&Math.hypot(ball.vx,ball.vy)<300){tx=ball.x;ty=ball.y;sp=BASE*1.05;p.ai.gkState='SWEEP';}
+    else if(p.ai.gkState==='RECOVER'&&dist(p,{x:gl+d*28,y:cy})>22){tx=gl+d*28;ty=cy;sp=BASE*.95;}
+    else if(!danger)p.ai.gkState='SET';
   }
   steer(p,tx,ty,sp,dt,1800);
   if(d===1)p.x=clamp(p.x,8,PEN_D+30);else p.x=clamp(p.x,L-PEN_D-30,L-8);
@@ -3488,6 +3500,7 @@ async function fetchProfile(sess){
   if(!u){u=sess.user.user_metadata&&sess.user.user_metadata.username;
     if(u)try{await fetch(ONLINE.url+'/rest/v1/profiles',{method:'POST',headers:{apikey:ONLINE.key,Authorization:'Bearer '+sess.access_token,'Content-Type':'application/json',Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify({id:sess.user.id,username:u})});}catch(e){}}
   applyAcc(sess,u);
+  window.dispatchEvent(new CustomEvent('matchday:auth',{detail:{signedIn:true}}));
   await restoreRanks();
   await claimQusqusGift(sess,u);
   await claimQussaiPrimeGift(sess,u);
@@ -3526,6 +3539,7 @@ async function doLogin(){
   catch(e){authSay('Could not reach the server.');}
 }
 async function doLogout(){try{const c=await sbc();await c.auth.signOut();}catch(e){}applyAcc(null);}
+window.mdGetSession=()=>ACC.uid&&ACC.token?{uid:ACC.uid,token:ACC.token}:null;
 function initAuth(){
   if(!ONLINE.url||!ONLINE.key||ONLINE.key==='PASTE-KEY-HERE')return;
   sbc().then(async c=>{
@@ -3778,7 +3792,12 @@ function render3D(dt){
   if(live){
     const ring=(x,y,rad,style,dash)=>{ctx.beginPath();for(let i=0;i<=28;i++){const a=i/28*Math.PI*2,q=proj(x+Math.cos(a)*rad,y+Math.sin(a)*rad,.5);if(!q)return;i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}ctx.strokeStyle=style;ctx.lineWidth=3*DPR;ctx.setLineDash(dash||[]);ctx.stroke();ctx.setLineDash([]);};
     if(human)ring(human.x,human.y,22,'#ffd23f');
-    if(state==='play'&&human&&ball.owner===human){const dr=inputDir(human),q=pickTarget(human,dr.x,dr.y,inp.lob);if(q)ring(q.x,q.y,24,'rgba(255,255,255,.95)',[7*DPR,6*DPR]);}
+    if(state==='play'&&human&&ball.owner===human){
+      const dr=inputDir(human),q=pickTarget(human,dr.x,dr.y,inp.lob);
+      if(q)ring(q.x,q.y,24,'rgba(255,255,255,.95)',[7*DPR,6*DPR]);
+      const origin=proj(human.x,human.y,24),target=proj(human.x+dr.x*220,human.y+dr.y*220,24);
+      if(origin&&target){const alpha=.35+.25*Math.sin(gameTime*7);ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle='#ffe58a';ctx.fillStyle='#ffe58a';ctx.lineWidth=3*DPR;ctx.setLineDash([8*DPR,6*DPR]);ctx.beginPath();ctx.moveTo(origin[0],origin[1]);ctx.lineTo(target[0],target[1]);ctx.stroke();ctx.setLineDash([]);const a=Math.atan2(target[1]-origin[1],target[0]-origin[0]);ctx.beginPath();ctx.moveTo(target[0],target[1]);ctx.lineTo(target[0]-12*DPR*Math.cos(a-.45),target[1]-12*DPR*Math.sin(a-.45));ctx.lineTo(target[0]-12*DPR*Math.cos(a+.45),target[1]-12*DPR*Math.sin(a+.45));ctx.closePath();ctx.fill();ctx.restore();}
+    }
     ctx.textAlign='center';ctx.lineJoin='round';
     for(const p of players)if(p.fl&&!p.out){const q=proj(p.x,p.y,60+(1.1-p.fl.t)*22);if(!q)continue;ctx.globalAlpha=Math.min(1,p.fl.t*2);ctx.font=`800 ${17*DPR}px "Barlow Condensed",sans-serif`;ctx.strokeStyle='rgba(0,0,0,.7)';ctx.lineWidth=3.5*DPR;ctx.strokeText(p.fl.txt,q[0],q[1]);ctx.fillStyle='#ffd23f';ctx.fillText(p.fl.txt,q[0],q[1]);ctx.globalAlpha=1;}
     if(human){const q=proj(human.x,human.y,64);if(q){const s=DPR;ctx.fillStyle='#ffd23f';ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.lineTo(q[0]-7*s,q[1]-12*s);ctx.lineTo(q[0]+7*s,q[1]-12*s);ctx.closePath();ctx.fill();
@@ -3923,13 +3942,11 @@ requestAnimationFrame(frame);
 (function(){
  const $=id=>document.getElementById(id);
  const modal=$('mdStripeShop'),status=$('mdspStatus'),inventory=$('mdspInventory');
- let playerId='';
- try{
-   playerId=localStorage.getItem('matchday_guest_player_id')||'';
-   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(playerId)){
-     playerId=crypto.randomUUID();localStorage.setItem('matchday_guest_player_id',playerId);
-   }
- }catch(e){status.textContent='Browser storage is blocked. Enable site storage to use the shop.';}
+ let guestId='';
+ try{guestId=localStorage.getItem('matchday_guest_player_id')||'';}catch(e){}
+ const session=()=>window.mdGetSession&&window.mdGetSession();
+ const authHeaders=()=>{const s=session();return s?{Authorization:'Bearer '+s.token}:{}};
+ const requireLogin=()=>{if(!session()){setStatus('Log in to your Matchday account to buy and manage player cards.');return false;}return true;};
  const labels={starter:'Starter Player Pack',pro:'Pro Player Pack',icon:'Icon Player Pack'};
  function setStatus(t){status.textContent=t;}
  function addRewardToDreamTeam(reward){
@@ -3947,10 +3964,11 @@ requestAnimationFrame(frame);
    }catch(e){console.warn('Could not add pack reward to Dream Team:',e);return false;}
  }
  async function loadInventory(){
-   if(!playerId){inventory.textContent='Guest ID unavailable in this browser.';return;}
-   inventory.textContent='Checking verified purchases…';
+   if(!requireLogin()){inventory.textContent='Sign in to view your account-owned packs.';return;}
+   inventory.textContent='Checking account inventory…';
    try{
-     const res=await fetch('/api/my-purchases?playerId='+encodeURIComponent(playerId),{cache:'no-store'});
+     if(guestId){const link=await fetch('/api/claim-legacy-purchases',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({guestId})});if(link.ok){const linked=await link.json();if(linked.linked)setStatus('Linked '+linked.linked+' previous purchase(s) to your account.');}}
+     const res=await fetch('/api/my-purchases',{headers:authHeaders(),cache:'no-store'});
      const data=await res.json();
      if(!res.ok)throw new Error(data.error||'Inventory endpoint is not available.');
      inventory.replaceChildren();
@@ -3973,12 +3991,30 @@ requestAnimationFrame(frame);
        }
        row.append(left,right);inventory.append(row);
      });
-   }catch(e){inventory.textContent=e.message+' Deploy on Vercel and configure Stripe/Supabase to enable live inventory.';}
+     await loadCards();
+   }catch(e){inventory.textContent=e.message+' Check that the secure Matchday database migration is applied.';}
+ }
+ async function loadCards(){
+   const area=$('mdspCards');if(!area)return;area.replaceChildren();
+   if(!requireLogin()){area.textContent='Player-card collection requires an account.';return;}
+   try{
+     const r=await fetch('/api/my-cards',{headers:authHeaders(),cache:'no-store'}),data=await r.json();
+     if(!r.ok)throw new Error(data.error||'Could not load cards.');
+     const heading=document.createElement('h4');heading.textContent='Owned player cards ('+data.cards.length+')';area.append(heading);
+     data.cards.forEach(entry=>{const card=entry.card||{},row=document.createElement('div');row.className='mdsp-purchase';const left=document.createElement('div');const title=document.createElement('b');title.textContent=(card.nm||'Player')+' · '+(card.ovr||'?')+' OVR';const small=document.createElement('small');small.textContent=(entry.rarity||'Card')+' · '+(card.pos||'MF')+' · Level '+(entry.level||0);left.append(title,small);const right=document.createElement('div');
+       if(['bronze','common'].includes(String(entry.rarity).toLowerCase())){const burn=document.createElement('button');burn.className='mdsp-btn';burn.textContent='Burn +25';burn.addEventListener('click',()=>manageCard(entry.id,'burn',burn));right.append(burn);const train=document.createElement('button');train.className='mdsp-btn';train.style.marginLeft='5px';train.textContent='Train';train.addEventListener('click',()=>manageCard(entry.id,'train',train));right.append(train);}
+       row.append(left,right);area.append(row);
+     });
+     if(!data.cards.length){const p=document.createElement('p');p.textContent='No player cards saved to your account yet.';area.append(p);}
+   }catch(e){area.textContent=e.message;}
+ }
+ async function manageCard(cardId,action,button){
+   button.disabled=true;try{const r=await fetch('/api/manage-card',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({cardId,action})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Card action failed.');setStatus(action==='burn'?'Duplicate burned for 25 coins.':'Training upgrade applied.');await loadCards();}catch(e){setStatus(e.message);button.disabled=false;}
  }
  async function openPack(purchaseId,button){
    button.disabled=true;button.textContent='Opening…';
    try{
-     const res=await fetch('/api/open-pack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({playerId,purchaseId})});
+     const res=await fetch('/api/open-pack',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({purchaseId})});
      const data=await res.json();
      if(!res.ok)throw new Error(data.error||'Could not open pack.');
      const added=addRewardToDreamTeam(data.reward);
@@ -3987,22 +4023,24 @@ requestAnimationFrame(frame);
    }catch(e){setStatus(e.message);button.disabled=false;button.textContent='Open pack';}
  }
  async function buy(productId,button){
-   if(!playerId){setStatus('Could not create your guest ID. Allow browser storage and reload.');return;}
+   if(!requireLogin())return;
    button.disabled=true;button.textContent='Starting checkout…';setStatus('Creating a secure Stripe Checkout session…');
    try{
-     const res=await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({productId,playerId})});
+     const res=await fetch('/api/create-checkout-session',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({productId})});
      const data=await res.json();
      if(!res.ok||!data.url)throw new Error(data.error||'Checkout could not start.');
      window.location.assign(data.url);
    }catch(e){setStatus(e.message);button.disabled=false;button.textContent='Buy securely';}
  }
  $('mdStripeShopBtn').addEventListener('click',()=>{modal.classList.add('open');loadInventory();});
+ window.addEventListener('matchday:auth',()=>{if(modal.classList.contains('open'))loadInventory();});
  $('mdspClose').addEventListener('click',()=>modal.classList.remove('open'));
  $('mdspRefresh').addEventListener('click',loadInventory);
  modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open');});
  modal.querySelectorAll('[data-buy]').forEach(button=>button.addEventListener('click',()=>buy(button.dataset.buy,button)));
  const params=new URLSearchParams(window.location.search);
+ if(session())loadInventory();
  if(params.get('purchase')==='success'){
    modal.classList.add('open');setStatus('Checkout returned. Waiting for Stripe webhook confirmation; refresh inventory in a moment.');
    loadInventory();
