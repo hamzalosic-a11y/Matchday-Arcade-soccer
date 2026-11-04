@@ -3006,7 +3006,21 @@ function applySnap(p){
 function guestFrame(dt){
   const k=1-Math.exp(-24*dt);gameTime+=dt;
   for(const p of players){if(p.fl&&(p.fl.t-=dt)<=0)p.fl=null;}
-  for(const p of players)if(p.tx!==undefined){p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;}
+  // Predict the guest's controlled footballer locally between host snapshots.
+  // The host remains authoritative; incoming snapshots gently reconcile prediction error.
+  const predicted=human;
+  if(predicted&&predicted.team===1&&state==='play'){
+    const saved={...inp2};
+    Object.assign(inp2,inp);
+    updatePlayer(predicted,dt);
+    Object.assign(inp2,saved);
+  }
+  for(const p of players)if(p!==predicted&&p.tx!==undefined){p.x+=(p.tx-p.x)*k;p.y+=(p.ty-p.y)*k;}
+  if(predicted&&predicted.tx!==undefined){
+    const correction=1-Math.exp(-7*dt);
+    predicted.x+=(predicted.tx-predicted.x)*correction;
+    predicted.y+=(predicted.ty-predicted.y)*correction;
+  }
   if(net.bx!==undefined){ball.x+=(net.bx-ball.x)*k;ball.y+=(net.by-ball.y)*k;}
   net.tx+=dt;
   if(net.tx>=.033){
