@@ -421,6 +421,11 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 .career-xi-row small{color:#a9bfd0}
 @media(max-width:620px){.career-tactics-grid{grid-template-columns:1fr}.career-mini-pitch{min-height:320px}.career-xi{display:grid;grid-template-columns:1fr 1fr}.career-xi-row{grid-template-columns:24px 1fr;padding:6px}.career-xi-row small{grid-column:2}}
 
+#dtBody .pcbig{transform-origin:center;animation:mdCardReveal .78s cubic-bezier(.18,.82,.22,1) both;filter:drop-shadow(0 12px 22px rgba(255,210,63,.22))}
+#dtBody .pcbig::after{content:"";pointer-events:none;position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,transparent 28%,rgba(255,255,255,.28) 48%,transparent 68%);transform:translateX(-140%);animation:mdCardShine 1.05s .25s ease-out both}
+@keyframes mdCardReveal{0%{opacity:0;transform:perspective(900px) rotateY(78deg) scale(.72)}65%{opacity:1;transform:perspective(900px) rotateY(-8deg) scale(1.04)}100%{transform:perspective(900px) rotateY(0) scale(1)}}
+@keyframes mdCardShine{to{transform:translateX(140%)}}
+@media(prefers-reduced-motion:reduce){#dtBody .pcbig,#dtBody .pcbig::after{animation:none}}
 </style>
 </head>
 <body>
@@ -436,7 +441,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
    <div class="mdsp-card"><div class="mdsp-icon">💎</div><b>Pro Pack</b><p>One fictional player card with better rare-card odds.</p><div class="mdsp-price">SEK 29.90</div><button class="mdsp-btn" data-buy="pro">Buy securely</button></div>
    <div class="mdsp-card"><div class="mdsp-icon">👑</div><b>Icon Pack</b><p>One fictional player card with the best icon-card odds.</p><div class="mdsp-price">SEK 49.90</div><button class="mdsp-btn" data-buy="icon">Buy securely</button></div>
   </div>
-  <div class="mdsp-status" id="mdspStatus" role="status">Connecting to the secure shop…</div>
+  <div class="mdsp-status" id="mdspStatus" role="status">Sign in to your Matchday account to manage purchases.</div>
   <div class="mdsp-owned"><div class="mdsp-head"><h3>My packs & cards</h3><button class="mdsp-btn mdsp-close" id="mdspRefresh" type="button">Refresh</button></div><div id="mdspInventory" class="mdsp-note">Sign in to view your account inventory.</div><div id="mdspCards" class="mdsp-note"></div></div>
   <p class="mdsp-note">Sign in to your Matchday account before purchasing. New purchases and opened cards are saved to your account, not this browser.</p>
  </div>
@@ -540,6 +545,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <input id="onName" maxlength="14" placeholder="Log in first" value="" readonly>
     <p class="sub" id="onSt" style="margin:12px 0">Pick your club on the main menu first, then press Find opponent.</p>
     <div class="tr"><button id="onFind">Find opponent</button><button id="onLad">Ranked ladder</button><button id="onBack">Back</button></div>
+    <div id="mdFriendRooms" style="width:min(620px,100%);margin-top:14px;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)"><b>⚽ Play with a Friend</b><p class="sub">Create a private room code or join your friend's room.</p><div class="tr"><button id="mdRoomCreate">Create room</button><input id="mdRoomCode" maxlength="6" placeholder="6-character code" style="width:150px;text-transform:uppercase"><button id="mdRoomJoin">Join room</button></div><p id="mdRoomStatus" class="sub" aria-live="polite">Log in to create or join a private room.</p></div>
   </div>
   <div class="screen" id="dtScr" hidden>
     <h1>DREAM<span>TEAM</span></h1><p class="sub" id="dtInfo"></p><div id="dtBody"></div>
@@ -2904,6 +2910,34 @@ async function startOnline(host,hp,gp){
   room.on('broadcast',{event:'bye'},()=>{if(net.on&&state!=='end'){net.fin=1;showMsg('Opponent left, you win','',2500);finishMatch();}});
   room.subscribe(st=>{if(st==='SUBSCRIBED'&&!host){netSend('hi',1);net.hi=setInterval(()=>{if(net.on)clearInterval(net.hi);else netSend('hi',1);},1000);}});
 }
+window.mdJoinPrivateRoom=async function(room){
+  if(!room||!room.room_code||!ACC.uid||!ACC.name){onSt('Log in before joining a private room.');return false;}
+  try{
+    const client=await sbc(),isHost=room.host_user_id===ACC.uid;
+    const dr=!!onDream;
+    const me={id:ACC.uid,name:ACC.name,team:settings.home,t:Date.now(),r:(dr?RK2:RK).rating,rid:ACC.uid};
+    if(dr)me.dt=dreamData();
+    const privateChannel=client.channel('md-private-'+room.room_code,{config:{presence:{key:ACC.uid}}});
+    lobby=privateChannel;let started=false;
+    privateChannel.on('presence',{event:'sync'},()=>{
+      if(started)return;
+      const peers=Object.values(privateChannel.presenceState()).flat();
+      const other=peers.find(x=>x.id!==ACC.uid);
+      if(!other)return;
+      started=true;
+      const hp=isHost?me:other,gp=isHost?other:me;
+      startOnline(isHost,hp,gp);
+    });
+    privateChannel.subscribe(async status=>{
+      if(status==='SUBSCRIBED'){
+        await privateChannel.track(me);
+        onSt(isHost?'Room ready. Share code '+room.room_code+' with your friend.':'Connected to room '+room.room_code+'. Waiting for host…');
+      }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')onSt('Private room connection failed. Try again.');
+    });
+    return true;
+  }catch(e){onSt('Could not connect to private room.');return false;}
+};
+
 function beginOnline(p){
   net.on=true;clearInterval(net.hi);net.tx=0;net.lastRx=performance.now();net.lastInputAt=0;net.badInput=0;
   try{if(lobby){sb.removeChannel(lobby);lobby=null;}}catch(e){}
@@ -3972,7 +4006,7 @@ requestAnimationFrame(frame);
      const data=await res.json();
      if(!res.ok)throw new Error(data.error||'Inventory endpoint is not available.');
      inventory.replaceChildren();
-     if(!data.purchases.length){inventory.textContent='No verified purchases yet.';return;}
+     if(!data.purchases.length){inventory.textContent='No verified purchases yet.';await loadCards();return;}
      data.purchases.forEach(p=>{
        const row=document.createElement('div');row.className='mdsp-purchase';
        const left=document.createElement('div');
@@ -4036,6 +4070,16 @@ requestAnimationFrame(frame);
  window.addEventListener('matchday:auth',()=>{if(modal.classList.contains('open'))loadInventory();});
  $('mdspClose').addEventListener('click',()=>modal.classList.remove('open'));
  $('mdspRefresh').addEventListener('click',loadInventory);
+ const roomStatus=$('mdRoomStatus'),roomCode=$('mdRoomCode');
+ async function roomRequest(action,code){
+   const s=session();if(!s){if(roomStatus)roomStatus.textContent='Log in to use private rooms.';return null;}
+   const r=await fetch('/api/rooms',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({action,code})});
+   const d=await r.json();if(!r.ok)throw new Error(d.error||'Private room request failed.');return d.room;
+ }
+ const createRoom=$('mdRoomCreate'),joinRoom=$('mdRoomJoin');
+ if(createRoom)createRoom.addEventListener('click',async()=>{createRoom.disabled=true;try{const room=await roomRequest('create');if(!room) return;roomCode.value=room.room_code;roomStatus.textContent='Room code: '+room.room_code+' · Share it with your friend. Connecting…';if(window.mdJoinPrivateRoom)await window.mdJoinPrivateRoom(room);}catch(e){roomStatus.textContent=e.message;}finally{createRoom.disabled=false;}});
+ if(joinRoom)joinRoom.addEventListener('click',async()=>{joinRoom.disabled=true;try{const room=await roomRequest('join',roomCode.value);if(!room)return;roomStatus.textContent='Joining '+room.room_code+'…';if(window.mdJoinPrivateRoom)await window.mdJoinPrivateRoom(room);}catch(e){roomStatus.textContent=e.message;}finally{joinRoom.disabled=false;}});
+
  modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open');});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('open');});
  modal.querySelectorAll('[data-buy]').forEach(button=>button.addEventListener('click',()=>buy(button.dataset.buy,button)));
