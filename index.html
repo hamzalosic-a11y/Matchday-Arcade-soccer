@@ -3982,7 +3982,7 @@ requestAnimationFrame(frame);
  const session=()=>window.mdGetSession&&window.mdGetSession();
  const authHeaders=()=>{const s=session();return s?{Authorization:'Bearer '+s.token}:{}};
  const requireLogin=()=>{if(!session()){setStatus('Log in to your Matchday account to buy and manage player cards.');return false;}return true;};
- const labels={starter:'Starter Player Pack',pro:'Pro Player Pack',icon:'Icon Player Pack'};
+ const labels={starter:'Starter Player Pack',pro:'Pro Player Pack',icon:'Icon Player Pack',legend:'Icon Player Pack'};
  function setStatus(t){status.textContent=t;}
  function addRewardToDreamTeam(reward){
    if(!reward||typeof reward.id!=='string'||typeof reward.nm!=='string'||!Number.isFinite(Number(reward.ovr)))return false;
