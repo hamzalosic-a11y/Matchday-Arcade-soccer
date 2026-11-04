@@ -442,6 +442,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
    <div class="mdsp-card"><div class="mdsp-icon">👑</div><b>Icon Pack</b><p>One fictional player card with the best icon-card odds.</p><div class="mdsp-price">SEK 49.90</div><button class="mdsp-btn" data-buy="icon">Buy securely</button></div>
   </div>
   <div class="mdsp-status" id="mdspStatus" role="status">Sign in to your Matchday account to manage purchases.</div>
+  <div class="mdsp-status" id="mdspWallet" role="status">Account wallet: sign in to view your coins.</div>
   <div class="mdsp-owned"><div class="mdsp-head"><h3>My packs & cards</h3><button class="mdsp-btn mdsp-close" id="mdspRefresh" type="button">Refresh</button></div><div id="mdspInventory" class="mdsp-note">Sign in to view your account inventory.</div><div id="mdspCards" class="mdsp-note"></div></div>
   <p class="mdsp-note">Sign in to your Matchday account before purchasing. New purchases and opened cards are saved to your account, not this browser.</p>
  </div>
@@ -3997,9 +3998,14 @@ requestAnimationFrame(frame);
      return true;
    }catch(e){console.warn('Could not add pack reward to Dream Team:',e);return false;}
  }
+ async function loadWallet(){
+   const el=$('mdspWallet');if(!el)return;if(!requireLogin()){el.textContent='Account wallet: sign in to view coins.';return;}
+   try{const r=await fetch('/api/wallet',{headers:authHeaders(),cache:'no-store'}),d=await r.json();if(!r.ok)throw new Error(d.error||'Wallet unavailable.');el.textContent='🪙 '+Number(d.balance||0).toLocaleString()+' account coins';}catch(e){el.textContent=e.message;}
+ }
  async function loadInventory(){
-   if(!requireLogin()){inventory.textContent='Sign in to view your account-owned packs.';return;}
+   if(!requireLogin()){inventory.textContent='Sign in to view your account-owned packs.';await loadWallet();return;}
    inventory.textContent='Checking account inventory…';
+   await loadWallet();
    try{
      if(guestId){const link=await fetch('/api/claim-legacy-purchases',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({guestId})});if(link.ok){const linked=await link.json();if(linked.linked)setStatus('Linked '+linked.linked+' previous purchase(s) to your account.');}}
      const res=await fetch('/api/my-purchases',{headers:authHeaders(),cache:'no-store'});
@@ -4043,7 +4049,7 @@ requestAnimationFrame(frame);
    }catch(e){area.textContent=e.message;}
  }
  async function manageCard(cardId,action,button){
-   button.disabled=true;try{const r=await fetch('/api/manage-card',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({cardId,action})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Card action failed.');setStatus(action==='burn'?'Duplicate burned for 25 coins.':'Training upgrade applied.');await loadCards();}catch(e){setStatus(e.message);button.disabled=false;}
+   button.disabled=true;try{const r=await fetch('/api/manage-card',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({cardId,action})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Card action failed.');setStatus(action==='burn'?'Duplicate burned for 25 coins.':'Training upgrade applied.');await loadWallet();await loadCards();}catch(e){setStatus(e.message);button.disabled=false;}
  }
  async function openPack(purchaseId,button){
    button.disabled=true;button.textContent='Opening…';
