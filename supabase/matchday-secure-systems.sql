@@ -81,6 +81,7 @@ begin
  if not found then raise exception 'Card not found in this account'; end if;
  if p_action='burn' then
   if lower(target.rarity) not in('bronze','common') then raise exception 'Only common Bronze cards can be burned'; end if;
+  if not exists(select 1 from public.player_cards where user_id=p_uid and card_key=target.card_key and id<>target.id and lower(rarity) in('bronze','common')) then raise exception 'Only duplicate Bronze cards can be burned'; end if;
   delete from public.player_cards where id=target.id;
   insert into public.wallets(user_id,balance) values(p_uid,25) on conflict(user_id) do update set balance=public.wallets.balance+25,updated_at=now();
   insert into public.wallet_transactions(user_id,amount,reason,idempotency_key) values(p_uid,25,'Burned duplicate Bronze player card','burn:'||target.id::text) on conflict(idempotency_key) do nothing;
