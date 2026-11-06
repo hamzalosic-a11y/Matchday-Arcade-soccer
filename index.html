@@ -427,6 +427,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 @keyframes mdCardShine{to{transform:translateX(140%)}}
 @media(prefers-reduced-motion:reduce){#dtBody .pcbig,#dtBody .pcbig::after{animation:none}}
 .md-pc-roster{display:grid;grid-template-columns:1fr 1fr;gap:6px}.md-pc-roster-row{display:flex;align-items:center;gap:7px;background:#0b1b2a;border:1px solid #284456;border-radius:8px;padding:7px;font-size:12px}.md-pc-roster-row>span{color:#9cffc9;font-weight:900;min-width:18px}.md-pc-roster-row>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.md-pc-roster-row small{color:#9fb5c6;white-space:nowrap}.md-pc-alert{margin:12px 0;padding:12px;border:1px solid #d99a48;background:#4a321d;border-radius:10px;color:#ffe0ae}.md-pc-alert button{margin-left:8px;background:#d99a48;color:#241608;border:0;border-radius:7px;padding:7px 10px;font-weight:800}@media(max-width:520px){.md-pc-roster{grid-template-columns:1fr}}
+.md-pc-panel select{width:100%;min-height:40px;background:#0b1b2a;color:#f1efe6;border:1px solid #345064;border-radius:8px;padding:8px;margin-top:5px}.md-pc-section [data-pc="start-tournament"]{display:block;width:100%;margin:7px 0;text-align:left}
 </style>
 </head>
 <body>
@@ -3901,7 +3902,9 @@ const MD_PC_KEY='matchday.playercareer.v1';
 let mdPlayerCareer=null,mdPlayerCareerPro=null;
 try{mdPlayerCareer=JSON.parse(localStorage.getItem(MD_PC_KEY)||'null');}catch(_){mdPlayerCareer=null;}
 if(mdPlayerCareer&&(!Number.isInteger(mdPlayerCareer.club)||!TEAMS[mdPlayerCareer.club]||!['FW','MF','DF'].includes(mdPlayerCareer.pos)))mdPlayerCareer=null;
-if(mdPlayerCareer){mdPlayerCareer.live=false;mdPlayerCareer.matchGoals=0;mdPlayerCareer.age=mdPlayerCareer.age||13;mdPlayerCareer.stage=mdPlayerCareer.stage||'academy';mdPlayerCareer.bench=Array.isArray(mdPlayerCareer.bench)?mdPlayerCareer.bench:[];mdPlayerCareer.squad=Array.isArray(mdPlayerCareer.squad)?mdPlayerCareer.squad:[];mdPlayerCareer.injuryWeeks=mdPlayerCareer.injuryWeeks||0;}
+if(mdPlayerCareer){mdPlayerCareer.live=false;mdPlayerCareer.matchGoals=0;mdPlayerCareer.age=mdPlayerCareer.age||13;mdPlayerCareer.stage=mdPlayerCareer.stage||'academy';mdPlayerCareer.bench=Array.isArray(mdPlayerCareer.bench)?mdPlayerCareer.bench:[];mdPlayerCareer.squad=Array.isArray(mdPlayerCareer.squad)?mdPlayerCareer.squad:[];mdPlayerCareer.injuryWeeks=mdPlayerCareer.injuryWeeks||0;mdPlayerCareer.country=Number.isInteger(mdPlayerCareer.country)&&TEAMS[mdPlayerCareer.country]?.g==='nat'?mdPlayerCareer.country:TEAMS.findIndex(t=>t.g==='nat');mdPlayerCareer.tournament=mdPlayerCareer.tournament||null;mdPlayerCareer.trophies=Array.isArray(mdPlayerCareer.trophies)?mdPlayerCareer.trophies:[];}
+function mdPcRoleGroup(pos){if(pos==='GK')return'GK';if(['ST','CF','LW','RW'].includes(pos))return'FW';if(['CAM','CM','CDM','LM','RM'].includes(pos))return'MF';if(['LB','CB','RB','LWB','RWB'].includes(pos))return'DF';return null;}
+function mdPcTournamentOptions(p){const age=p.age||13,year=new Date().getFullYear(),a=[];if(age<=15)a.push({id:'u15-euros-'+year,name:'U15 European Championship',age:15},{id:'u15-world-'+year,name:'U15 World Cup',age:15});if(age<=17)a.push({id:'u17-euros-'+year,name:'U17 European Championship',age:17},{id:'u17-world-'+year,name:'U17 World Cup',age:17});if(age<=19)a.push({id:'u19-euros-'+year,name:'U19 European Championship',age:19},{id:'u20-world-'+year,name:'U20 World Cup',age:19});a.push({id:'senior-euros-'+year,name:'Senior European Championship',age:20},{id:'senior-world-'+year,name:'FIFA World Cup',age:20});return a.map(x=>({...x,eligible:age>=x.age}));}
 function mdPcSave(){try{localStorage.setItem(MD_PC_KEY,JSON.stringify(mdPlayerCareer));}catch(_){}}
 function mdPcOverall(p){return Math.round((p.pace+p.shooting+p.passing+p.defending)/4);}
 function mdPcStatLabel(k){return({pace:'PACE',shooting:'SHOOTING',passing:'PASSING',defending:'DEFENDING'})[k]||k.toUpperCase();}
@@ -3917,42 +3920,45 @@ function mdPcOpen(){
 function mdPcRender(){
  const b=$('pcBody');if(!b)return;
  if(!mdPlayerCareer){
-  const clubs=TEAMS.map((t,i)=>({t,i})).filter(x=>x.t.g==='club');
-  const chosen=clubs.some(x=>x.i===settings.home)?settings.home:(clubs[0]?.i??0);
-  b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">THE ACADEMY JOURNEY · AGE 13</div><h2>Start as a 13-year-old prospect</h2><p>Choose the real club academy you want to represent. Earn your place, make the matchday squad, fight for a first-team contract and build a career. Your teammates have generated fictional names.</p><label>PLAYER NAME<input id="pcName" maxlength="18" placeholder="Enter player name" autocomplete="off"></label><div class="md-pc-form"><label>POSITION<select id="pcPosition"><option value="FW">ST · Striker</option><option value="MF">CM · Midfielder</option><option value="DF">CB · Defender</option></select></label><label>CHOOSE YOUR ACADEMY<select id="pcClub">'+clubs.map(x=>'<option value="'+x.i+'"'+(x.i===chosen?' selected':'')+'>'+esc(x.t.n)+' Academy</option>').join('')+'</select></label></div><button class="go md-pc-primary" data-pc="create">Join Academy →</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
+  const clubs=TEAMS.map((t,i)=>({t,i})).filter(x=>x.t.g==='club'),nations=TEAMS.map((t,i)=>({t,i})).filter(x=>x.t.g==='nat');
+  const chosen=clubs.some(x=>x.i===settings.home)?settings.home:(clubs[0]?.i??0),country=nations.find(x=>x.t.n==='Sweden')?.i??nations[0]?.i;
+  b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">THE ACADEMY JOURNEY · AGE 13</div><h2>Start as a 13-year-old prospect</h2><p>Choose your academy, position and the country you dream of representing. Your international career can lead from youth tournaments to senior European Championships and World Cups.</p><label>PLAYER NAME<input id="pcName" maxlength="18" placeholder="Enter player name" autocomplete="off"></label><div class="md-pc-form"><label>POSITION<select id="pcPosition"><option value="ST">ST · Striker</option><option value="CF">CF · Centre forward</option><option value="LW">LW · Left winger</option><option value="RW">RW · Right winger</option><option value="CAM">CAM · Attacking midfielder</option><option value="CM">CM · Central midfielder</option><option value="CDM">CDM · Defensive midfielder</option><option value="LM">LM · Left midfielder</option><option value="RM">RM · Right midfielder</option><option value="LB">LB · Left back</option><option value="CB">CB · Centre back</option><option value="RB">RB · Right back</option><option value="LWB">LWB · Left wing-back</option><option value="RWB">RWB · Right wing-back</option><option value="GK">GK · Goalkeeper</option></select></label><label>CHOOSE YOUR ACADEMY<select id="pcClub">'+clubs.map(x=>'<option value="'+x.i+'"'+(x.i===chosen?' selected':'')+'>'+esc(x.t.n)+' Academy</option>').join('')+'</select></label><label>COUNTRY TO REPRESENT<select id="pcCountry">'+nations.map(x=>'<option value="'+x.i+'"'+(x.i===country?' selected':'')+'>'+esc(x.t.n)+'</option>').join('')+'</select></label></div><button class="go md-pc-primary" data-pc="create">Join Academy →</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
   return;
  }
  const p=mdPlayerCareer,ov=mdPcOverall(p),xpNeed=p.level*100,progress=Math.min(100,Math.round(p.xp/xpNeed*100)),stats=['pace','shooting','passing','defending'];
- const posName={FW:'Striker',MF:'Midfielder',DF:'Defender'};
+ const posName={ST:'Striker',CF:'Centre forward',LW:'Left winger',RW:'Right winger',CAM:'Attacking midfielder',CM:'Central midfielder',CDM:'Defensive midfielder',LM:'Left midfielder',RM:'Right midfielder',LB:'Left back',CB:'Centre back',RB:'Right back',LWB:'Left wing-back',RWB:'Right wing-back',GK:'Goalkeeper'};
  const squad=p.squad||[],bench=p.bench||[];
  const roster='<div class="md-pc-section"><h3>🧑‍🤝‍🧑 Academy squad · fictional players</h3><div class="md-pc-roster">'+squad.slice(0,11).map((x,i)=>'<div class="md-pc-roster-row"><span>'+(i+1)+'</span><b>'+esc(x.name)+'</b><small>'+x.role+' · '+x.ovr+' OVR</small></div>').join('')+'</div><h3 style="margin-top:14px">🪑 Substitutes bench</h3><div class="md-pc-roster">'+bench.map((x,i)=>'<div class="md-pc-roster-row"><span>'+(i+12)+'</span><b>'+esc(x.name)+'</b><small>'+x.role+' · '+x.ovr+' OVR</small></div>').join('')+'</div></div>';
  const injury=p.injuryWeeks>0?'<div class="md-pc-alert">🩹 Injured · estimated '+p.injuryWeeks+' week(s) remaining. You cannot play while recovering. <button data-pc="rest">Rest one week</button></div>':'';
  const promotion=p.age>=15&&p.stage!=='first'?'<div class="md-pc-section"><h3>🎯 First-team pathway</h3><p>Perform consistently in academy matches. At 16+, coaches may invite you to train with the senior squad. Poor form can put your academy place at risk, but being released is rare.</p></div>':'';
- b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">PLAYER PROFILE · '+mdPcStage(p)+' · SEASON '+p.season+'</div><div class="md-pc-profile"><div class="md-pc-rating"><b>'+ov+'</b><span>OVR</span></div><div><h2>'+esc(p.name)+'</h2><p>Age '+p.age+' · '+posName[p.pos]+' · '+esc(TEAMS[p.club].n)+' Academy</p><div class="md-pc-xp"><span style="width:'+progress+'%"></span></div><small>'+p.xp+' XP · '+Math.max(0,xpNeed-p.xp)+' XP to next level</small></div></div><div class="md-pc-stats"><div><b>'+p.appearances+'</b><span>APPS</span></div><div><b>'+p.goals+'</b><span>GOALS</span></div><div><b>'+p.wins+'-'+p.draws+'-'+p.losses+'</b><span>W-D-L</span></div><div><b>'+(p.avgRating?p.avgRating.toFixed(1):'—')+'</b><span>AVG RATING</span></div></div>'+injury+roster+'<div class="md-pc-section"><h3>⚽ Player attributes</h3>'+stats.map(k=>'<div class="md-pc-attribute"><span>'+mdPcStatLabel(k)+'</span><b>'+p[k]+'</b><button data-pc="train" data-stat="'+k+'" '+(p.coins<35||p[k]>=95?'disabled':'')+'>Train · 35 coins</button></div>').join('')+'<div class="md-pc-coins">🪙 '+p.coins+' training coins</div></div>'+promotion+'<button class="go md-pc-primary" data-pc="play" '+(p.injuryWeeks>0?'disabled':'')+'>▶ Play next academy match</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
+ const tourneyUI='<div class="md-pc-section"><h3>🌍 International career · '+esc(TEAMS[p.country]?.n||'Country')+'</h3><p>Play for your country in youth and senior competitions.</p>'+(p.tournament?'<p><b>'+esc(p.tournament.name)+'</b> · '+esc(p.tournament.round)+'</p><button class="go md-pc-primary" data-pc="tournament">▶ Continue tournament</button>':mdPcTournamentOptions(p).map(t=>'<button class="md-pc-back" data-pc="start-tournament" data-comp="'+t.id+'" '+(t.eligible?'':'disabled')+'>'+esc(t.name)+(t.eligible?' · Enter':' · Available at age '+t.age)+'</button>').join(''))+'</div><div class="md-pc-section"><h3>🏆 International honours</h3><p>'+(p.trophies.length?p.trophies.map(esc).join(' · '):'No trophies yet')+'</p></div>';
+ b.innerHTML='<section class="md-pc-panel"><div class="md-pc-kicker">PLAYER PROFILE · '+mdPcStage(p)+' · SEASON '+p.season+'</div><div class="md-pc-profile"><div class="md-pc-rating"><b>'+ov+'</b><span>OVR</span></div><div><h2>'+esc(p.name)+'</h2><p>Age '+p.age+' · '+(posName[p.pos]||p.pos)+' · '+esc(TEAMS[p.club].n)+' Academy · '+esc(TEAMS[p.country]?.n||'Country')+'</p><div class="md-pc-xp"><span style="width:'+progress+'%"></span></div><small>'+p.xp+' XP · '+Math.max(0,xpNeed-p.xp)+' XP to next level</small></div></div><div class="md-pc-stats"><div><b>'+p.appearances+'</b><span>APPS</span></div><div><b>'+p.goals+'</b><span>GOALS</span></div><div><b>'+p.wins+'-'+p.draws+'-'+p.losses+'</b><span>W-D-L</span></div><div><b>'+(p.avgRating?p.avgRating.toFixed(1):'—')+'</b><span>AVG RATING</span></div></div>'+injury+roster+'<div class="md-pc-section"><h3>⚽ Player attributes</h3>'+stats.map(k=>'<div class="md-pc-attribute"><span>'+mdPcStatLabel(k)+'</span><b>'+p[k]+'</b><button data-pc="train" data-stat="'+k+'" '+(p.coins<35||p[k]>=95?'disabled':'')+'>Train · 35 coins</button></div>').join('')+'<div class="md-pc-coins">🪙 '+p.coins+' training coins</div></div>'+promotion+tourneyUI+'<button class="go md-pc-primary" data-pc="play" '+(p.injuryWeeks>0?'disabled':'')+'>▶ Play next academy match</button><button class="md-pc-back" data-pc="back">Back to menu</button></section>';
 }
 function mdApplyPlayerCareerPro(){
  if(!mdPlayerCareer||!mdPlayerCareer.live||!teams[0])return;
- const p=teams[0].players.filter(x=>x.role===mdPlayerCareer.pos&&!x.isGK).sort((a,b)=>Math.abs(a.fy-.5)-Math.abs(b.fy-.5))[0];
+ const group=mdPcRoleGroup(mdPlayerCareer.pos),p=mdPlayerCareer.pos==='GK'?teams[0].players.find(x=>x.isGK):teams[0].players.filter(x=>!x.isGK&&x.role===group).sort((a,b)=>Math.abs(a.fy-.5)-Math.abs(b.fy-.5))[0];
  if(!p)return;
- p.nm=mdPlayerCareer.name;p.num=mdPlayerCareer.pos==='FW'?9:mdPlayerCareer.pos==='MF'?8:4;
- p.sht=mdPlayerCareer.shooting;p.pas=mdPlayerCareer.passing;p.def=mdPlayerCareer.defending;
+ p.nm=mdPlayerCareer.name;p.num=mdPlayerCareer.pos==='GK'?1:['ST','CF'].includes(mdPlayerCareer.pos)?9:['LW','LWB'].includes(mdPlayerCareer.pos)?11:['RW','RWB'].includes(mdPlayerCareer.pos)?7:mdPlayerCareer.pos==='LB'?3:mdPlayerCareer.pos==='RB'?2:mdPlayerCareer.pos==='CB'?4:mdPlayerCareer.pos==='CDM'?6:mdPlayerCareer.pos==='CAM'?10:8;
+ p.sht=mdPlayerCareer.shooting;p.pas=mdPlayerCareer.passing;p.def=mdPlayerCareer.defending;if(mdPlayerCareer.pos==='GK')p.gk=clamp(55+mdPlayerCareer.defending-45,35,95);
  p.pace=clamp(.86+(mdPlayerCareer.pace-55)/260,.84,1.18);p.isPro=true;mdPlayerCareerPro=p;human=p;
 }
 function mdPlayerCareerGoal(s){if(mdPlayerCareer&&mdPlayerCareer.live&&s&&s===mdPlayerCareerPro&&s.team===0)mdPlayerCareer.matchGoals=(mdPlayerCareer.matchGoals||0)+1;}
 function mdPlayerCareerFinish(home,away){
  if(!mdPlayerCareer||!mdPlayerCareer.live)return;
  const p=mdPlayerCareer,g=Number(p.matchGoals)||0,win=home>away,draw=home===away;
- const rating=clamp(6+g*.8+(win?.6:draw?.2:-.5),4,10);
+ const rating=clamp(6+g*.8+(win?.6:draw?.2:-.5),4,10),intl=p.matchType==='international',tour=p.tournament;
  p.appearances++;p.goals+=g;p.wins+=+win;p.draws+=+draw;p.losses+=+(home<away);
  p.ratingTotal=(Number(p.ratingTotal)||0)+rating;p.avgRating=p.ratingTotal/p.appearances;
  const coins=18+(win?15:draw?7:0)+g*10,xp=30+(win?20:draw?10:0)+g*12;p.coins+=coins;p.xp+=xp;
  while(p.xp>=p.level*100){p.level++;const stat=['pace','shooting','passing','defending'][(p.level-2)%4];p[stat]=Math.min(95,p[stat]+1);}
  p.matchGoals=g;p.live=false;mdPlayerCareerPro=null;
+ if(intl&&tour){tour.played++;tour.wins+=win?1:0;tour.round=tour.played===1?'Group stage · Match 2':tour.played===2?'Semi-final':tour.played===3?'Final':'Completed';if(tour.played>=4){if(tour.wins>=3){p.trophies.push(tour.name);p.tournamentMessage='CHAMPIONS! '+tour.name;}else p.tournamentMessage='Tournament complete: '+tour.name+'.';p.tournament=null;}}
+ p.matchType='club';
  p.squad=(p.squad||[]).map(x=>({...x,ovr:Math.min(85,x.ovr+((Math.random()<.12)?1:0))}));
  if(p.appearances%8===0&&p.age<18){p.age++;p.season++;if(p.age>=16&&p.stage!=='first'&&rating>=7&&Math.random()<.24){p.stage='first';p.promotionNote='The manager has invited you to the first team!';}else if(p.age>=16&&p.stage!=='first'&&rating<5.5&&Math.random()<.025){p.stage='released';p.released=true;p.releaseNote='The academy has released you after a difficult run of form.';}}
  if(p.stage==='released'){p.live=false;}
  mdPcSave();$('endTeams').textContent+=' · ⭐ '+p.name+': '+g+' goals · '+rating.toFixed(1)+'/10 · +'+coins+' coins';
- if(p.promotionNote){$('endTeams').textContent+=' · 🎉 '+p.promotionNote;p.promotionNote='';}
+ if(p.promotionNote){$('endTeams').textContent+=' · 🎉 '+p.promotionNote;p.promotionNote='';}if(p.tournamentMessage){$('endTeams').textContent+=' · 🌍 '+p.tournamentMessage;p.tournamentMessage='';}
  if(p.released){$('endTeams').textContent+=' · '+p.releaseNote+' You can trial at another academy from your profile.';p.released=false;}
  $('mdPlayerCareerReturn').hidden=false;
 }
@@ -3960,9 +3966,9 @@ function mdAbortPlayerCareer(){if(mdPlayerCareer&&mdPlayerCareer.live){mdPlayerC
 function mdPcPlay(){
  if(!mdPlayerCareer||mdPlayerCareer.injuryWeeks>0)return;
  if(career)career.live=false;cup.active=false;cup.lastResult='';dtMatch=false;
- settings.home=mdPlayerCareer.club;
- const pool=TEAMS.map((t,i)=>i).filter(i=>i!==settings.home&&TEAMS[i].g==='club');if(!pool.length)return;
- settings.away=pool[(Math.random()*pool.length)|0];settings.diff=1;
+ const intl=!!mdPlayerCareer.tournament;settings.home=intl?mdPlayerCareer.country:mdPlayerCareer.club;
+ const pool=TEAMS.map((t,i)=>i).filter(i=>i!==settings.home&&TEAMS[i].g===(intl?'nat':'club'));if(!pool.length)return;
+ settings.away=pool[(Math.random()*pool.length)|0];settings.diff=intl?2:1;mdPlayerCareer.matchType=intl?'international':'club';
  mdPlayerCareer.live=true;mdPlayerCareer.matchGoals=0;mdPlayerCareerPro=null;mdPcSave();
  $('playerCareerScr').hidden=true;startMatch();
 }
@@ -3971,12 +3977,14 @@ $('pcBody').addEventListener('click',e=>{
  const b=e.target.closest('[data-pc]');if(!b)return;const a=b.dataset.pc;
  if(a==='back'){mdAbortPlayerCareer();$('playerCareerScr').hidden=true;$('menu').hidden=false;return;}
  if(a==='create'){
-  const name=cleanName($('pcName')?.value,18)||'Rookie',club=Number($('pcClub')?.value),pos=$('pcPosition')?.value;
-  if(!TEAMS[club]||TEAMS[club].g!=='club'||!['FW','MF','DF'].includes(pos))return;
-  const all=mdPcMakeSquad();mdPlayerCareer={name,club,pos,age:13,stage:'academy',season:1,level:1,xp:0,coins:0,pace:48,shooting:46,passing:48,defending:45,appearances:0,goals:0,wins:0,draws:0,losses:0,avgRating:0,ratingTotal:0,matchGoals:0,live:false,injuryWeeks:0,squad:all.slice(0,11),bench:all.slice(11)};
+  const name=cleanName($('pcName')?.value,18)||'Rookie',club=Number($('pcClub')?.value),pos=$('pcPosition')?.value,country=Number($('pcCountry')?.value);
+  if(!TEAMS[club]||TEAMS[club].g!=='club'||!mdPcRoleGroup(pos)||!TEAMS[country]||TEAMS[country].g!=='nat')return;
+  const all=mdPcMakeSquad();mdPlayerCareer={name,club,pos,country,age:13,stage:'academy',season:1,level:1,xp:0,coins:0,pace:48,shooting:46,passing:48,defending:45,appearances:0,goals:0,wins:0,draws:0,losses:0,avgRating:0,ratingTotal:0,matchGoals:0,live:false,injuryWeeks:0,squad:all.slice(0,11),bench:all.slice(11),tournament:null,trophies:[]};
   mdPcSave();mdPcRender();return;
  }
  if(a==='play'){mdPcPlay();return;}
+ if(a==='start-tournament'){const comp=mdPcTournamentOptions(mdPlayerCareer).find(t=>t.id===b.dataset.comp);if(!comp||!comp.eligible||mdPlayerCareer.tournament)return;mdPlayerCareer.tournament={id:comp.id,name:comp.name,round:'Group stage · Match 1',played:0,wins:0};mdPcSave();mdPcPlay();return;}
+ if(a==='tournament'){mdPcPlay();return;}
  if(a==='rest'){if(mdPlayerCareer&&mdPlayerCareer.injuryWeeks>0){mdPlayerCareer.injuryWeeks--;mdPcSave();mdPcRender();}return;}
  if(a==='train'){const stat=b.dataset.stat;if(!mdPlayerCareer||!['pace','shooting','passing','defending'].includes(stat))return;if(mdPlayerCareer.coins>=35&&mdPlayerCareer[stat]<95){mdPlayerCareer.coins-=35;mdPlayerCareer[stat]=Math.min(95,mdPlayerCareer[stat]+2);mdPcSave();mdPcRender();}}
 });
