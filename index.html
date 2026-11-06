@@ -34,6 +34,7 @@ canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block}
 .disp{font-family:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;font-weight:800;letter-spacing:.01em}
 #hud{position:absolute;inset:0;pointer-events:none}
 #hud[hidden],.screen[hidden],#touch[hidden]{display:none}
+#mdArcadeEvent{position:absolute;top:112px;left:50%;transform:translateX(-50%);z-index:4;min-width:190px;padding:8px 14px;border:1px solid #ffd23f88;border-radius:12px;background:linear-gradient(110deg,#182c4cf2,#342b12f2);box-shadow:0 5px 24px #0006;text-align:center;pointer-events:none;animation:pop .25s ease-out}#mdArcadeEvent b{display:block;color:#ffd23f;font:900 18px 'Barlow Condensed',sans-serif;letter-spacing:1px}#mdArcadeEvent small{display:block;color:#fff;font-size:11px;font-weight:700;margin-top:2px}#mdArcadeEvent[hidden]{display:none}
 #board{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:rgba(10,19,34,.88);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-weight:800;font-size:26px;line-height:1}
 #board>*{display:flex;align-items:center;padding:8px 10px}
 #board .chip{width:8px;padding:0}
@@ -461,6 +462,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
       <span class="sc" id="s1">0</span><span id="n1">AWY</span><span class="chip" id="c1"></span>
     </div>
     <canvas id="radar" width="280" height="176"></canvas>
+    <div id="mdArcadeEvent" hidden><b id="mdArcadeTitle">ARCADE EVENT</b><small id="mdArcadeDesc"></small></div>
     <button class="hbtn" id="btnPause" aria-label="Pause">Pause</button>
     <button class="hbtn" id="btnMute" aria-label="Toggle sound">Sound on</button>
     <button class="hbtn" id="btnView" aria-label="Switch between 3D and 2D">3D</button>
@@ -1075,6 +1077,12 @@ let paused=false,gameTime=0,holdSw=0,pressCall=0,setPiece=null,pending=null,near
 const pcs=(a,b)=>b?Math.round(a/b*100)+'%':'-';
 let msgT=0,particles=[],evt=0,addShown=false,addT=0;
 const settings={diff:1,half:180,home:0,away:1,tab:'club',country:'all',league:'all',pitch:0,view:1,gameplay:'competitive'};
+// Rotating arcade moments keep every single-player match feeling different.
+let mdArcadeEvent=null,mdArcadeNextAt=30,mdArcadeLast='';
+const MD_ARCADE_EVENTS=[{id:'turbo',title:'TURBO TIME',desc:'Everyone moves 18% faster!',duration:18},{id:'rocket',title:'ROCKET BALL',desc:'Shots and passes fly 22% faster!',duration:18},{id:'double',title:'DOUBLE GOAL',desc:'The next goal is worth TWO!',duration:24}];
+function mdArcadeSet(ev){mdArcadeEvent=ev;const box=$('mdArcadeEvent');if(!box)return;box.hidden=!ev;if(ev){$('mdArcadeTitle').textContent='⚡ '+ev.title;$('mdArcadeDesc').textContent=ev.desc;}}
+function mdArcadeStep(dt){if(net.on)return;if(mdArcadeEvent){mdArcadeEvent.left-=dt;if(mdArcadeEvent.left<=0)mdArcadeSet(null);}if(!mdArcadeEvent&&clock>=mdArcadeNextAt&&clock<settings.half){const pool=MD_ARCADE_EVENTS.filter(e=>e.id!==mdArcadeLast);const base=pool[(Math.random()*pool.length)|0];mdArcadeLast=base.id;mdArcadeSet({...base,left:base.duration});mdArcadeNextAt+=38;}}
+function mdArcadeBoost(id){return !net.on&&mdArcadeEvent?.id===id;}
 // Local 3-round knockout cup; results are based on matches actually played.
 const cup={active:false,round:0,opponents:[],lastResult:'',pendingNext:false,best:0,wins:0};
 try{cup.wins=Math.max(0,parseInt(localStorage.getItem('md_cup_wins')||'0',10)||0);}catch(_){}
@@ -1196,7 +1204,7 @@ function startMatch(){
     Tm.players.forEach(p=>{if(!p.isGK){p.pace*=THEME.spd;if(p.role!=='DF')p.pace*=P.tempo;}});});
   players=teams[0].players.concat(teams[1].players);players.forEach((p,i)=>p.gi=i);
   ball={x:L/2,y:W/2,z:0,vx:0,vy:0,vz:0,owner:null,lastKicker:null,lastTeam:0,noPick:0,roll:0,net:false};
-  ms=[[],[]];evt=0;addShown=false;addT=0;score=[0,0];half=1;clock=0;stats={shots:[0,0],poss:[0,0],yc:[0,0],rc:[0,0],off:[0,0],sot:[0,0],sv:[0,0]};paused=false;particles=[];pending=null;setPiece=null;
+  ms=[[],[]];evt=0;addShown=false;addT=0;score=[0,0];half=1;clock=0;mdArcadeNextAt=30;mdArcadeLast='';mdArcadeSet(null);stats={shots:[0,0],poss:[0,0],yc:[0,0],rc:[0,0],off:[0,0],sot:[0,0],sv:[0,0]};paused=false;particles=[];pending=null;setPiece=null;
   $('n0').textContent=d0.s;$('n1').textContent=d1.s;
   $('c0').style.background=kits[0].p;$('c1').style.background=kits[1].p;
   $('menu').hidden=true;$('careerScr').hidden=true;$('endScr').hidden=true;$('pauseScr').hidden=true;$('hud').hidden=false;$('cupScr')&&($('cupScr').hidden=true);
@@ -1240,6 +1248,7 @@ function attachBall(dt){
   ball.roll+=Math.hypot(o.vx,o.vy)*dt/6;
 }
 function kick(p,dx,dy,speed,vz,keepZ){
+  if(mdArcadeBoost('rocket'))speed*=1.22;
   const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;
   p.thr=false;ball.sv=null;ball.offs=null;ball.owner=null;ball.vx=dx*speed;ball.vy=dy*speed;ball.vz=vz;ball.z=keepZ?ball.z:(vz>0?1:0);ball.curl=0;
   ball.lastKicker=p;ball.lastTeam=p.team;ball.noPick=.3;p.kick=.22;p.charge=0;
@@ -1638,7 +1647,7 @@ function setupRestart(type,team,x,y){
 }
 function goalScored(t){
   if(ball.sv&&1-ball.sv.t===t)stats.sot[t]++;ball.sv=null;
-  evt+=1;score[t]++;state='goal';stTimer=4.0;ball.net=true;lastScorer=t;
+  evt+=1;score[t]+=mdArcadeBoost('double')?2:1;if(mdArcadeBoost('double'))mdArcadeSet(null);state='goal';stTimer=4.0;ball.net=true;lastScorer=t;
   const s=ball.lastKicker,own=s&&s.team!==t;
   if(s&&!own)ms[s.team].push(s.num);
   mdPlayerCareerGoal(s);
@@ -1702,7 +1711,7 @@ function aiStep(p,dt){
   if(!ball.owner&&near[p.team].indexOf(p)<2&&airReach(p))aiAir(p);
   const dp=dparams(p.team),Tm=teams[p.team],d=Tm.dir;
   const tacticalTier=p.team===1?settings.diff:1;
-  const base=BASE*p.pace*(p.team===1?dp.spd:1)*(settings.gameplay==='competitive'?1.02:.94);
+  const base=BASE*p.pace*(p.team===1?dp.spd:1)*(settings.gameplay==='competitive'?1.02:.94)*(mdArcadeBoost('turbo')?1.18:1);
   if(ball.owner===p){aiOwner(p,dt,base);return;}
   let tx,ty,sp=base*.88;
   const rank=near[p.team].indexOf(p);
@@ -1886,7 +1895,7 @@ function humanStep(p,dt){
   if(inp.sprint&&mag>.3&&!p.tired&&p.stam>0){sprinting=true;p.stam=Math.max(0,p.stam-.3*dt);if(p.stam<=0)p.tired=true;}
   else p.stam=Math.min(1,p.stam+.13*dt);
   p.sprinting=sprinting;
-  const sp=BASE*p.pace*(owner?.93:1)*(sprinting?(settings.gameplay==='competitive'?1.22:1.15):1)*(p.tired?.9:1)*(p.sk?1.25:1)*(settings.gameplay==='competitive'?1.05:.94);
+  const sp=BASE*p.pace*(mdArcadeBoost('turbo')?1.18:1)*(owner?.93:1)*(sprinting?(settings.gameplay==='competitive'?1.22:1.15):1)*(p.tired?.9:1)*(p.sk?1.25:1)*(settings.gameplay==='competitive'?1.05:.94);
   let tvx=0,tvy=0;
   if(mag>.1){const l=Math.hypot(inp.mx,inp.my);tvx=inp.mx/l*sp*mag;tvy=inp.my/l*sp*mag;}
   if(p.thr){tvx=tvy=0;p.vx=p.vy=0;p.sprinting=false;if(mag>.3){const dd=inputDir(p);p.face=Math.atan2(dd.y,dd.x);}}
@@ -2043,7 +2052,7 @@ function step(dt){
     if(stTimer<=0){hideMsg();setupKickoff(1-lastScorer);}
   }else if(state==='halftime'){
     stTimer-=dt;
-    if(stTimer<=0){half=2;clock=0;evt=0;addShown=false;addT=0;hideMsg();setupKickoff(1);}
+    if(stTimer<=0){half=2;clock=0;mdArcadeNextAt=30;mdArcadeSet(null);evt=0;addShown=false;addT=0;hideMsg();setupKickoff(1);}
   }else if(state==='play'){
     computeNear();autoSwitch(dt,0);if(net.on)autoSwitch(dt,1);
     for(const p of players)updatePlayer(p,dt);
@@ -2064,7 +2073,7 @@ function step(dt){
       setupRestart(e.kind,e.team,e.x,e.y);
       if(e.kind==='corner')flash('Corner');
     }
-    clock+=dt;
+    clock+=dt;mdArcadeStep(dt);
     if(ball.owner)stats.poss[ball.owner.team]+=dt;
     if(clock>=settings.half&&!addShown){addShown=true;const n=clamp(Math.ceil(evt*.7),1,5);addT=n*settings.half/45;showMsg('+'+n+' min','added time',2200);}
     endHalfCheck();
