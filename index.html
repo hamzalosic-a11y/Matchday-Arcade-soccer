@@ -3955,7 +3955,7 @@ function mdPlayerCareerFinish(home,away){
  if(intl&&tour){tour.played++;tour.wins+=win?1:0;tour.round=tour.played===1?'Group stage · Match 2':tour.played===2?'Semi-final':tour.played===3?'Final':'Completed';if(tour.played>=4){if(tour.wins>=3){p.trophies.push(tour.name);p.tournamentMessage='CHAMPIONS! '+tour.name;}else p.tournamentMessage='Tournament complete: '+tour.name+'.';p.tournament=null;}}
  p.matchType='club';
  p.squad=(p.squad||[]).map(x=>({...x,ovr:Math.min(85,x.ovr+((Math.random()<.12)?1:0))}));
- if(p.appearances%8===0&&p.age<18){p.age++;p.season++;if(p.age>=16&&p.stage!=='first'&&rating>=7&&Math.random()<.24){p.stage='first';p.promotionNote='The manager has invited you to the first team!';}else if(p.age>=16&&p.stage!=='first'&&rating<5.5&&Math.random()<.025){p.stage='released';p.released=true;p.releaseNote='The academy has released you after a difficult run of form.';}}
+ if(p.appearances%8===0&&p.age<21){p.age++;p.season++;if(p.age>=16&&p.stage!=='first'&&rating>=7&&Math.random()<.24){p.stage='first';p.promotionNote='The manager has invited you to the first team!';}else if(p.age>=16&&p.stage!=='first'&&rating<5.5&&Math.random()<.025){p.stage='released';p.released=true;p.releaseNote='The academy has released you after a difficult run of form.';}}
  if(p.stage==='released'){p.live=false;}
  mdPcSave();$('endTeams').textContent+=' · ⭐ '+p.name+': '+g+' goals · '+rating.toFixed(1)+'/10 · +'+coins+' coins';
  if(p.promotionNote){$('endTeams').textContent+=' · 🎉 '+p.promotionNote;p.promotionNote='';}if(p.tournamentMessage){$('endTeams').textContent+=' · 🌍 '+p.tournamentMessage;p.tournamentMessage='';}
