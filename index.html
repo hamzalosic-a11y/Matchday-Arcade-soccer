@@ -2211,31 +2211,66 @@ function drawPlayer(p){
   if(p.out)return;
   const tm=teams[p.team],kit=tm.kit,col=p.isGK?kit.gk:kit.p;
   ctx.save();ctx.translate(p.x,p.y);
-  ctx.fillStyle='rgba(0,0,0,.26)';ctx.beginPath();ctx.ellipse(3,4,14,11,0,0,7);ctx.fill();
+  const moving=Math.sin(p.ph),kick=p.kick>0?1:0;
+  const slide=p.lunge&&p.lunge.slide,fall=p.stun>0.2&&!p.lunge;
+  ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(2,5,15,11,0,0,7);ctx.fill();
   if(p.air)ctx.translate(0,-9);
   ctx.rotate(p.face+(p.sk?((p.sk.type==='Roulette')?(1-p.sk.t/.55)*Math.PI*2:Math.sin(gameTime*34)*.4):0)+((p.air&&p.air.type==='bike')?Math.PI*Math.min(1,(1-p.air.t/.7)*1.6):0));
   if(p.air)ctx.scale(1.14,1.14);
-  const slide=p.lunge&&p.lunge.slide,fall=p.stun>0.2&&!p.lunge;
-  if(slide||fall)ctx.scale(1.35,.82);
-  const sw=Math.sin(p.ph)*6+(p.kick>0?6:0);
-  ctx.fillStyle=kit.sh;
-  ctx.beginPath();ctx.ellipse(sw,-6.5,5.5,4,0,0,7);ctx.ellipse(-sw,6.5,5.5,4,0,0,7);ctx.fill();
-  ctx.fillStyle='#10131a';
-  ctx.beginPath();ctx.ellipse(sw+3,-6.5,2.6,2.6,0,0,7);ctx.ellipse(-sw+3,6.5,2.6,2.6,0,0,7);ctx.fill();
-  const armSwing=Math.sin(p.ph+Math.PI)*3;
-  ctx.fillStyle=(kit.pat==='solid'&&!p.isGK)?kit.c:col;
-  if(p.isGK)ctx.fillStyle=col;
-  ctx.beginPath();ctx.ellipse(armSwing,-13.5,4,2.8,0,0,7);ctx.ellipse(-armSwing,13.5,4,2.8,0,0,7);ctx.fill();
-  ctx.fillStyle=col;ctx.beginPath();ctx.ellipse(0,0,8.5,13.5,0,0,7);ctx.fill();
-  if(!p.isGK&&kit.pat==='stripes'){
-    ctx.save();ctx.beginPath();ctx.ellipse(0,0,8.5,13.5,0,0,7);ctx.clip();
-    ctx.fillStyle=kit.c;
-    for(let i=-2;i<=2;i+=2)ctx.fillRect(-10,i*4.4-2.2,20,4.4);
+  if(slide||fall)ctx.scale(1.32,.82);
+  const legA=moving*3.1+kick*4,legB=-moving*3.1-kick*2;
+  // Boots and lower legs
+  function limb(x,y,angle,len,width,skin){
+    ctx.save();ctx.translate(x,y);ctx.rotate(angle);
+    ctx.fillStyle='rgba(0,0,0,.16)';ctx.beginPath();ctx.ellipse(1,1,width+1,len+1,0,0,7);ctx.fill();
+    const lg=ctx.createLinearGradient(-width,0,width,0);lg.addColorStop(0,skin?'#b77d5c':'#263247');lg.addColorStop(.48,skin?'#efc09a':'#f5f6fa');lg.addColorStop(1,skin?'#a9684a':'#111827');
+    ctx.fillStyle=lg;ctx.beginPath();ctx.roundRect(-width,-len,width*2,len*2,2.5);ctx.fill();
     ctx.restore();
   }
-  if(!p.isGK&&kit.pat==='hoops'){ctx.save();ctx.beginPath();ctx.ellipse(0,0,8.5,13.5,0,0,7);ctx.clip();ctx.fillStyle=kit.c;for(let i=-1;i<=1;i++)ctx.fillRect(i*6-1.5,-14,3,28);ctx.restore();}
-  ctx.fillStyle=p.skin;ctx.beginPath();ctx.arc(1.5,0,6.1,0,7);ctx.fill();
-  ctx.fillStyle=p.hair;ctx.beginPath();ctx.arc(1,0,6.3,Math.PI-1.15,Math.PI+1.15);ctx.fill();
+  limb(5,-6,legA*.055,6,2.5,false);limb(-5,6,legB*.055,6,2.5,false);
+  // Football shorts
+  const shorts=kit.sh||'#202938';
+  const sg=ctx.createLinearGradient(-7,-5,7,6);sg.addColorStop(0,shorts);sg.addColorStop(.5,'#ffffff22');sg.addColorStop(1,'#00000066');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.moveTo(-7,-8);ctx.lineTo(7,-8);ctx.lineTo(6,8);ctx.lineTo(1,10);ctx.lineTo(0,3);ctx.lineTo(-1,10);ctx.lineTo(-6,8);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=.8;ctx.stroke();
+  // Socks, boots and studs
+  [[5,-6,legA],[ -5,6,legB]].forEach(([x,y,a])=>{
+    ctx.save();ctx.translate(x,y);ctx.rotate(a*.055);
+    ctx.fillStyle=kit.s||'#f2f2f2';ctx.beginPath();ctx.roundRect(-2.3,-2.5,4.6,7,1.5);ctx.fill();
+    ctx.fillStyle='#111827';ctx.beginPath();ctx.ellipse(0,5.3,3.2,2.3,0,0,7);ctx.fill();
+    ctx.fillStyle='#d9e2ef';ctx.fillRect(-1.8,4.8,3.6,.7);
+    ctx.restore();
+  });
+  // Arms with shaded sleeves
+  const armSwing=moving*2.2;
+  [[-8,-8,-1],[8,8,1]].forEach(([x,y,d])=>{
+    ctx.save();ctx.translate(x,y);ctx.rotate(d*armSwing*.035);
+    ctx.fillStyle='rgba(0,0,0,.15)';ctx.beginPath();ctx.ellipse(0,2,3.1,6.1,0,0,7);ctx.fill();
+    const ag=ctx.createLinearGradient(-3,0,3,0);ag.addColorStop(0,'#101827');ag.addColorStop(.45,col);ag.addColorStop(1,'#ffffff55');
+    ctx.fillStyle=ag;ctx.beginPath();ctx.roundRect(-2.8,-5,5.6,10,2.5);ctx.fill();
+    ctx.fillStyle=p.skin;ctx.beginPath();ctx.arc(0,6,2.25,0,7);ctx.fill();
+    ctx.restore();
+  });
+  // Neck and torso, with kit fabric highlights
+  ctx.fillStyle=p.skin;ctx.beginPath();ctx.roundRect(-2.4,-3,4.8,6,1.5);ctx.fill();
+  const tg=ctx.createLinearGradient(-9,-10,9,10);tg.addColorStop(0,'#101827');tg.addColorStop(.22,col);tg.addColorStop(.58,col);tg.addColorStop(1,'#080d18');
+  ctx.fillStyle=tg;ctx.beginPath();ctx.moveTo(-6.2,-10);ctx.quadraticCurveTo(-9,-9,-9,-4);ctx.lineTo(-7.6,8);ctx.quadraticCurveTo(0,12,7.6,8);ctx.lineTo(9,-4);ctx.quadraticCurveTo(9,-9,6.2,-10);ctx.lineTo(2.8,-11.5);ctx.quadraticCurveTo(0,-8,-2.8,-11.5);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.24)';ctx.lineWidth=.8;ctx.stroke();
+  if(!p.isGK&&kit.pat==='stripes'){
+    ctx.save();ctx.beginPath();ctx.moveTo(-6.2,-10);ctx.quadraticCurveTo(-9,-9,-9,-4);ctx.lineTo(-7.6,8);ctx.quadraticCurveTo(0,12,7.6,8);ctx.lineTo(9,-4);ctx.quadraticCurveTo(9,-9,6.2,-10);ctx.closePath();ctx.clip();
+    ctx.fillStyle=kit.c;for(let x=-7;x<=7;x+=5)ctx.fillRect(x,-12,2.1,25);ctx.restore();
+  }else if(!p.isGK&&kit.pat==='hoops'){
+    ctx.save();ctx.beginPath();ctx.ellipse(0,0,8.5,11,0,0,7);ctx.clip();ctx.fillStyle=kit.c;for(let y=-7;y<=7;y+=6)ctx.fillRect(-10,y,20,2.2);ctx.restore();
+  }
+  // Collar, crest and shirt details
+  ctx.fillStyle='rgba(255,255,255,.78)';ctx.beginPath();ctx.arc(0,-9.3,2.1,0,Math.PI);ctx.fill();
+  ctx.fillStyle='#f8fafc';ctx.beginPath();ctx.arc(4.5,-2.5,1.05,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fillRect(-5.8,1.5,1,4);
+  // Head, ears and hair
+  ctx.fillStyle=p.skin;ctx.beginPath();ctx.ellipse(0,-14.2,5.5,6.2,0,0,7);ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.16)';ctx.beginPath();ctx.ellipse(1.5,-12.7,3.2,3.8,0,0,7);ctx.fill();
+  ctx.fillStyle=p.hair;ctx.beginPath();ctx.ellipse(-.3,-17.1,5.5,3.3,-.08,Math.PI,Math.PI*2);ctx.lineTo(4.8,-14.8);ctx.quadraticCurveTo(1,-16.2,-5,-14.5);ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.ellipse(-1.8,-18,1.8,.7,-.3,0,7);ctx.fill();
   ctx.restore();
 }
 function drawScene(dt){
