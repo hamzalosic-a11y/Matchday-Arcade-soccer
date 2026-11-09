@@ -517,7 +517,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
       <div id="mdDailyCard"><div class="mdGrowthEyebrow">⚡ DAILY CHALLENGE</div><b>Win one match today</b><p id="mdDailyStatus">Beat the opponent to earn bonus Dream Team coins.</p><div class="mdDailyReward">🏆 REWARD: +50 COINS</div></div>
       <div id="mdObjectivesCard"><div class="mdGrowthEyebrow">🎯 HARD OBJECTIVES</div><b>Prove you are a top player</b><p id="mdObjectivesStatus">Complete tougher missions for smaller rewards.</p><div class="mdDailyReward">🏅 UP TO 600 COINS</div></div>
       <div id="mdSeasonCard"><div class="mdGrowthEyebrow">🏆 SEASON PASS · FREE</div><b>Season 1: Road to Glory</b><p id="mdSeasonStatus">Play matches to earn XP and unlock 10 rewards.</p><div class="mdDailyReward" id="mdSeasonReward">NEXT REWARD: 50 COINS</div><button id="mdSeasonClaim" type="button" disabled>No reward ready</button></div>
-      <div id="mdRecordCard"><div class="mdGrowthEyebrow">📊 CLUB RECORD</div><b id="mdRecordLine">0W · 0D · 0L</b><p id="mdRecordDetail">Play matches to build your record.</p><div class="mdDailyReward" id="mdRecordForm">FORM: —</div></div>
+      <div id="mdRecordCard"><div class="mdGrowthEyebrow">📊 CLUB RECORD</div><b id="mdRecordLine">0W · 0D · 0L</b><p id="mdRecordDetail">Play matches to build your record.</p><div class="mdDailyReward" id="mdRecordForm">FORM: —</div></div><div id="mdWeeklyCard"><div class="mdGrowthEyebrow">🌍 RIVAL WEEK</div><b id="mdWeeklyTitle">Weekly challenge</b><p id="mdWeeklyStatus">Complete this week’s challenge to earn bonus coins.</p><div class="mdDailyReward" id="mdWeeklyProgress">0/3 PROGRESS · +350 COINS</div><button id="mdWeeklyClaim" type="button" disabled>Challenge in progress</button></div>
       <button id="mdShareBtn" type="button">↗ SHARE MATCHDAY</button>
     </div>
     <div class="help">
@@ -4260,6 +4260,12 @@ requestAnimationFrame(frame);
 .md-pc-coins{padding-top:10px;color:#ffd66b;font-weight:900;font-size:13px}
 @media(max-width:560px){.md-pc-form{grid-template-columns:1fr;gap:0}.md-pc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.md-pc-attribute{grid-template-columns:1fr 30px auto;gap:5px}.md-pc-attribute button{font-size:10px;padding:7px 5px}}
 
+#mdWeeklyCard{min-width:0;text-align:left;background:linear-gradient(135deg,rgba(41,161,218,.15),rgba(148,91,224,.13));border:1px solid rgba(91,173,230,.42);border-radius:13px;padding:12px 14px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+#mdWeeklyCard>b{font-family:'Barlow Condensed',sans-serif;font-size:22px;display:block}
+#mdWeeklyCard p{font-size:13px;color:var(--mut);margin:4px 0 7px}
+#mdWeeklyClaim{margin-top:9px;border:1px solid #69b8ef;border-radius:8px;padding:8px 12px;background:linear-gradient(100deg,#48a9df,#9c79ec);color:#071421;font-weight:900;cursor:pointer}
+#mdWeeklyClaim:disabled{opacity:.48;cursor:not-allowed}
+
 </style>
 <script>
 /* MATCHDAY_LOCAL_CLUB_RECORD_V1: browser-local W/D/L, recent form and best win streak */
@@ -4301,6 +4307,94 @@ requestAnimationFrame(frame);
     render();
   };
   render();
+})();
+</script>
+
+
+<script>
+/* MATCHDAY RIVAL WEEK + SKILL COMBOS */
+(function(){
+ const KEY='matchday.rival-week.v1';
+ const missions=[
+  {id:'wins',title:'Win 3 matches',target:3,reward:350,unit:'WINS'},
+  {id:'goals',title:'Score 12 goals',target:12,reward:300,unit:'GOALS'},
+  {id:'plays',title:'Play 5 matches',target:5,reward:250,unit:'MATCHES'},
+  {id:'skills',title:'Perform 10 skill moves',target:10,reward:400,unit:'SKILL MOVES'}
+ ];
+ function weekStamp(){
+  const d=new Date(),start=new Date(d.getFullYear(),0,1);
+  const n=Math.ceil((((d-start)/86400000)+start.getDay()+1)/7);
+  return d.getFullYear()+'-W'+String(n).padStart(2,'0');
+ }
+ function storageKey(){return KEY+(typeof ACC!=='undefined'&&ACC&&ACC.uid?'.'+ACC.uid:'.guest');}
+ function read(){
+  const week=weekStamp();
+  try{
+   const v=JSON.parse(localStorage.getItem(storageKey())||'null');
+   if(v&&v.week===week)return {...v};
+  }catch(e){}
+  return {week,progress:0,claimed:false};
+ }
+ function save(v){try{localStorage.setItem(storageKey(),JSON.stringify(v));}catch(e){}}
+ function mission(v){
+  const n=Number(v.week.split('W')[1])||1;
+  return missions[(n-1)%missions.length];
+ }
+ function refresh(){
+  const title=document.getElementById('mdWeeklyTitle'),status=document.getElementById('mdWeeklyStatus'),progress=document.getElementById('mdWeeklyProgress'),btn=document.getElementById('mdWeeklyClaim');
+  if(!title||!status||!progress||!btn)return;
+  const v=read(),m=mission(v),p=Math.min(m.target,Math.max(0,Number(v.progress)||0)),done=p>=m.target;
+  title.textContent=m.title;
+  status.textContent=v.claimed?'Reward claimed! A new rival challenge arrives next week.':done?'Challenge complete — claim your coins!':'Make progress in regular offline matches. Progress: '+p+'/'+m.target+'.';
+  progress.textContent=(v.claimed?'✓ CLAIMED · ':p+'/'+m.target+' '+m.unit+' · ')+ '+'+m.reward+' COINS';
+  btn.disabled=!done||v.claimed;
+  btn.textContent=v.claimed?'Reward claimed':done?'Claim '+m.reward+' coins':'Challenge in progress';
+ }
+ function skillCount(){
+  const mv=(typeof stats!=='undefined'&&stats&&stats.mv)||{};
+  return Object.entries(mv).filter(([k])=>['Step-over','Elastico','Roulette'].includes(k)).reduce((n,[,v])=>n+(Number(v)||0),0);
+ }
+ function update(result){
+  const v=read(),m=mission(v);
+  let add=0;
+  if(m.id==='wins'&&result.goals>result.against)add=1;
+  if(m.id==='goals')add=result.goals;
+  if(m.id==='plays')add=1;
+  if(m.id==='skills')add=result.skills;
+  v.progress=Math.min(m.target,(Number(v.progress)||0)+add);
+  save(v);refresh();
+ }
+ document.getElementById('mdWeeklyClaim')?.addEventListener('click',function(){
+  const v=read(),m=mission(v);
+  if(v.claimed||v.progress<m.target)return;
+  if(typeof dtInit==='function')dtInit();
+  if(typeof DT==='undefined'||!DT)return;
+  DT.coins=(Number(DT.coins)||0)+m.reward;
+  if(typeof dtSave==='function')dtSave();
+  v.claimed=true;save(v);refresh();
+ });
+ if(typeof finishMatch==='function'){
+  const originalFinishMatch=finishMatch;
+  finishMatch=function(){
+   const eligible=!(typeof net!=='undefined'&&net&&net.on)&&!(typeof career!=='undefined'&&career&&career.live);
+   const result={goals:Number(score&&score[0])||0,against:Number(score&&score[1])||0,skills:skillCount()};
+   originalFinishMatch.apply(this,arguments);
+   if(eligible)update(result);
+  };
+ }
+ if(typeof doSkill==='function'){
+  const originalDoSkill=doSkill;
+  doSkill=function(p,dir){
+   const was=p?p.skCd:1;
+   originalDoSkill.apply(this,arguments);
+   if(!p||typeof net!=='undefined'&&net&&net.on||was>0||!p.sk)return;
+   const now=typeof gameTime==='number'?gameTime:0;
+   p._mdSkillCombo=(p._mdSkillLast&&now-p._mdSkillLast<5)?(p._mdSkillCombo||1)+1:1;
+   p._mdSkillLast=now;
+   if(p._mdSkillCombo>=2&&typeof showMsg==='function')showMsg('SKILL COMBO ×'+p._mdSkillCombo,p.sk.type+' · keep the moves flowing',950);
+  };
+ }
+ refresh();
 })();
 </script>
 
