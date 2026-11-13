@@ -457,6 +457,20 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 @keyframes mdBootLines{to{background-position:0 220px}}
 @media(prefers-reduced-motion:reduce){#mdBoot:before,.mdBoot-light,.mdBoot-ball{animation:none!important}#mdBoot,.mdBoot-fill{transition:none!important}}
 
+
+/* FC-style penalty camera and aim selector */
+#mdPenaltyScreen{position:absolute;z-index:35;left:50%;bottom:clamp(92px,13vh,145px);transform:translateX(-50%);width:min(430px,92vw);padding:14px 16px 13px;border:1px solid #ffffff35;border-radius:16px;background:linear-gradient(145deg,rgba(7,15,27,.94),rgba(13,30,47,.9));box-shadow:0 18px 55px #0009;color:#fff;text-align:center;backdrop-filter:blur(12px);pointer-events:auto}
+#mdPenaltyScreen[hidden]{display:none}
+.mdPenTop{display:flex;align-items:center;justify-content:space-between;gap:10px;font:900 11px 'Barlow',sans-serif;letter-spacing:.16em;color:#b9c9d7}
+.mdPenTop strong{color:#ffd23f;font-size:12px}
+.mdPenTargets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
+.mdPenAngle{border:1px solid #ffffff28;border-radius:10px;padding:9px 5px;background:#ffffff0b;color:#fff;font:800 12px 'Barlow',sans-serif;cursor:pointer;touch-action:manipulation}
+.mdPenAngle[aria-pressed="true"]{border-color:#ffd23f;background:#ffd23f20;box-shadow:inset 0 0 0 1px #ffd23f55}
+.mdPenAngle i{display:block;width:100%;height:23px;margin-bottom:4px;position:relative}
+.mdPenAngle i:before{content:"";position:absolute;left:50%;top:3px;width:8px;height:8px;border-radius:50%;background:#ffd23f;transform:translateX(-50%);box-shadow:0 0 12px #ffd23f}
+.mdPenHint{margin-top:9px;color:#9fb1c3;font:700 10px 'Barlow',sans-serif;letter-spacing:.08em}
+@media(max-height:560px){#mdPenaltyScreen{bottom:58px;padding:8px 12px}.mdPenTargets{margin-top:6px}.mdPenAngle{padding:5px}.mdPenAngle i{height:14px}}
+
 </style>
 </head>
 <body>
@@ -512,6 +526,17 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     <div id="stamWrap"><div id="stam"></div></div>
     <div id="pwrWrap"><div id="pwr"></div></div>
   </div>
+
+
+<div id="mdPenaltyScreen" hidden>
+ <div class="mdPenTop"><span>PENALTY KICK</span><strong id="mdPenPower">AIM YOUR SHOT</strong></div>
+ <div class="mdPenTargets">
+  <button class="mdPenAngle" data-pen-aim="-1" aria-pressed="false"><i></i>LEFT CORNER</button>
+  <button class="mdPenAngle" data-pen-aim="0" aria-pressed="true"><i></i>CENTRE</button>
+  <button class="mdPenAngle" data-pen-aim="1" aria-pressed="false"><i></i>RIGHT CORNER</button>
+ </div>
+ <div class="mdPenHint">CHOOSE A CORNER · HOLD SHOOT TO BUILD POWER</div>
+</div>
 
   <div id="touch" hidden>
     <div id="joyBase"><div id="joyKnob"></div></div>
@@ -1980,8 +2005,8 @@ function humanPass(p,lob){
 function humanShoot(p){
   const inp=IN(p);
   const power=Math.max(p.charge,.2);
-  const aim=clamp(inp.my*(Math.abs(inp.my)>.3?1:0),-1,1);
-  doShoot(p,power,aim,false);p.charge=0;
+  const aim=p.pen?mdPenaltyAim:clamp(inp.my*(Math.abs(inp.my)>.3?1:0),-1,1);
+  doShoot(p,power,aim,false);p.charge=0;mdPenaltyAim=0;
 }
 function humanTackle(p){
   const inp=IN(p);
@@ -2142,6 +2167,18 @@ function showMsg(t,sub,ms){if(net.on&&net.host)netSend('msg',[t,sub,ms]);const m
 function flash(t){if(state==='play'||state==='goal'||state==='kickoff'){if(!$('msg').hidden&&msgT>1)return;showMsg(t,'',900);}}
 function hideMsg(){$('msg').hidden=true;msgT=0;}
 let lastHud='',lastSc='';
+function updatePenaltyScreen(){
+  const el=$('mdPenaltyScreen');if(!el)return;
+  const active=state==='play'&&!paused&&human&&human.pen&&ball&&ball.owner===human;
+  el.hidden=!active;
+  if(active){
+    const pwr=$('mdPenPower');if(pwr)pwr.textContent=human.charge>.05?'POWER '+Math.round(human.charge*100)+'%':'AIM YOUR SHOT';
+    el.querySelectorAll('[data-pen-aim]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.penAim)===mdPenaltyAim)));
+  }
+}
+document.querySelectorAll('[data-pen-aim]').forEach(b=>b.addEventListener('click',()=>{
+  mdPenaltyAim=clamp(Number(b.dataset.penAim),-1,1);updatePenaltyScreen();
+}));
 function updateHud(){
   const min=Math.min(45,Math.floor(clock/settings.half*45))+(half===2?45:0),ex=clock>settings.half?Math.floor((clock-settings.half)/settings.half*45)+1:0;
   const label=half===1?'1st half':'2nd half';
@@ -2324,13 +2361,16 @@ function drawPlayer(p){
   ctx.restore();
 }
 function drawScene(dt){
+  const penOwner=ball&&ball.owner&&ball.owner.pen?ball.owner:null;
   const vh=viewW*ch/cw;
-  const tx=ball.x+ball.vx*.28,ty=ball.y+ball.vy*.18;
-  const k=1-Math.exp(-5.5*dt);cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;
+  const tx=penOwner?(penOwner.x+(teams[penOwner.team].dir===1?L:0))/2:ball.x+ball.vx*.28;
+  const ty=penOwner?W/2:ball.y+ball.vy*.18;
+  const k=1-Math.exp((penOwner?-8.5:-5.5)*dt);cam.x+=(tx-cam.x)*k;cam.y+=(ty-cam.y)*k;
   const hw=viewW/2,hh=vh/2;
   cam.x=(L+2*M-viewW>0)?clamp(cam.x,-M+hw,L+M-hw):L/2;
   cam.y=(W+2*M-vh>0)?clamp(cam.y,-M+hh,W+M-hh):W/2;
-  ctx.setTransform(scale,0,0,scale,cv.width/2-cam.x*scale,cv.height/2-cam.y*scale);
+  const penZoom=penOwner?1.42:1,drawScale=scale*penZoom;
+  ctx.setTransform(drawScale,0,0,drawScale,cv.width/2-cam.x*drawScale,cv.height/2-cam.y*drawScale);
   drawPitch();
   for(const p of players)if(p===human){
     ctx.strokeStyle='#ffd23f';ctx.lineWidth=3.5;ctx.beginPath();ctx.ellipse(p.x,p.y+3,21,17,0,0,7);ctx.stroke();
@@ -2394,6 +2434,7 @@ function render(dt){
 }
 
 /* ---------- input ---------- */
+let mdPenaltyAim=0;
 const isTouch=('ontouchstart' in window)||(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 const K={};
 function action(name,down){
@@ -3824,9 +3865,19 @@ function render3D(dt){
   let tx=L/2+Math.sin(gameTime*.2)*350,tz=W/2;
   if(live){tx=ball.x+ball.vx*.28;tz=ball.y+ball.vy*.18;}
   const kk=1-Math.exp(-5.5*dt);cam.x+=(tx-cam.x)*kk;cam.y+=(tz-cam.y)*kk;
-  const asp=w3/h3,fov=.62,r=Math.max(520,viewW/(2*Math.tan(fov/2)*asp)*.92),pit=.64;
-  const cx=clamp(cam.x,-40,L+40),cz=clamp(cam.y,-20,W+20);
-  const V=m4.look([cx,r*Math.sin(pit),cz+r*Math.cos(pit)],[cx,0,cz-20],[0,1,0]),VP=m4.mul(m4.persp(fov,asp,20,5000),V);GL.VP=VP;
+  const asp=w3/h3,penOwner=live&&ball.owner&&ball.owner.pen?ball.owner:null;
+  let V;
+  if(penOwner){
+    const pd=teams[penOwner.team].dir,goalX=pd===1?L:0;
+    const eye=[penOwner.x-pd*245,132,penOwner.y+pd*22];
+    const target=[goalX,38,W/2];
+    V=m4.look(eye,target,[0,1,0]);
+  }else{
+    const fov=.62,r=Math.max(520,viewW/(2*Math.tan(fov/2)*asp)*.92),pit=.64;
+    const cx=clamp(cam.x,-40,L+40),cz=clamp(cam.y,-20,W+20);
+    V=m4.look([cx,r*Math.sin(pit),cz+r*Math.cos(pit)],[cx,0,cz-20],[0,1,0]);
+  }
+  const VP=m4.mul(m4.persp(penOwner?.52:.62,asp,20,5000),V);GL.VP=VP;
   g.clearColor(fogC[0],fogC[1],fogC[2],1);g.clear(g.COLOR_BUFFER_BIT|g.DEPTH_BUFFER_BIT);
   g.useProgram(GL.P1);const u=GL.u;
   g.uniformMatrix4fv(u.VP,false,VP);g.uniform3f(u.L,-.35,1,.42);g.uniform1f(u.Amb,night?.48:.7);
@@ -3974,7 +4025,7 @@ function frame(ts){
     if(net.on&&!net.host)guestFrame(dt);
     else{acc+=dt;let n=0;while(acc>=STEP&&n<5){step(STEP);acc-=STEP;n++;}if(n===5)acc=0;if(net.on)hostTx(dt);}
     if(msgT>0){msgT-=dt;if(msgT<=0)hideMsg();}
-    updateHud();drawRadarSafe();
+    updateHud();updatePenaltyScreen();drawRadarSafe();
   }
   // Keep gameplay simulation running at its normal fixed step, but cap expensive
   // 3D match rendering to 30 FPS on touch devices to reduce GPU heat and stutter.
