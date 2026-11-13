@@ -3945,7 +3945,7 @@ function drawRadarSafe(){if(ball&&players.length)drawRadar();}
 const MD_PC_KEY='matchday.playercareer.v1';
 let mdPlayerCareer=null,mdPlayerCareerPro=null;
 try{mdPlayerCareer=JSON.parse(localStorage.getItem(MD_PC_KEY)||'null');}catch(_){mdPlayerCareer=null;}
-if(mdPlayerCareer&&(!Number.isInteger(mdPlayerCareer.club)||!TEAMS[mdPlayerCareer.club]||!['FW','MF','DF'].includes(mdPlayerCareer.pos)))mdPlayerCareer=null;
+if(mdPlayerCareer&&(!Number.isInteger(mdPlayerCareer.club)||!TEAMS[mdPlayerCareer.club]||!(['FW','MF','DF'].includes(mdPlayerCareer.pos)||['FW','MF','DF','GK'].includes(mdPcRoleGroup(mdPlayerCareer.pos)))))mdPlayerCareer=null;
 if(mdPlayerCareer){mdPlayerCareer.live=false;mdPlayerCareer.matchGoals=0;mdPlayerCareer.age=mdPlayerCareer.age||13;mdPlayerCareer.stage=mdPlayerCareer.stage||'academy';mdPlayerCareer.bench=Array.isArray(mdPlayerCareer.bench)?mdPlayerCareer.bench:[];mdPlayerCareer.squad=Array.isArray(mdPlayerCareer.squad)?mdPlayerCareer.squad:[];mdPlayerCareer.injuryWeeks=mdPlayerCareer.injuryWeeks||0;mdPlayerCareer.country=Number.isInteger(mdPlayerCareer.country)&&TEAMS[mdPlayerCareer.country]?.g==='nat'?mdPlayerCareer.country:TEAMS.findIndex(t=>t.g==='nat');mdPlayerCareer.tournament=mdPlayerCareer.tournament||null;mdPlayerCareer.trophies=Array.isArray(mdPlayerCareer.trophies)?mdPlayerCareer.trophies:[];}
 function mdPcRoleGroup(pos){if(pos==='GK')return'GK';if(['ST','CF','LW','RW'].includes(pos))return'FW';if(['CAM','CM','CDM','LM','RM'].includes(pos))return'MF';if(['LB','CB','RB','LWB','RWB'].includes(pos))return'DF';return null;}
 function tournamentNation(i){return TEAMS[i]&&TEAMS[i].g==='nat';}
