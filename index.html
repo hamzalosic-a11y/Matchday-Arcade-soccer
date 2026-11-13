@@ -429,10 +429,52 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
 @media(prefers-reduced-motion:reduce){#dtBody .pcbig,#dtBody .pcbig::after{animation:none}}
 .md-pc-roster{display:grid;grid-template-columns:1fr 1fr;gap:6px}.md-pc-roster-row{display:flex;align-items:center;gap:7px;background:#0b1b2a;border:1px solid #284456;border-radius:8px;padding:7px;font-size:12px}.md-pc-roster-row>span{color:#9cffc9;font-weight:900;min-width:18px}.md-pc-roster-row>b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.md-pc-roster-row small{color:#9fb5c6;white-space:nowrap}.md-pc-alert{margin:12px 0;padding:12px;border:1px solid #d99a48;background:#4a321d;border-radius:10px;color:#ffe0ae}.md-pc-alert button{margin-left:8px;background:#d99a48;color:#241608;border:0;border-radius:7px;padding:7px 10px;font-weight:800}@media(max-width:520px){.md-pc-roster{grid-template-columns:1fr}}
 .md-pc-panel select{width:100%;min-height:40px;background:#0b1b2a;color:#f1efe6;border:1px solid #345064;border-radius:8px;padding:8px;margin-top:5px}.md-pc-section [data-pc="start-tournament"]{display:block;width:100%;margin:7px 0;text-align:left}
+
+/* MATCHDAY CINEMATIC LOADING SCREEN */
+#mdBoot{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 100%,#173e35 0%,#0b1b24 42%,#050b14 100%);color:#f5f7f2;opacity:1;visibility:visible;transition:opacity .55s ease,visibility .55s ease}
+#mdBoot.mdBootDone{opacity:0;visibility:hidden;pointer-events:none}
+#mdBoot:before{content:"";position:absolute;inset:-20%;background:repeating-linear-gradient(112deg,transparent 0 13%,rgba(255,255,255,.025) 13.2% 13.5%,transparent 13.8% 27%);transform:perspective(500px) rotateX(58deg) scale(1.5);transform-origin:bottom;animation:mdBootLines 9s linear infinite}
+#mdBoot:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 15% 10%,rgba(255,215,75,.18),transparent 35%),radial-gradient(ellipse at 85% 12%,rgba(68,174,255,.17),transparent 34%);pointer-events:none}
+.mdBoot-light{position:absolute;top:-25%;width:24vw;height:90vh;filter:blur(28px);opacity:.18;background:linear-gradient(180deg,transparent,#ffe58a,transparent);transform:rotate(28deg);animation:mdBootSweep 4.8s ease-in-out infinite}
+.mdBoot-light.l2{right:5%;left:auto;background:linear-gradient(180deg,transparent,#72c7ff,transparent);transform:rotate(-28deg);animation-delay:-2.4s}
+.mdBoot-card{position:relative;z-index:1;width:min(560px,90vw);padding:clamp(24px,5vw,44px);text-align:center;border:1px solid rgba(255,255,255,.16);border-radius:24px;background:linear-gradient(145deg,rgba(19,37,53,.88),rgba(5,15,25,.86));box-shadow:0 28px 100px #0009,inset 0 1px rgba(255,255,255,.12);backdrop-filter:blur(14px)}
+.mdBoot-kicker{font:800 11px 'Barlow',sans-serif;letter-spacing:.32em;color:#a9c6c0}
+.mdBoot-logo{margin:8px 0 0;font:italic 900 clamp(58px,12vw,88px)/.9 'Barlow Condensed',sans-serif;letter-spacing:-.035em;text-shadow:0 8px 28px #0008}
+.mdBoot-logo span{color:#ffd23f}
+.mdBoot-tag{margin:13px 0 24px;color:#b7c8d0;font-size:12px;letter-spacing:.18em;font-weight:700}
+.mdBoot-pitch{height:104px;position:relative;margin:0 auto 24px;width:min(360px,100%);overflow:hidden;border:1px solid #ffffff42;border-radius:12px;background:repeating-linear-gradient(90deg,#286c47 0 25%,#2e7950 25% 50%);box-shadow:inset 0 0 35px #07170f}
+.mdBoot-pitch:before{content:"";position:absolute;inset:8px;border:1px solid #ffffff9c;border-radius:3px}
+.mdBoot-pitch:after{content:"";position:absolute;left:50%;top:8px;bottom:8px;border-left:1px solid #ffffff9c}
+.mdBoot-circle{position:absolute;width:52px;height:52px;border:1px solid #ffffff9c;border-radius:50%;left:calc(50% - 26px);top:calc(50% - 26px)}
+.mdBoot-ball{position:absolute;left:calc(50% - 7px);top:calc(50% - 7px);width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 15px #fff;animation:mdBootBall 2.4s ease-in-out infinite}
+.mdBoot-status{display:flex;justify-content:space-between;gap:12px;color:#dbe6e3;font:800 11px 'Barlow',sans-serif;letter-spacing:.13em}
+.mdBoot-percent{color:#ffd23f;font-variant-numeric:tabular-nums}
+.mdBoot-track{height:7px;margin:10px 0 15px;background:#ffffff18;border-radius:99px;overflow:hidden}
+.mdBoot-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#e9a927,#ffe57a,#fff1b7);box-shadow:0 0 18px #ffd23f88;transition:width .22s ease}
+.mdBoot-tip{min-height:18px;color:#9fb4b7;font-size:12px}
+@keyframes mdBootBall{0%,100%{transform:translate(-75px,-12px)}50%{transform:translate(75px,12px)}}
+@keyframes mdBootSweep{0%,100%{opacity:.08}50%{opacity:.3}}
+@keyframes mdBootLines{to{background-position:0 220px}}
+@media(prefers-reduced-motion:reduce){#mdBoot:before,.mdBoot-light,.mdBoot-ball{animation:none!important}#mdBoot,.mdBoot-fill{transition:none!important}}
+
 </style>
 </head>
 <body>
 <div id="app">
+
+<div id="mdBoot" role="status" aria-live="polite" aria-label="Loading Matchday Arcade Soccer">
+ <div class="mdBoot-light"></div><div class="mdBoot-light l2"></div>
+ <div class="mdBoot-card">
+  <div class="mdBoot-kicker">THE NEXT MATCH STARTS HERE</div>
+  <div class="mdBoot-logo">MATCH<span>DAY</span></div>
+  <div class="mdBoot-tag">ARCADE SOCCER · SEASON IN PLAY</div>
+  <div class="mdBoot-pitch" aria-hidden="true"><i class="mdBoot-circle"></i><i class="mdBoot-ball"></i></div>
+  <div class="mdBoot-status"><span id="mdBootText">PREPARING THE PITCH</span><span class="mdBoot-percent" id="mdBootPercent">0%</span></div>
+  <div class="mdBoot-track"><div class="mdBoot-fill" id="mdBootFill"></div></div>
+  <div class="mdBoot-tip" id="mdBootTip">Warming up the stadium lights…</div>
+ </div>
+</div>
+
 
 <button id="mdStripeShopBtn" type="button">🛒 PACK SHOP</button>
 <div id="mdStripeShop" role="dialog" aria-modal="true" aria-labelledby="mdspTitle">
@@ -4395,6 +4437,28 @@ requestAnimationFrame(frame);
   };
  }
  refresh();
+})();
+</script>
+
+
+<script>
+/* MATCHDAY_BOOT_SCREEN_V2 */
+(function(){
+ const root=document.getElementById('mdBoot');
+ if(!root)return;
+ const fill=document.getElementById('mdBootFill'),pct=document.getElementById('mdBootPercent'),label=document.getElementById('mdBootText'),tip=document.getElementById('mdBootTip');
+ const tips=['Warming up the stadium lights…','Getting the pitch match-ready…','Calling the teams out of the tunnel…','Almost time for kick-off…'];
+ let progress=0,ready=document.readyState==='complete',started=performance.now(),done=false;
+ const timer=setInterval(()=>{
+   if(done)return;
+   const elapsed=performance.now()-started;
+   progress=Math.min(94,Math.max(progress,Math.round(12+82*(1-Math.exp(-elapsed/1900)))));
+   fill.style.width=progress+'%';pct.textContent=progress+'%';
+   label.textContent=progress<35?'PREPARING THE PITCH':progress<68?'LOADING MATCHDAY':'GETTING READY FOR KICK-OFF';
+   tip.textContent=tips[Math.min(3,Math.floor(progress/25))];
+   if(ready&&elapsed>1050){done=true;clearInterval(timer);progress=100;fill.style.width='100%';pct.textContent='100%';label.textContent='READY TO PLAY';setTimeout(()=>{root.classList.add('mdBootDone');setTimeout(()=>root.remove(),650);},220);}
+ },90);
+ window.addEventListener('load',()=>{ready=true;},{once:true});
 })();
 </script>
 
