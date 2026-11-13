@@ -1419,7 +1419,9 @@ function gkContact(p,spd){
   if(forced){stats.sot[1-p.team]++;stats.sv[p.team]++;ball.sv=null;}
   const dp=dparams(p.team),Tm=teams[p.team],d=Tm.dir;
   if(spd<460){
-    ball.owner=p;ball.lastTeam=p.team;p.ai.t=rand(.9,1.4);p.ai.force=null;ball.vz=0;ball.z=0;sfx.catch();return;
+    ball.owner=p;ball.lastTeam=p.team;p.ai.t=rand(.9,1.4);p.ai.force=null;ball.vz=0;ball.z=0;sfx.catch();
+    if(window.mdTrainingActive&&window.mdTrainingDrill==='pen'&&p.team===1)setTimeout(()=>{if(window.mdTrainingActive&&window.mdTrainingDrill==='pen')setupRestart('pen',0,0,W/2);},900);
+    return;
   }
   const gs=dp.gk*(.9+((p.gk||Tm.data.d)-80)/150);
   const pS=clamp(.5+gs*.38-(spd-460)/2200,.3,.96);
