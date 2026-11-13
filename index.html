@@ -1297,6 +1297,7 @@ window.mdStartTrainingMatch=function(drill){
   showMsg('TRAINING MODE',mode==='dribble'?'Dribble and practise skill moves':mode==='shots'?'Shoot past the goalkeeper':mode==='free'?'Free kick practice':'Penalty practice',1800);
   window.mdTrainingActive=true;
 };
+window.mdContinueTraining=function(){const mode=window.mdTrainingDrill;if(mode)window.mdStartTrainingMatch(mode);};
 window.mdExitTraining=function(){
   window.mdTrainingActive=false;window.mdTrainingDrill='';
   paused=true;state='menu';
@@ -1493,7 +1494,7 @@ function doPass(p,q,lob,errMul){
     kick(p,rx,ry,clamp((210+THEME.fric*d)*(settings.gameplay==='competitive'?1.08:.94),300,1000),0);
   }
   q.recv=1.7;
-  if(!p.noOff){const d=teams[p.team].dir,set=new Set();for(const t of teams[p.team].players)if(isOff(p,t,d))set.add(t);ball.offs=set;}
+  if(!p.noOff&&!window.mdTrainingActive){const d=teams[p.team].dir,set=new Set();for(const t of teams[p.team].players)if(isOff(p,t,d))set.add(t);ball.offs=set;}
   p.noOff=false;
 }
 function offProg(t){const d=teams[t].dir;return teams[1-t].players.filter(o=>!o.out).map(o=>prog(o.x,d)).sort((a,b)=>b-a)[1]||0;}
@@ -1742,6 +1743,7 @@ function setupRestart(type,team,x,y){
   holdSw=holdSw2=.8;
 }
 function goalScored(t){
+  if(window.mdTrainingActive&&window.mdTrainingDrill==='pen')setTimeout(()=>{if(window.mdTrainingActive&&window.mdTrainingDrill==='pen')setupRestart('pen',0,0,W/2);},3600);
   if(ball.sv&&1-ball.sv.t===t)stats.sot[t]++;ball.sv=null;
   evt+=1;score[t]+=mdArcadeBoost('double')?2:1;if(mdArcadeBoost('double'))mdArcadeSet(null);state='goal';stTimer=4.0;ball.net=true;lastScorer=t;
   const s=ball.lastKicker,own=s&&s.team!==t;
@@ -4563,10 +4565,12 @@ requestAnimationFrame(frame);
 .mdTrainPick{min-height:112px;text-align:left;border:1px solid #355b57;border-radius:12px;padding:14px;background:linear-gradient(145deg,#173a38,#172744);color:#fff;font:900 20px 'Barlow Condensed',sans-serif;cursor:pointer}
 .mdTrainPick small{display:block;margin-top:7px;color:#b8d5d0;font:500 12px 'Barlow',sans-serif;line-height:1.4}
 .mdTrainPick.active{border:2px solid #9cffc9;background:linear-gradient(145deg,#20594b,#172744);box-shadow:0 0 0 2px #9cffc933}
-#mdTrainingHud{position:fixed;z-index:9000;top:54px;left:50%;transform:translateX(-50%);border:1px solid #9cffc9;border-radius:10px;background:#102b28ed;color:#dffff0;padding:8px 13px;font:800 13px 'Barlow',sans-serif;pointer-events:auto;white-space:nowrap}
+#mdTrainingHud{position:fixed;z-index:9000;top:54px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto;white-space:nowrap}
 #mdTrainingHud[hidden]{display:none}
+#mdTrainingHud button{border:1px solid #9cffc9;border-radius:10px;background:#102b28ed;color:#dffff0;padding:9px 13px;font:800 13px 'Barlow',sans-serif;cursor:pointer}
+#mdTrainingHud #mdTrainingContinue{background:#9cffc9;color:#09251d}
 </style>
-<button id="mdTrainingHud" hidden>🎯 TRAINING · BACK TO DRILLS</button>
+<div id="mdTrainingHud" hidden><button id="mdTrainingContinue" type="button">↻ CONTINUE</button><button id="mdTrainingBack" type="button">← BACK</button></div>
 <script>
 /* MATCHDAY_TRAINING_GROUND_V2 */
 (function(){
@@ -4587,7 +4591,10 @@ requestAnimationFrame(frame);
   hud.hidden=false;
   window.mdStartTrainingMatch(selected);
  });
- hud.addEventListener('click',()=>{
+ document.getElementById('mdTrainingContinue').addEventListener('click',()=>{
+  if(typeof window.mdContinueTraining==='function')window.mdContinueTraining();
+ });
+ document.getElementById('mdTrainingBack').addEventListener('click',()=>{
   hud.hidden=true;
   if(typeof window.mdExitTraining==='function')window.mdExitTraining();
  });
