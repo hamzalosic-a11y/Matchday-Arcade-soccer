@@ -1283,6 +1283,26 @@ function startMatch(){
   cam.x=L/2;cam.y=W/2;
   sfx.whistle(1);
 }
+
+/* Expose a narrow training entry point from the private game runtime. */
+window.mdStartTrainingMatch=function(drill){
+  window.mdTrainingDrill=drill;
+  startMatch();
+  const mode=window.mdTrainingDrill;
+  if(!mode)return;
+  const enemy=teams[1];
+  if(enemy)enemy.players.forEach(p=>{if(!p.isGK){p.out=true;p.x=p.y=-900;p.vx=p.vy=0;}});
+  if(mode==='pen')setupRestart('pen',0,0,W/2);
+  else if(mode==='free'||mode==='shots')setupRestart('free',0,Math.round(L*.78),Math.round(W/2));
+  showMsg('TRAINING MODE',mode==='dribble'?'Dribble and practise skill moves':mode==='shots'?'Shoot past the goalkeeper':mode==='free'?'Free kick practice':'Penalty practice',1800);
+  window.mdTrainingActive=true;
+};
+window.mdExitTraining=function(){
+  window.mdTrainingActive=false;window.mdTrainingDrill='';
+  paused=true;state='menu';
+  $('hud').hidden=true;$('menu').hidden=false;$('touch').hidden=true;
+};
+
 function setupKickoff(kt){
   const Tk=teams[kt],dk=Tk.dir;
   for(const p of players){
@@ -4548,7 +4568,7 @@ requestAnimationFrame(frame);
 </style>
 <button id="mdTrainingHud" hidden>🎯 TRAINING · BACK TO DRILLS</button>
 <script>
-/* MATCHDAY_TRAINING_GROUND_V1 */
+/* MATCHDAY_TRAINING_GROUND_V2 */
 (function(){
  const panel=document.getElementById('mdTrainingPanel'),start=document.getElementById('mdTrainingStart'),hint=document.getElementById('mdTrainingHint'),hud=document.getElementById('mdTrainingHud');
  if(!panel||!start||!hud)return;
@@ -4562,37 +4582,16 @@ requestAnimationFrame(frame);
  }));
  start.addEventListener('click',()=>{
   if(!selected)return;
-  window.mdTrainingDrill=selected;
+  if(typeof window.mdStartTrainingMatch!=='function'){hint.textContent='Game is still loading. Please refresh and try again.';return;}
   panel.hidden=true;panel.style.display='none';
-  if(typeof startMatch==='function')startMatch();
+  hud.hidden=false;
+  window.mdStartTrainingMatch(selected);
  });
  hud.addEventListener('click',()=>{
-  window.mdTrainingDrill='';
   hud.hidden=true;
-  if(typeof paused!=='undefined')paused=true;
-  const h=document.getElementById('hud'),m=document.getElementById('menu');
-  if(h)h.hidden=true;if(m)m.hidden=false;
-  if(typeof state!=='undefined')state='menu';
+  if(typeof window.mdExitTraining==='function')window.mdExitTraining();
  });
- const originalStart=window.startMatch;
- if(typeof originalStart==='function'){
-  window.startMatch=function(){
-   originalStart.apply(this,arguments);
-   const drill=window.mdTrainingDrill;
-   if(!drill)return;
-   hud.hidden=false;
-   if(typeof teams!=='undefined'&&teams[1]){
-    teams[1].players.forEach(p=>{if(!p.isGK){p.out=true;p.x=p.y=-900;p.vx=p.vy=0;}});
-   }
-   if(drill==='pen'||drill==='free'){
-    if(typeof setupRestart==='function')setupRestart(drill==='pen'?'pen':'free',0,drill==='pen'?undefined:Math.round(L*.78),Math.round(W/2));
-   }else if(drill==='shots'){
-    if(typeof setupRestart==='function')setupRestart('free',0,Math.round(L*.78),Math.round(W/2));
-   }
-   if(typeof showMsg==='function')showMsg('TRAINING MODE',drill==='dribble'?'Dribble and practise skill moves':drill==='shots'?'Shoot past the goalkeeper':drill==='free'?'Free kick practice':'Penalty practice',1800);
-  };
- }
-})();
+})();;
 </script>
 
 </body>
