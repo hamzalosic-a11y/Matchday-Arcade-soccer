@@ -1651,21 +1651,25 @@ function setupRestart(type,team,x,y){
   const Tm=teams[team],d=Tm.dir,ownX=d===1?0:L,atkX=d===1?L:0;
   let taker=null;
   ball.net=false;
-  if(type==='goal'){taker=Tm.players[0];x=ownX+d*(SIX_D-10);y=W/2+rand(-60,60);}
+  if(type==='goal'){taker=Tm.players.find(p=>p.isGK&&!p.out)||Tm.players.find(p=>!p.out);x=ownX+d*(SIX_D-10);y=W/2+rand(-60,60);}
   else if(type==='pen'){
     x=atkX-d*180;y=W/2;
-    taker=Tm.players.filter(p=>p.role==='FW'&&!p.out).sort((a,b)=>Math.abs(a.fy-.5)-Math.abs(b.fy-.5))[0]||Tm.players.find(p=>!p.isGK&&!p.out);
+    taker=Tm.players.filter(p=>p.role==='FW'&&!p.out).sort((a,b)=>(b.sht||0)-(a.sht||0))[0]||Tm.players.find(p=>!p.isGK&&!p.out);
   }else{
     let bd=1e9;
     for(const p of Tm.players){if(p.isGK||p.out)continue;const dd=Math.hypot(p.x-x,p.y-y);if(dd<bd){bd=dd;taker=p;}}
   }
+  // A corner must always have a valid outfield taker and a ball position safely inside the pitch.
+  if(!taker)taker=Tm.players.find(p=>!p.out)||Tm.players[0];
+  if(type==='corner'){x=clamp(x,18,L-18);y=clamp(y,18,W-18);}
+  if(type==='free'){x=clamp(x,35,L-35);y=clamp(y,35,W-35);}
   let face;
   if(type==='throw')face=y<W/2?Math.PI/2:-Math.PI/2;
-  else if(type==='corner')face=Math.atan2(W/2-y,(atkX-d*150)-x);
+  else if(type==='corner')face=Math.atan2(W/2-y,(atkX-d*180)-x);
   else face=d===1?0:Math.PI;
   const off=15+(taker.isGK?9:0);
   taker.face=face;taker.x=x-Math.cos(face)*off;taker.y=y-Math.sin(face)*off;
-  taker.vx=taker.vy=0;taker.lunge=null;taker.stun=0;taker.cant=0;taker.recv=0;
+  taker.vx=taker.vy=0;taker.lunge=null;taker.stun=0;taker.cant=0;taker.recv=0;taker.thr=false;
   ball.x=x;ball.y=y;ball.z=0;ball.vx=ball.vy=ball.vz=0;ball.owner=taker;ball.lastTeam=team;ball.noPick=0;
   taker.protect=1.3;taker.noOff=(type==='throw'||type==='corner'||type==='goal');ball.offs=null;taker.thr=(type==='throw');taker.pen=(type==='pen');taker.ai.t=type==='pen'?1.3:rand(.9,1.5);
   taker.ai.force=type==='goal'?'long':type==='corner'?'cross':type==='pen'?'shoot':(type==='free'&&Math.hypot(atkX-x,W/2-y)<330?'shoot':'pass');
@@ -1681,6 +1685,10 @@ function setupRestart(type,team,x,y){
       const dx=p.x-x,dy=p.y-y,dd=Math.hypot(dx,dy)||1,min=type==='throw'?100:125;
       if(dd<min){p.x=x+dx/dd*min;p.y=y+dy/dd*min;p.vx=p.vy=0;}
       if(type==='goal'&&Math.abs(p.x-ownX)<PEN_D+20&&Math.abs(p.y-W/2)<PEN_W/2+20){p.x=ownX+d*(PEN_D+45);}
+    }
+    // For corners, gather the attacking forwards in the box and keep the defence goal-side.
+    if(type==='corner'&&p.team===team&&!p.isGK&&p!==taker&&p.role!=='DF'){
+      p.x=atkX-d*(PEN_D*.72+rand(10,55));p.y=clamp(W/2+(p.idx%2?1:-1)*rand(45,150),55,W-55);p.vx=p.vy=0;
     }
   }
   setPiece=(type==='corner')?{type,team,taker}:null;
@@ -1701,17 +1709,17 @@ function goalScored(t){
   for(let i=0;i<320;i++){particles.push({x:gx,y:rand(GY0,GY1),vx:(t===0?1:-1)*rand(80,560),vy:rand(-460,340),c:colors[i%colors.length],life:rand(1.7,3.8),r:rand(2,9)});}
 }
 function checkBounds(){
-  if(ball.net)return;
+  if(ball.net||pending)return;
   if(ball.owner)ball.lastTeam=ball.owner.team;
   const x=ball.x,y=ball.y;
   if(y<0||y>W){
     const t=1-ball.lastTeam;
-    pending={type:'restart',kind:'throw',team:t,x:clamp(x,40,L-40),y:y<0?6:W-6};
+    pending={type:'restart',kind:'throw',team:t,x:clamp(x,40,L-40),y:y<0?18:W-18};
   }else if(x<0||x>L){
     const left=x<0;
     if(y>GY0&&y<GY1&&ball.z<BAR){goalScored(left?1:0);return;}
     const defTeam=left?0:1;
-    if(ball.lastTeam===defTeam)pending={type:'restart',kind:'corner',team:1-defTeam,x:left?10:L-10,y:y<W/2?10:W-10};
+    if(ball.lastTeam===defTeam)pending={type:'restart',kind:'corner',team:1-defTeam,x:left?18:L-18,y:y<W/2?18:W-18};
     else pending={type:'restart',kind:'goal',team:defTeam,x:0,y:0};
   }
 }
