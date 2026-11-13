@@ -572,6 +572,7 @@ canvas#game{filter:saturate(1.08) contrast(1.025)}
     </div>
     <div class="row" style="margin-top:6px"><span class="lbl">Gameplay style</span><div class="seg" id="segGameplay"><button data-v="competitive" class="on">⚡ Competitive</button><button data-v="authentic">⚽ Authentic</button></div></div>
     <p id="gameplayHint" style="font-size:12px;color:var(--mut);margin:0 0 8px">Faster movement and passing for responsive arcade matches.</p>
+    <button class="go alt" id="btnTraining" style="margin-top:10px;border-color:#65dca5;color:#9cffc9">🎯 Training ground</button>
     <button class="go alt" id="btnQuickMatch" style="margin-top:12px">⚡ Quick match · Real clubs</button>
     <button class="go" id="btnStart">Choose teams & kick off</button>
     <div class="tr" style="margin-top:12px"><button id="btnPlayerCareer" style="border-color:rgba(69,211,151,.5)">⭐ Player Career</button><button id="btnCareer">Career mode</button><button id="btnLb">Leaderboard</button><button id="btnDt">Dream Team</button><button id="btnOnline">Ranked online</button><button id="btnAcc">Account</button><button id="btnCup">🏆 Road to Glory Cup</button><button id="btnRush">⚡ Arcade Rush</button></div>
@@ -4518,6 +4519,79 @@ requestAnimationFrame(frame);
    if(ready&&elapsed>1050){done=true;clearInterval(timer);progress=100;fill.style.width='100%';pct.textContent='100%';label.textContent='READY TO PLAY';setTimeout(()=>{root.classList.add('mdBootDone');setTimeout(()=>root.remove(),650);},220);}
  },90);
  window.addEventListener('load',()=>{ready=true;},{once:true});
+})();
+</script>
+
+
+<div id="mdTrainingPanel" hidden style="position:fixed;z-index:16000;inset:0;background:rgba(4,10,20,.96);color:var(--text);padding:22px;overflow:auto;touch-action:pan-y;display:none;align-items:center;justify-content:center">
+ <section style="width:min(760px,100%);background:var(--panel);border:1px solid #65dca5;border-radius:18px;padding:clamp(16px,4vw,28px);box-shadow:0 18px 60px #0009">
+  <div style="font:900 12px 'Barlow',sans-serif;letter-spacing:2px;color:#9cffc9">MATCHDAY ACADEMY</div>
+  <h2 style="font:900 clamp(36px,7vw,58px)/.95 'Barlow Condensed',sans-serif;margin:8px 0;color:#fff">TRAINING <span style="color:#9cffc9">GROUND</span></h2>
+  <p style="color:var(--mut);margin:0 0 18px">No match pressure. Practice your moves, improve your finishing and repeat every drill.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px">
+   <button class="mdTrainPick" data-drill="dribble">⚡ DRIBBLING<small>Run with the ball and practise skill moves</small></button>
+   <button class="mdTrainPick" data-drill="shots">🎯 SHOOTING<small>Take shots against the goalkeeper</small></button>
+   <button class="mdTrainPick" data-drill="free">🌀 FREE KICKS<small>Practise your placement and power</small></button>
+   <button class="mdTrainPick" data-drill="pen">🥅 PENALTIES<small>Pick a corner and beat the keeper</small></button>
+  </div>
+  <p id="mdTrainingHint" style="color:#9cffc9;font-weight:700;text-align:center;min-height:22px;margin:14px 0 4px">Choose a drill to begin.</p>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap"><button id="mdTrainingStart" class="go" disabled>START DRILL</button><button id="mdTrainingClose" class="go alt">BACK</button></div>
+ </section>
+</div>
+<style>
+#mdTrainingPanel[hidden]{display:none!important}
+.mdTrainPick{min-height:112px;text-align:left;border:1px solid #355b57;border-radius:12px;padding:14px;background:linear-gradient(145deg,#173a38,#172744);color:#fff;font:900 20px 'Barlow Condensed',sans-serif;cursor:pointer}
+.mdTrainPick small{display:block;margin-top:7px;color:#b8d5d0;font:500 12px 'Barlow',sans-serif;line-height:1.4}
+.mdTrainPick.active{border:2px solid #9cffc9;background:linear-gradient(145deg,#20594b,#172744);box-shadow:0 0 0 2px #9cffc933}
+#mdTrainingHud{position:fixed;z-index:9000;top:54px;left:50%;transform:translateX(-50%);border:1px solid #9cffc9;border-radius:10px;background:#102b28ed;color:#dffff0;padding:8px 13px;font:800 13px 'Barlow',sans-serif;pointer-events:auto;white-space:nowrap}
+#mdTrainingHud[hidden]{display:none}
+</style>
+<button id="mdTrainingHud" hidden>🎯 TRAINING · BACK TO DRILLS</button>
+<script>
+/* MATCHDAY_TRAINING_GROUND_V1 */
+(function(){
+ const panel=document.getElementById('mdTrainingPanel'),start=document.getElementById('mdTrainingStart'),hint=document.getElementById('mdTrainingHint'),hud=document.getElementById('mdTrainingHud');
+ if(!panel||!start||!hud)return;
+ let selected='';
+ const descriptions={dribble:'DRIBBLING · Take the ball, sprint, turn and use I / Skill to practise moves.',shots:'SHOOTING · Build power by holding K / Shoot, aim up or down, then release.',free:'FREE KICKS · Aim your set piece and practise different shot power.',pen:'PENALTIES · Choose a corner on the penalty screen and take your shot.'};
+ document.getElementById('btnTraining')?.addEventListener('click',()=>{panel.hidden=false;panel.style.display='flex';});
+ document.getElementById('mdTrainingClose').addEventListener('click',()=>{panel.hidden=true;panel.style.display='none';});
+ panel.querySelectorAll('[data-drill]').forEach(b=>b.addEventListener('click',()=>{
+  selected=b.dataset.drill;panel.querySelectorAll('[data-drill]').forEach(x=>x.classList.toggle('active',x===b));
+  hint.textContent=descriptions[selected];start.disabled=false;
+ }));
+ start.addEventListener('click',()=>{
+  if(!selected)return;
+  window.mdTrainingDrill=selected;
+  panel.hidden=true;panel.style.display='none';
+  if(typeof startMatch==='function')startMatch();
+ });
+ hud.addEventListener('click',()=>{
+  window.mdTrainingDrill='';
+  hud.hidden=true;
+  if(typeof paused!=='undefined')paused=true;
+  const h=document.getElementById('hud'),m=document.getElementById('menu');
+  if(h)h.hidden=true;if(m)m.hidden=false;
+  if(typeof state!=='undefined')state='menu';
+ });
+ const originalStart=window.startMatch;
+ if(typeof originalStart==='function'){
+  window.startMatch=function(){
+   originalStart.apply(this,arguments);
+   const drill=window.mdTrainingDrill;
+   if(!drill)return;
+   hud.hidden=false;
+   if(typeof teams!=='undefined'&&teams[1]){
+    teams[1].players.forEach(p=>{if(!p.isGK){p.out=true;p.x=p.y=-900;p.vx=p.vy=0;}});
+   }
+   if(drill==='pen'||drill==='free'){
+    if(typeof setupRestart==='function')setupRestart(drill==='pen'?'pen':'free',0,drill==='pen'?undefined:Math.round(L*.78),Math.round(W/2));
+   }else if(drill==='shots'){
+    if(typeof setupRestart==='function')setupRestart('free',0,Math.round(L*.78),Math.round(W/2));
+   }
+   if(typeof showMsg==='function')showMsg('TRAINING MODE',drill==='dribble'?'Dribble and practise skill moves':drill==='shots'?'Shoot past the goalkeeper':drill==='free'?'Free kick practice':'Penalty practice',1800);
+  };
+ }
 })();
 </script>
 
